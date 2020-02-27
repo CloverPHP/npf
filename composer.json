@@ -42,11 +42,8 @@
     "clue/redis-react": "^2.3"
   },
   "scripts": {
-    "post-package-install": [
+    "post-create-project-cmd": [
       "Npf\\Build\\Setup::Install"
-    ],
-    "post-package-update": [
-      "Npf\\Build\\Setup::Update"
     ]
   },
   "autoload": {
