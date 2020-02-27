@@ -1,6 +1,6 @@
 {
-  "name": "starphp/npf",
-  "description": "IOXonic New PHP Framework",
+  "name": "php-nf/npf",
+  "description": "New PHP Framework",
   "keywords": [
     "framework"
   ],
