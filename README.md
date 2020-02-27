@@ -12,7 +12,7 @@ You wil need to create a `composer.json` file with the following keys at minimum
             "Npf\\Build\\Setup::Install"
         ],
         "post-update-cmd": [
-            "Npf\\Build\\Setup::Install"
+            "Npf\\Build\\Setup::Update"
         ]
     },
     "autoload": {
