@@ -41,6 +41,14 @@
     "react/mysql": "^0.5.4",
     "clue/redis-react": "^2.3"
   },
+  "scripts": {
+    "post-package-install": [
+      "Npf\\Build\\Setup::Install"
+    ],
+    "post-package-update": [
+      "Npf\\Build\\Setup::Update"
+    ]
+  },
   "autoload": {
     "psr-4": {
       "Npf\\": "src/",
