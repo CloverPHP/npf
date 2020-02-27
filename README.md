@@ -1,4 +1,4 @@
-# npf PHP Framework
+# NPF PHP Framework
 
 ##Composer JSON file
 You wil need to create a composer.json file with the following keys at minimum:
