@@ -32,6 +32,10 @@ final class Setup
      */
     final static public function Update()
     {
+        if (!file_exists('App')) {
+            static::Install();
+            return;
+        }
         static::initialIgnoreGit();
         static::updateConfig();
         static::initialModule();
