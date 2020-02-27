@@ -42,7 +42,7 @@
     "clue/redis-react": "^2.3"
   },
   "scripts": {
-    "post-create-project-cmd": [
+    "post-package-install": [
       "Npf\\Build\\Setup::Install"
     ]
   },
