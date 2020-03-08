@@ -317,7 +317,6 @@ namespace Npf\Core\Db {
                 $result = $this->valLiteral . $this->driver->escapeStr($matches[1]) . $this->
                     valLiteral;
             else {
-                $colName = $this->convertSplit($colName);
                 if (preg_match($pattern, $colName, $matches)) {
                     $match = strtoupper($matches[1]);
                     switch ($match) {
@@ -419,10 +418,11 @@ namespace Npf\Core\Db {
                             $result = "FROM_UNIXTIME(" . $this->getColNm($colName, null, false) . ", \"%Y-%m-%d\")";
                             break;
                     }
-                } elseif ($Fnc === false && strpos($colName, $this->colLiteral) === false && $colName !== '*')
+                } elseif ($Fnc === false && strpos($colName, $this->colLiteral) === false && $colName !== '*') {
+                    $colName = $this->convertSplit($colName);
                     $result = $this->colLiteral . $this->driver->escapeStr($colName) . $this->
                         colLiteral;
-                else
+                }else
                     $result = $this->driver->escapeStr($colName);
                 if ($alias)
                     $result .= (!is_int($colAlias) && !empty($colAlias) ? " AS {$this->valLiteral}" .
