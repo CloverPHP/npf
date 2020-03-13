@@ -846,6 +846,7 @@ final class Rpc
         }
     }
 
+
     /**
      * @param $url
      * @param $method
@@ -854,6 +855,18 @@ final class Rpc
      * @return mixed
      */
     final public function __invoke($url, $method = "GET", $content = null, array $headers = [])
+    {
+        return $this->run($url, $method, $content, $headers);
+    }
+
+    /**
+     * @param $url
+     * @param $method
+     * @param $content
+     * @param array $headers
+     * @return mixed
+     */
+    final public function run($url, $method = "GET", $content = null, array $headers = [])
     {
         $this->setUrl($url);
         $this->setMethod($method);
