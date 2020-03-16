@@ -182,10 +182,10 @@ namespace Npf\Core {
         final private function finishingApp()
         {
             $profiler = $this->profiler->fetch();
-            $this->response->add('profiler', $profiler);
             $this->emit('appEnd', [&$this, $profiler]);
             $this->commit();
             $this->emit('appBeforeClean', [&$this, $profiler]);
+            $this->response->add('profiler', $this->profiler->fetch());
             $this->clean();
             $this->view->render();
             exit($this->getRoles() === 'daemon' ? 1 : 0);
