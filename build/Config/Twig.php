@@ -20,6 +20,11 @@ Class Twig
     ];
 
     /**
+     * @var array Twig Enviroment Option
+     */
+    public $environmentOption = [];
+
+    /**
      * Auto Append Header when using twig
      * @var array
      */

@@ -23,10 +23,6 @@ namespace Npf\Core {
             'error' => '',
             'code' => ''
         ];
-        /**
-         * @var true
-         */
-        private $silent = false;
 
         /**
          * Response constructor
@@ -44,6 +40,7 @@ namespace Npf\Core {
          * @param $error
          * @param string $desc
          * @param string $code
+         * @return Response
          */
         public function error($error, $desc = '', $code = '')
         {
@@ -53,16 +50,19 @@ namespace Npf\Core {
                 $this->set('profiler', ['desc' => (string)$desc]);
             if ($code)
                 $this->set('code', (string)$code);
+            return $this;
         }
 
         /**
          * @param array $data
+         * @return Response
          */
         public function success(array $data = [])
         {
             $this->set('status', 'ok');
             $this->set('error', null);
             $this->__import($data);
+            return $this;
         }
 
         /**
@@ -83,6 +83,7 @@ namespace Npf\Core {
          * Response constructor
          * @param $array
          * @param bool $overwrite
+         * @return Response
          */
         public function setHeaders($array, $overwrite = false)
         {
@@ -92,6 +93,7 @@ namespace Npf\Core {
                 foreach ($array as $name => $value)
                     $this->header($name, $value, $overwrite);
             }
+            return $this;
         }
 
         /**
@@ -167,12 +169,14 @@ namespace Npf\Core {
          * Change a buffer item
          * @param string $name
          * @param mixed $data
+         * @return Response
          */
         final public function chg($name, $data)
         {
             if (!empty($name)) {
                 $this->{$name} = $data;
             }
+            return $this;
         }
 
         /**
@@ -181,7 +185,8 @@ namespace Npf\Core {
         final public function clear()
         {
             parent::clear();
-            $this->__import($this->initial);
+            $this->import($this->initial);
+            return $this;
         }
     }
 }

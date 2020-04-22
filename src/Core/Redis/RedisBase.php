@@ -568,12 +568,14 @@ namespace Npf\Core\Redis {
         public function select($db)
         {
             $db = (int)$db;
+            $sTime = -$this->app->profiler->elapsed();
             if (!$this->connected)
                 return false;
             elseif ($this->__write(['SELECT', $db])) {
                 $result = $this->__read();
                 if ($result)
                     $this->db = $db;
+                $this->app->profiler->saveQuery("selectDb:{$db}", $sTime, "redis");
                 return $result;
             } else
                 return false;

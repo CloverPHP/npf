@@ -67,11 +67,10 @@ namespace Npf\Core {
         /**
          * Route constructor.
          * @param App $app
-         * @throws InternalError
-         * @throws ReflectionExceptionAlias
-         * @throws UnknownClass
          * @throws DBQueryError
+         * @throws InternalError
          * @throws LoaderError
+         * @throws ReflectionExceptionAlias
          * @throws RuntimeError
          * @throws SyntaxError
          */
@@ -80,61 +79,65 @@ namespace Npf\Core {
             $this->app = &$app;
             $this->generalConfig = $this->app->config('General');
             $this->routeConfig = $this->app->config('Route');
-            if ((boolean)$this->routeConfig->get('forceSecure', false))
+            if (
+                !in_array($app->getRoles(), ['cronjob', 'daemon'], true) &&
+                (boolean)$this->routeConfig->get('forceSecure', false)
+            )
                 $app->forceSecure();
             $this->rootDirectory = $this->routeConfig->get('rootDirectory', 'App');
             $this->homeDirectory = $this->routeConfig->get('homeDirectory', 'Index');
             $this->indexFile = $this->routeConfig->get('indexFile', 'Index');
             $this->defaultWebRoute = !in_array($app->getRoles(), ['cronjob', 'daemon'], true) ? (string)$this->routeConfig->get('defaultWebRoute', '') : '';
-            $pathInfo = isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : '';
-            if (!$pathInfo) {
-                $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
-                $uri = str_replace($app->getBasePath(), '/', $uri);
-                if ($uri)
-                    $pathInfo = strpos($uri, '?') !== false ? strstr($uri, "?", true) : $uri;
-                if ($pathInfo === '/')
-                    $pathInfo = "/{$this->homeDirectory}/{$this->indexFile}";
-            }
+            $pathInfo = isset($_SERVER['REQUEST_URI']) ? explode("?", $_SERVER['REQUEST_URI'])[0] : '';
+            $pathInfo = preg_replace('#^/\w+\.php#', '', $pathInfo);
+            $pathInfo = (!$pathInfo || $pathInfo === '/') ?
+                $this->indexFile : (substr($pathInfo, 0, 1) === '/' ? substr($pathInfo, 1) : $pathInfo);
             $this->proceedAppPath($pathInfo);
-            if (!$this->isExistsAppClass($this->routeClass)) {
-                if (!empty($this->defaultWebRoute))
-                    $this->proceedAppPath($this->defaultWebRoute);
-                if (empty($this->defaultWebRoute) || !$this->isExistsAppClass($this->routeClass))
-                    throw new UnknownClass("URI app router class not found: {$this->routeClass}", '', 'error', ['uri' => $pathInfo]);
-            }
             clearstatcache();
         }
 
         /**
          * @param $pathInfo
          * @throws ReflectionExceptionAlias
-         * @throws UnknownClass
          */
         final private function proceedAppPath($pathInfo)
         {
             $this->appPath = array_values(explode("\\", str_replace('/', '\\', $pathInfo)));
             if (empty($this->appPath))
-                throw new UnknownClass("Uri is invalid", '', 'error', ['uri' => $pathInfo]);
-            else {
-                if (empty($this->appPath[0]))
-                    array_shift($this->appPath);
-                foreach ($this->appPath as &$path)
-                    if (empty($path))
-                        $path = $this->indexFile;
+                $this->appPath[] = $this->indexFile;
+            $endPath = end($this->appPath);
+            if (empty($endPath))
+                $this->appPath[key($this->appPath)] = $this->indexFile;
+            $appRootPath = reset($this->appPath);
+            $addHomeDirectory = false;
+            if (count($this->appPath) <= 1 && !empty($this->homeDirectory)) {
+                $addHomeDirectory = true;
+                $appRootPath = $this->homeDirectory;
+                array_unshift($this->appPath, $this->homeDirectory);
             }
-            if (count($this->appPath) <= 1)
-                array_unshift($this->appPath, $this->indexFile);
 
             $this->appFile = implode("\\", $this->appPath);
+            if (count($this->appPath) > 1 && $addHomeDirectory && $appRootPath === $this->homeDirectory) {
+                if (
+                    !$this->isExistsAppClass($this->appFile) &&
+                    !$this->isExistsStaticFile($this->appFile) &&
+                    !empty($this->homeDirectory) &&
+                    $addHomeDirectory
+                ) {
+                    array_shift($this->appPath);
+                    $this->appFile = implode("\\", $this->appPath);
+                }
+            }
             if (
                 $this->routeConfig->get('routeStaticFile', false) &&
                 $this->isExistsStaticFile($this->appFile) &&
                 !$this->isExistsAppClass($this->appFile)
             )
                 $this->isStatic = true;
-            $this->routeClass = "{$this->appPath[0]}\\Router";
+            $this->routeClass = (!empty($appRootPath) ? "{$appRootPath}\\" : "") . "Router";
+            if (!$this->isExistsAppClass($this->routeClass))
+                $this->routeClass = "Router";
         }
-
 
         /**
          * @throws InternalError
@@ -149,6 +152,14 @@ namespace Npf\Core {
             }
             $appRouteClass = "{$this->rootDirectory}\\{$this->routeClass}";
             $routerObj = new $appRouteClass($this->app, $this);
+
+            //Route Default Uri if not found
+            $appFile = $this->appFile;
+            if (!$this->isStatic && !$this->isExistsAppClass($this->appFile) && !empty($this->defaultWebRoute))
+                $this->proceedAppPath($this->defaultWebRoute);
+            if (!$this->isExistsAppClass($this->routeClass))
+                throw new UnknownClass("URI app router class not found: {$this->routeClass}", '', 'error', ['uri' => $appFile]);
+
             $this->app->request->setUri($this->appFile);
             if ($this->isStatic)
                 $this->routeStatic();
@@ -325,14 +336,14 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $className
+         * @param $fileName
          * @return string
          * @throws ReflectionExceptionAlias
          */
-        final public function isExistsStaticFile($className)
+        final public function isExistsStaticFile($fileName)
         {
-            $staticFile = str_replace("\\", "/", "{$this->rootDirectory}\\{$className}");
-            return file_exists($this->app->getRootPath() . $staticFile) && !is_dir($staticFile);
+            $staticFile = $this->app->getRootPath() . str_replace("\\", "/", "{$this->rootDirectory}\\{$fileName}");
+            return file_exists($staticFile) && !is_dir($staticFile);
         }
 
         /**

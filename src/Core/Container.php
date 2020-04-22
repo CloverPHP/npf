@@ -58,12 +58,23 @@ namespace Npf\Core {
          * Import data from a object/array/json
          * @param mixed $data
          * @param bool $notExistsOnly
-         * @return bool
+         * @return Container
+         */
+        final public function import($data, $notExistsOnly = false)
+        {
+            return $this->__import($data, $notExistsOnly);
+        }
+
+        /**
+         * Import data from a object/array/json
+         * @param mixed $data
+         * @param bool $notExistsOnly
+         * @return Container
          */
         final public function __import($data, $notExistsOnly = false)
         {
             if ($this->__lock || NULL === $data)
-                return FALSE;
+                return $this;
             if (!empty($data)) {
 
                 switch (gettype($data)) {
@@ -87,9 +98,8 @@ namespace Npf\Core {
                             $this->set($key, $value, $notExistsOnly);
                         break;
                 }
-                return TRUE;
-            } else
-                return FALSE;
+            }
+            return $this;
         }
 
         /**
@@ -97,14 +107,13 @@ namespace Npf\Core {
          * @param string $name Name
          * @param null $value Value to set
          * @param bool $notExistsOnly set only not exists
-         * @return bool
+         * @return Container
          */
         public function set($name, $value = NULL, $notExistsOnly = false)
         {
-            if (($notExistsOnly && !isset($this->__data[$name])) || !$notExistsOnly) {
-                return $this->__set($name, $value);
-            } else
-                return false;
+            if (($notExistsOnly && !isset($this->__data[$name])) || !$notExistsOnly)
+                $this->__set($name, $value);
+            return $this;
         }
 
         /**
@@ -179,17 +188,17 @@ namespace Npf\Core {
          * Set a value
          * @param $name
          * @param $value
-         * @return bool
+         * @return Container
          */
         public function __set($name, $value)
         {
             if ($this->__lock || NULL === $value)
-                return FALSE;
+                return $this;
             if (!$this->__firstOnly && is_array($value) && $this->__isAssoc($value))
                 $this->__data[$name] = new Container($value);
             else
                 $this->__data[$name] = $value;
-            return true;
+            return $this;
         }
 
         /**
@@ -287,33 +296,33 @@ namespace Npf\Core {
 
         /**
          * @param $name
-         * @return bool
+         * @return Container
          */
         public function del($name)
         {
-            if (isset($this->__data[$name])) {
+            if (isset($this->__data[$name]))
                 unset($this->__data[$name]);
-                return true;
-            }
-            return false;
+            return $this;
         }
 
         /**
-         * @return bool
+         * @return Container
          */
         public function clear()
         {
             $this->__data = [];
-            return true;
+            return $this;
         }
 
         /**
          * Lock setup to lock the content.
          * @param bool $lock
+         * @return Container
          */
         protected function lock($lock = true)
         {
             $this->__lock = (boolean)$lock;
+            return $this;
         }
     }
 }

@@ -422,7 +422,7 @@ namespace Npf\Core\Db {
                     $colName = $this->convertSplit($colName);
                     $result = $this->colLiteral . $this->driver->escapeStr($colName) . $this->
                         colLiteral;
-                }else
+                } else
                     $result = $this->driver->escapeStr($colName);
                 if ($alias)
                     $result .= (!is_int($colAlias) && !empty($colAlias) ? " AS {$this->valLiteral}" .

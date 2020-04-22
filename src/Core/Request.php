@@ -101,7 +101,7 @@ namespace Npf\Core {
                     $options = getopt("r:", ["run:"]);
                     if (is_array($options) && !empty($options)) {
                         $options = explode("?", reset($options));
-                        $_SERVER['PATH_INFO'] = $options[0];
+                        $_SERVER['REQUEST_URI'] = $options[0];
                         if (isset($options[1]))
                             parse_str($options[1], $params);
                     }
@@ -178,12 +178,12 @@ namespace Npf\Core {
         /**
          * Set Uri
          * @param $Uri
-         * @return bool
+         * @return Request
          */
         final public function setUri($Uri)
         {
             $this->uri = $Uri;
-            return true;
+            return $this;
         }
 
         /**
@@ -214,18 +214,20 @@ namespace Npf\Core {
          *
          * @param string $name
          * @param mixed $value Value
-         * @return void
+         * @return Request
          */
         public function setHeader($name, $value)
         {
             $name = strtolower($name);
             $this->headers[$name] = $value;
+            return $this;
         }
 
         /**
          * @param array $requests
          * @param array $headers
          * @param bool $notExists
+         * @return Request
          */
         final public function addRequest($requests = [], $headers = [], $notExists = false)
         {
@@ -238,6 +240,7 @@ namespace Npf\Core {
                         continue;
                     $this->headers[$name] = $value;
                 }
+            return $this;
         }
 
         /**
@@ -257,6 +260,15 @@ namespace Npf\Core {
             $code = key($needed);
             if (is_array($needed) && !empty($needed))
                 throw new InvalidParams("Invalid Parameter, for more info, please refer 'tips'.", $code, 'error', ['tips' => $needed]);
+        }
+
+        /**
+         * @return bool
+         */
+        final public function isXHR()
+        {
+            $method = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) ? strtoupper($_SERVER['HTTP_X_REQUESTED_WITH']) : '';
+            return ($method === 'XMLHTTPREQUEST');
         }
     }
 }

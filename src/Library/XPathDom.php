@@ -22,8 +22,7 @@ final class XPathDom
      * @var DOMNodeList
      */
     protected $domNodeList = null;
-    protected $XMLValues = [];
-    protected $XMLIndex = [];
+
     /**
      * @var DOMDocument Dom Document Library
      */

@@ -2,21 +2,26 @@
 
 namespace Npf\Library;
 
+use Detection\MobileDetect;
 use InvalidArgumentException;
 
 /**
  * Class Rpc
  * Enhanced curl and make more easy to use
  */
-final class UserAgent
+final class UserAgent extends MobileDetect
 {
     private $userPlatform = null;
     private $userBrowser = null;
     private $userVersion = null;
 
+    /**
+     * UserAgent constructor.
+     */
     final public function __construct()
     {
         $this->setUserAgent($_SERVER['HTTP_USER_AGENT']);
+        parent::__construct();
     }
 
     /**
@@ -31,6 +36,7 @@ final class UserAgent
         $this->userPlatform = $data['platform'];
         $this->userBrowser = $data['browser'];
         $this->userVersion = $data['version'];
+        parent::setUserAgent($userAgent);
         return true;
     }
 

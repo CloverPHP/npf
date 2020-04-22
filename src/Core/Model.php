@@ -202,7 +202,7 @@ namespace Npf\Core {
         {
             $matches = [];
             if (is_string($value) && !is_numeric($value)) {
-                if (preg_match("/^({DB_([A-Z]|FNC|SUM|COL|COUNT|DISTINCT|MIN|MAX|RAND|DAY|MONTH|YEAR)})(.*)/", $value, $matches)) {
+                if (preg_match("/^({DB_([A-Z]|FNC|SUM|COL|COUNT|DISTINCT|MIN|MAX|RAND|DATE|DAY|MONTH|YEAR)})(.*)/", $value, $matches)) {
                     $value = (strtoupper($matches[2]) === 'RAND') ? "{DB_RAND}" : "{$matches[1]}" . ($prefix ? $this->prefix : "") . "{$matches[3]}";
                 } elseif ($prefix)
                     $value = "{$this->prefix}{$value}";

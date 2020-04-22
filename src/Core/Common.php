@@ -511,6 +511,24 @@ namespace Npf\Core {
                         }
                         break;
 
+                    case 'username':
+                        $pass = (boolean)preg_match("/^[a-zA-Z][\w!@#$%^&*()+=]*$/", $value);
+                        break;
+
+                    case 'printable':
+                        $pass = (boolean)preg_match("/^[[:print:]]+$/u", $value);
+                        break;
+
+                    case 'content':
+                        $extend = (string)$extend;
+                        $extend = preg_match("/^\s+$/", $extend) ? $extend : '';
+                        $pass = (boolean)static::safeUtf8($value, $extend);
+                        break;
+
+                    case 'amount':
+                        $pass = (boolean)preg_match('/^\d{1,10}(\.\d{0,2})?$/', $value);
+                        break;
+
                     case 'optional':
                         if ($value === NULL)
                             $optional = true;
@@ -551,6 +569,26 @@ namespace Npf\Core {
                 }
                 return false;
             }
+        }
+
+        /**
+         * Check is Utf8
+         * @param $string
+         * @param $space
+         * @return false|int
+         */
+        public static function safeUtf8($string, $space = '\x20')
+        {
+            return preg_match('/^(?:'
+                . '[\x21-\x7E' . $space . ']'
+                . '|[\xC2-\xDF][\x80-\xBF]'                // non-overlong 2-byte
+                . '|\xE0[\xA0-\xBF][\x80-\xBF]'           // excluding overlongs
+                . '|[\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}'    // straight 3-byte
+                . '|\xED[\x80-\x9F][\x80-\xBF]'           // excluding surrogates
+                . '|\xF0[\x90-\xBF][\x80-\xBF]{2}'        // planes 1-3
+                . '|[\xF1-\xF3][\x80-\xBF]{3}'            // planes 4-15
+                . '|\xF4[\x80-\x8F][\x80-\xBF]{2}'        // plane 16
+                . ')+$/xs', $string);
         }
 
         /**
@@ -1022,6 +1060,24 @@ namespace Npf\Core {
         }
 
         /**
+         * Get Specify datetime by timezone
+         * @param $fromTimeZone
+         * @param $targetTimeZone
+         * @param string $format
+         * @param null $time
+         * @return string
+         * @throws \Exception
+         */
+        public static function convertTimeZone($fromTimeZone, $targetTimeZone, $format = 'Y-m-d H:i:s', $time = null)
+        {
+            $dateTime = new DateTime(is_string($time) ? $time : 'now', new DateTimeZone($fromTimeZone));
+            if (is_integer($time))
+                $dateTime->setTimestamp($time);
+            $dateTime->setTimezone(new DateTimeZone($targetTimeZone));
+            return $dateTime->format($format);
+        }
+
+        /**
          * Get current Timezone
          * @return string
          */
@@ -1090,14 +1146,25 @@ namespace Npf\Core {
         /**
          * Convert Second to Time
          * @param int $seconds
+         * @param int $size
          * @return float
          */
-        public static function secondToTime($seconds = 0)
+        public static function secondToTime($seconds = 0, $size = null)
         {
-            $hours = floor($seconds / 3600);
-            $minutes = floor($seconds / 60 % 60);
-            $secs = floor($seconds % 60);
-            return sprintf('%02d:%02d:%02d', $hours, $minutes, $secs);
+            switch ($size) {
+                case 1:
+                    $secs = floor($seconds / 60);
+                    return sprintf('%02d:%02d', $secs, $secs);
+                case 2:
+                    $minutes = floor($seconds / 60);
+                    $secs = floor($seconds % 60);
+                    return sprintf('%02d:%02d', $minutes, $secs);
+                default:
+                    $hours = floor($seconds / 3600);
+                    $minutes = floor($seconds / 60 % 60);
+                    $secs = floor($seconds % 60);
+                    return sprintf('%02d:%02d:%02d', $hours, $minutes, $secs);
+            }
         }
 
         /**

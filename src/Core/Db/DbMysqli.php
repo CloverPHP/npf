@@ -97,9 +97,9 @@ namespace Npf\Core\Db {
             if ($this->isResLink($this->resLink)) {
                 $sTime = -$profiler->elapsed();
                 if (!$this->persistent) {
-                    $Thread_ID = @mysqli_thread_id($this->resLink);
-                    if ($Thread_ID) {
-                        @mysqli_kill($this->resLink, $Thread_ID);
+                    $threadId = @mysqli_thread_id($this->resLink);
+                    if ($threadId > 0) {
+                        @mysqli_kill($this->resLink, $threadId);
                     }
                 }
                 @mysqli_close($this->resLink);

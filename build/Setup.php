@@ -32,10 +32,6 @@ final class Setup
      */
     final static public function Update()
     {
-        if (!file_exists('App')) {
-            static::Install();
-            return;
-        }
         static::initialIgnoreGit();
         static::updateConfig();
         static::initialModule();
@@ -58,7 +54,8 @@ final class Setup
     {
         if (static::isDirEmpty('App/Index')) {
             $appFiles = ['Router.php', 'Index.php', 'Html.php', 'Html.tpl'];
-            static::copyFile($appFiles, __DIR__ . '/Index/', 'App/Index/');
+            static::copyFile(['Router.php'], __DIR__ . '/App/', 'App/');
+            static::copyFile($appFiles, __DIR__ . '/App/', 'App/Index/');
         }
     }
 

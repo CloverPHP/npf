@@ -132,8 +132,8 @@ namespace Npf\Core {
          */
         final public function forceSecure()
         {
-            if (!$this->request->isSecure())
-                $this->redirect("Location: https://{$_SERVER["HTTP_HOST"]}{$_SERVER["REQUEST_URI"]}");
+            if (!$this->request->isSecure() && isset($_SERVER["HTTP_HOST"]) && isset($_SERVER["REQUEST_URI"]))
+                $this->redirect("https://{$_SERVER["HTTP_HOST"]}{$_SERVER["REQUEST_URI"]}");
         }
 
         /**
@@ -151,7 +151,8 @@ namespace Npf\Core {
         {
             $this->response->statusCode($statsCode);
             $this->response->header('Location', $url, true);
-            $this->view->setView('none');
+            if ($statsCode >= 300)
+                $this->view->setView('none');
             $this->finishingApp();
         }
 
@@ -182,10 +183,10 @@ namespace Npf\Core {
         final private function finishingApp()
         {
             $profiler = $this->profiler->fetch();
+            $this->response->add('profiler', $profiler);
             $this->emit('appEnd', [&$this, $profiler]);
             $this->commit();
             $this->emit('appBeforeClean', [&$this, $profiler]);
-            $this->response->add('profiler', $this->profiler->fetch());
             $this->clean();
             $this->view->render();
             exit($this->getRoles() === 'daemon' ? 1 : 0);
@@ -647,6 +648,7 @@ namespace Npf\Core {
                     'driver' => $dbConfig->get('driver', 'DbMysqli'),
                     'tran' => $dbConfig->get('tran'),
                     'host' => $host,
+                    'hosts' => [$host],
                     'port' => $port,
                     'user' => $user,
                     'pass' => $pass,

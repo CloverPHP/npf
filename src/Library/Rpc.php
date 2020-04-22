@@ -130,7 +130,7 @@ final class Rpc
      */
     private $handle;
 
-    private $rpcThread;
+    private $rpcThread = [];
 
     /**
      * Rpc constructor.
@@ -267,30 +267,6 @@ final class Rpc
      * @param $name
      * @param $value
      */
-    final public function addParam($name, $value)
-    {
-        if (!empty($name) && (is_string($value) || is_numeric($value))) {
-            $this->params[$name] = $value;
-            $this->content = '';
-        }
-    }
-
-    /**
-     * Add multiple request header
-     * @param array $options
-     */
-    final public function addOptions(array $options)
-    {
-        if (is_array($options) && !empty($options)) {
-            $this->curlOpt += $options;
-        }
-    }
-
-    /**
-     * Add A GET/POST param
-     * @param $name
-     * @param $value
-     */
     final public function bindingParam($name, $value)
     {
         if (!empty($name) && (is_string($value) || is_numeric($value))) {
@@ -345,6 +321,88 @@ final class Rpc
     {
         if (is_string($name) && !empty($name) && is_string($content) && !empty($content)) {
             $this->cookie[$name] = $content;
+        }
+    }
+
+    /**
+     * Add Cookie to response
+     * @param $cookies
+     */
+    final public function addCookies($cookies)
+    {
+        if (is_array($cookies) && !empty($cookies)) {
+            $this->cookie = array_merge($this->cookie, $cookies);
+        }
+    }
+
+    /**
+     * Add a curl option
+     * @param int $optId
+     * @param $value
+     */
+    final public function addOption($optId, $value)
+    {
+        if (!empty($optId) && is_int($optId)) {
+            $this->curlOpt[$optId] = $value;
+        }
+    }
+
+    /**
+     * Add multiple request header
+     * @param array $options
+     */
+    final public function addOptions(array $options)
+    {
+        if (is_array($options) && !empty($options)) {
+            $this->curlOpt += $options;
+        }
+    }
+
+    /**
+     * Added a request header
+     * @param string $name
+     * @param string $content
+     */
+    final public function addHeader($name, $content)
+    {
+        if (is_string($name) && !empty($name) && is_string($content) && !empty($content)) {
+            $this->headers[$name] = $content;
+        }
+    }
+
+    /**
+     * Add multiple request header
+     * @param array $headers
+     */
+    final public function addHeaders(array $headers)
+    {
+        if (is_array($headers) && !empty($headers)) {
+            $this->headers = array_merge($this->headers, $headers);
+        }
+    }
+
+    /**
+     * Add A GET/POST param
+     * @param $name
+     * @param $value
+     */
+    final public function addParam($name, $value)
+    {
+        if (!empty($name) && (is_string($value) || is_numeric($value))) {
+            $this->params[$name] = $value;
+            $this->content = '';
+        }
+    }
+
+    /**
+     * Add Multiple Get/Set Params
+     * @param array $values
+     */
+    final public function addParams(array $values)
+    {
+        if (is_array($values) && !empty($values)) {
+            $this->params = array_merge($this->params, $values);
+            $this->content = '';
         }
     }
 
@@ -652,18 +710,6 @@ final class Rpc
     }
 
     /**
-     * Added a request header
-     * @param string $name
-     * @param string $content
-     */
-    final public function addHeader($name, $content)
-    {
-        if (is_string($name) && !empty($name) && is_string($content) && !empty($content)) {
-            $this->headers[$name] = $content;
-        }
-    }
-
-    /**
      * Process Request Body
      * @return array
      */
@@ -768,11 +814,12 @@ final class Rpc
 
     /**
      * @param $url
-     * @param $method
+     * @param string $method
      * @param $content
      * @param array $headers
+     * @param array $cookies
      */
-    final public function prepare($url, $method = "GET", $content = null, array $headers = [])
+    final public function prepare($url, $method = "GET", $content = null, array $headers = [], array $cookies = [])
     {
         $this->setUrl($url);
         $this->setMethod($method);
@@ -781,6 +828,7 @@ final class Rpc
         elseif (is_string($content))
             $this->setContent($content);
         $this->addHeaders($headers);
+        $this->addCookies($cookies);
     }
 
     /**
@@ -809,18 +857,6 @@ final class Rpc
     }
 
     /**
-     * Add Multiple Get/Set Params
-     * @param array $values
-     */
-    final public function addParams(array $values)
-    {
-        if (is_array($values) && !empty($values)) {
-            $this->params = array_merge($this->params, $values);
-            $this->content = '';
-        }
-    }
-
-    /**
      * Set Request Body Content
      * @param string $content
      * @param string $contentType
@@ -836,37 +872,27 @@ final class Rpc
     }
 
     /**
-     * Add multiple request header
-     * @param array $headers
-     */
-    final public function addHeaders(array $headers)
-    {
-        if (is_array($headers) && !empty($headers)) {
-            $this->headers = array_merge($this->headers, $headers);
-        }
-    }
-
-
-    /**
      * @param $url
-     * @param $method
+     * @param string $method
      * @param $content
      * @param array $headers
+     * @param array $cookies
      * @return mixed
      */
-    final public function __invoke($url, $method = "GET", $content = null, array $headers = [])
+    final public function __invoke($url, $method = "GET", $content = null, array $headers = [], array $cookies = [])
     {
-        return $this->run($url, $method, $content, $headers);
+        return $this->run($url, $method, $content, $headers, $cookies);
     }
 
     /**
      * @param $url
-     * @param $method
+     * @param string $method
      * @param $content
      * @param array $headers
+     * @param array $cookies
      * @return mixed
      */
-    final public function run($url, $method = "GET", $content = null, array $headers = [])
+    final public function run($url, $method = "GET", $content = null, array $headers = [], array $cookies = [])
     {
         $this->setUrl($url);
         $this->setMethod($method);
@@ -875,17 +901,19 @@ final class Rpc
         elseif (is_string($content))
             $this->setContent($content);
         $this->addHeaders($headers);
+        $this->addCookies($cookies);
         return $this->_execute();
     }
 
     /**
      * Request Only, not waiting for response
      * @param $url
-     * @param $method
+     * @param string $method
      * @param $content
      * @param array $headers
+     * @param array $cookies
      */
-    final public function requestOnly($url, $method = "GET", $content = null, array $headers = [])
+    final public function requestOnly($url, $method = "GET", $content = null, array $headers = [], array $cookies = [])
     {
         $this->setUrl($url);
         $this->setMethod($method);
@@ -894,23 +922,12 @@ final class Rpc
         elseif (is_string($content))
             $this->setContent($content);
         $this->addHeaders($headers);
+        $this->addCookies($cookies);
         $timeout = $this->timeout;
         $this->timeout = 0;
         $this->addOption(CURLOPT_TIMEOUT_MS, 1);
         $this->_execute();
         $this->timeout = $timeout;
-    }
-
-    /**
-     * Add a curl option
-     * @param int $optId
-     * @param $value
-     */
-    final public function addOption($optId, $value)
-    {
-        if (!empty($optId) && is_int($optId)) {
-            $this->curlOpt[$optId] = $value;
-        }
     }
 
     /**
@@ -920,9 +937,10 @@ final class Rpc
      * @param string $method
      * @param null $content
      * @param array $headers
+     * @param array $cookies
      * @return bool
      */
-    final public function downloadFile($url, $saveFileName, $method = "GET", $content = NULL, array $headers = [])
+    final public function downloadFile($url, $saveFileName, $method = "GET", $content = NULL, array $headers = [], array $cookies = [])
     {
         if (file_exists($saveFileName)) {
             @unlink($saveFileName);
@@ -935,6 +953,7 @@ final class Rpc
         elseif (is_string($content))
             $this->setContent($content);
         $this->addHeaders($headers);
+        $this->addCookies($cookies);
         $result = $this->_execute($fp);
         fclose($fp);
         return !$result ? FALSE : TRUE;

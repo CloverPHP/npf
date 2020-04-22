@@ -189,10 +189,11 @@ class View
         switch ($errorDisplay) {
 
             case 'html':
+            case 'twig':
                 $corePath = Common::strPop('/', str_replace('\\', '/', __FILE__));
                 $mainPath = Common::strPop('/', $corePath);
                 $this->addTwigPath($mainPath);
-                $this->data = 'Error.html';
+                $this->data = $this->app->config('Profiler')->get('errorTwig', 'error.twig');
                 $this->renderTwig($data);
                 break;
 
@@ -326,7 +327,7 @@ class View
             else {
                 $contentType = $routeConfig->get('defaultStaticFileContentType', 'auto');
                 if ($contentType === 'auto') {
-                    $fifo = new finfo(FILEINFO_MIME);
+                    $fifo = new finfo(FILEINFO_MIME_TYPE);
                     $contentType = $fifo->file($this->data);
                 }
             }
@@ -385,7 +386,7 @@ class View
                 else
                     $loader->addPath($path, $name);
             }
-        $twig = new Environment($loader);
+        $twig = new Environment($loader, $this->app->config('Twig')->get('environmentOption', []));
         $this->twigExtension[] = new MarkdownExtension(new MichelfMarkdownEngine());
 
         if ($configExtensions = $this->app->config('Twig')->get('extension')) {
