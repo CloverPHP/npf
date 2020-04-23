@@ -183,8 +183,6 @@ class View
         $data = $response['body'];
         if (!$this->app->profiler->enable())
             unset($data['profiler']);
-        elseif (isset($content['profiler']['debug']))
-            $data['profiler']['debug'] = array_values($data['profiler']['debug']);
         $errorDisplay = $this->app->config('Profiler')->get('errorOutput');
         switch ($errorDisplay) {
 
@@ -228,6 +226,8 @@ class View
         if (false !== $response['statusCode'])
             http_response_code($response['statusCode']);
         $data = $response['body'];
+        if (!$this->app->profiler->enable())
+            unset($data['profiler']);
 
         switch ($this->type) {
 
