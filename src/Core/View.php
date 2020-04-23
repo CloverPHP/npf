@@ -183,6 +183,8 @@ class View
         $data = $response['body'];
         if (!$this->app->profiler->enable())
             unset($data['profiler']);
+        elseif (isset($content['profiler']['debug']))
+            $data['profiler']['debug'] = array_values($data['profiler']['debug']);
         $errorDisplay = $this->app->config('Profiler')->get('errorOutput');
         switch ($errorDisplay) {
 
@@ -292,8 +294,16 @@ class View
         $rootName = $this->generalConfig->get('xmlRoot', 'root');
         $xml = new SimpleXMLElement("<{$rootName}/>");
         array_walk_recursive($data, [$xml, 'addChild']);
+        if ($this->generalConfig->get('printPretty', false)) {
+            $domXml = new \DOMDocument('1.0');
+            $domXml->preserveWhiteSpace = false;
+            $domXml->formatOutput = true;
+            $domXml->loadXML($xml->asXML());
+            $result = $domXml->saveXML();
+        } else
+            $result = $xml->asXML();
         $this->app->response->header('Content-Type', 'text/xml; charset=utf-8', true);
-        $this->output($xml->asXML());
+        $this->output($result);
     }
 
     /**
@@ -302,9 +312,9 @@ class View
     final private function renderJson($data)
     {
         $jsonFlag = JSON_UNESCAPED_UNICODE;
-        if ($this->app->getEnv() !== 'production' && $this->generalConfig->get('printPretty', false))
+        if ($this->generalConfig->get('printPretty', false))
             $jsonFlag |= JSON_PRETTY_PRINT;
-        $this->app->response->header('Content-Type', 'application/json; charset=utf-8', true);
+        $this->app->response->header('Content-Type', 'text/json; charset=utf-8', true);
         $this->output(json_encode($data, $jsonFlag));
     }
 
