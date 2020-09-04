@@ -89,7 +89,7 @@ final class Rpc
     /**
      * @var string User Agent Simulation
      */
-    private $userAgent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'; //Simulation Google Chrome
+    private $userAgent = 'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36'; //Simulation Google Chrome
 
     /**
      * @var array Response Data

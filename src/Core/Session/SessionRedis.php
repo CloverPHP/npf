@@ -92,7 +92,7 @@ namespace Npf\Core\Session {
                     usleep(mt_rand(100000, 300000));
                 }
 
-                $ret = $this->app->redis->setnx($lockKey, time(), 300);
+                $ret = $this->app->redis->setnx($lockKey, time(), $this->config->get('lockTime', 600));
                 if ($ret) {
                     $this->lockKey = $lockKey;
                     break;
@@ -131,13 +131,13 @@ namespace Npf\Core\Session {
                 $this->app->redis->expire($this->lockKey, $this->lockTime);
                 $fingerprint = sha1($data);
                 if ($this->fingerprint !== $fingerprint) {
-                    if ($this->app->redis->set($this->keyPrefix . $sessionId, $data, $this->config->get('lockTime', 600))) {
+                    if ($this->app->redis->set($this->keyPrefix . $sessionId, $data, $this->config->get('sessionTtl', 10800))) {
                         $this->fingerprint = $fingerprint;
                         return true;
                     }
                     return false;
                 }
-                return $this->app->redis->expire($this->keyPrefix . $sessionId, $this->config->get('lockTime', 600));
+                return $this->app->redis->expire($this->keyPrefix . $sessionId, $this->config->get('sessionTtl', 10800));
             }
             return false;
         }

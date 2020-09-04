@@ -79,7 +79,7 @@ final class Setup
     final static private function updateConfig()
     {
         $configFiles = ['Db.php', 'General.php', 'Profiler.php', 'Redis.php', 'Session.php', 'Misc.php', 'Twig.php', 'Route.php'];
-        if ($handle = opendir('Config')) {
+        if (file_exists('Config') && is_dir('Config') && $handle = opendir('Config')) {
             while (false !== ($envDir = readdir($handle)))
                 if ($envDir != "." && $envDir != ".." && is_dir("Config/{$envDir}")) {
                     if ($handle2 = opendir("Config/{$envDir}")) {

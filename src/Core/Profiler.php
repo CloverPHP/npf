@@ -56,7 +56,7 @@ namespace Npf\Core {
             $this->app = &$app;
             $this->initTime = INIT_TIMESTAMP;
             try {
-                $this->config = $app->config('Profiler');
+                $this->config = $app->config('Profiler', true);
             } catch (\Exception $exception) {
                 $this->config = new Container();
             }
@@ -66,7 +66,7 @@ namespace Npf\Core {
                 if (is_array($opts) && !empty($opts))
                     $this->enable = true;
             } else
-                $this->enable = $this->config->get('enable', false);
+                $this->enable = $this->config->get('enable', true);
         }
 
         /**

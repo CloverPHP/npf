@@ -3,13 +3,13 @@
 //namespace %%Setup%%;
 
 use Npf\Core\App;
-use \Npf\Core\Model;
+use Npf\Exception\InternalError;
 
 /**
  * Class Model
  * @package Model
  */
-final class Loader extends Model
+final class Loader
 {
     /**
      * @var App
@@ -20,8 +20,6 @@ final class Loader extends Model
      * @var array
      */
     private $components = [];
-
-    /** @noinspection PhpMissingParentConstructorInspection */
 
     /**
      * Model constructor.
@@ -35,7 +33,7 @@ final class Loader extends Model
     /**
      * @param $name
      * @return mixed
-     * @throws \Npf\Exception\InternalError
+     * @throws InternalError
      */
     final public function __get($name)
     {

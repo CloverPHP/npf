@@ -13,7 +13,7 @@ class Profiler
      */
     public $enable = true;
     /**
-     * @var string Output Error as config format: json, xml, twig, none(status=500)
+     * @var string Output Error as config format: auto(xhr = json, else twig), json, xml, twig, none(status=500)
      */
     public $errorOutput = 'json';
     /**

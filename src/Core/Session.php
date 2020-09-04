@@ -69,6 +69,14 @@ namespace Npf\Core {
         }
 
         /**
+         * @return string
+         */
+        public function id()
+        {
+            return session_id();
+        }
+
+        /**
          * Start PHP Session
          * @throws InternalError
          */

@@ -130,35 +130,42 @@ class Gd
     /**
      * Image Process - Copy image from file to memory (partial of rect)
      * @param $file
-     * @param NULL $Rect
+     * @param NULL $rect
      * @param NULL $img
      * @return bool
      */
-    public function copyImageFromFile($file, $Rect = NULL, $img = NULL)
+    public function copyImageFromFile($file, $rect = NULL, $img = NULL)
     {
         if (NULL === $img) $img = $this->imgResource;
         if (!$this->isGDResource($img)) return FALSE;
-        if (!is_array($Rect)) $Rect = [];
-        if (!array_key_exists('X', $Rect)) $Rect['X'] = (int)0;
-        if (!array_key_exists('Y', $Rect)) $Rect['Y'] = (int)0;
-        if (!array_key_exists('L', $Rect)) $Rect['L'] = (int)0;
-        if (!array_key_exists('T', $Rect)) $Rect['T'] = (int)0;
+        if (!is_array($rect)) $rect = [];
+        if (!isset($rect['X'])) $rect['X'] = (int)0;
+        if (!isset($rect['Y'])) $rect['Y'] = (int)0;
+        if (!isset($rect['L'])) $rect['L'] = (int)0;
+        if (!isset($rect['T'])) $rect['T'] = (int)0;
         $imgSrc = $this->loadImageFromFile($file);
 
         if ($imgSrc !== FALSE) {
-
-            if (!array_key_exists('W', $Rect) || empty($Rect['W'])) $Rect['W'] = (int)imagesx($imgSrc);
-            if (!array_key_exists('H', $Rect) || empty($Rect['H'])) $Rect['H'] = (int)imagesy($imgSrc);
+            $imgWidth = (int)imagesx($imgSrc);
+            $imgHeight = (int)imagesy($imgSrc);
+            if(!empty($rect['W']) && empty($rect['H']))
+                $rect['H'] = $this->getNewHeight($rect['W'], $imgWidth, $imgHeight);
+            elseif(empty($rect['W']) && !empty($rect['H']))
+                $rect['W'] = $this->getNewWidth($rect['H'], $imgWidth, $imgHeight);
+            elseif (empty($rect['H']) && empty($rect['H'])) {
+                $rect['W'] = $imgWidth;
+                $rect['H'] = $imgHeight;
+            }
             $this->imgResource = $img;
             $this->initLoad($img);
-            $Rect['X'] = (int)$Rect['X'];
-            $Rect['Y'] = (int)$Rect['Y'];
-            $Rect['W'] = (int)$Rect['W'];
-            $Rect['H'] = (int)$Rect['H'];
-            $Rect['L'] = (int)$Rect['L'];
-            $Rect['T'] = (int)$Rect['T'];
+            $rect['X'] = (int)$rect['X'];
+            $rect['Y'] = (int)$rect['Y'];
+            $rect['W'] = (int)$rect['W'];
+            $rect['H'] = (int)$rect['H'];
+            $rect['L'] = (int)$rect['L'];
+            $rect['T'] = (int)$rect['T'];
 
-            imagecopyresampled($img, $imgSrc, $Rect['X'], $Rect['Y'], $Rect['L'], $Rect['T'], $Rect['W'], $Rect['H'], imagesx($imgSrc),
+            imagecopyresampled($img, $imgSrc, $rect['X'], $rect['Y'], $rect['L'], $rect['T'], $rect['W'], $rect['H'], imagesx($imgSrc),
                 imagesy($imgSrc));
             imagealphablending($img, TRUE);
             imagedestroy($imgSrc);
@@ -219,33 +226,33 @@ class Gd
     /**
      * Image Process - Merge Image from Load from file and memory with percentage override.
      * @param $File
-     * @param NULL $Rect
-     * @param int $Percent
+     * @param NULL $rect
+     * @param int $percent
      * @param string $crop
      * @param NULL $img
      * @return bool
      */
-    public function mergeImageFromFile($File, $Rect = NULL, $Percent = 100, $crop = '', $img = NULL)
+    public function mergeImageFromFile($File, $rect = NULL, $percent = 100, $crop = '', $img = NULL)
     {
         if (NULL === $img) $img = $this->imgResource;
         if (!$this->isGDResource($img)) return FALSE;
-        $Percent = (int)$Percent;
-        if (!is_array($Rect)) $Rect = [];
-        if (!array_key_exists('X', $Rect)) $Rect['X'] = (int)0;
-        if (!array_key_exists('Y', $Rect)) $Rect['Y'] = (int)0;
-        if (!array_key_exists('W', $Rect) || empty($Rect['W'])) $Rect['W'] = (int)imagesx($img);
-        if (!array_key_exists('H', $Rect) || empty($Rect['H'])) $Rect['H'] = (int)imagesy($img);
+        $percent = (int)$percent;
+        if (!is_array($rect)) $rect = [];
+        if (!isset($rect['X'])) $rect['X'] = (int)0;
+        if (!isset($rect['Y'])) $rect['Y'] = (int)0;
+        if (empty($rect['W'])) $rect['W'] = (int)imagesx($img);
+        if (empty($rect['H'])) $rect['H'] = (int)imagesy($img);
         $imgSrc = $this->loadImageFromFile($File);
-        $imgSrc = $this->resizeCaves($Rect['W'], $Rect['H'], $crop, $imgSrc);
+        $imgSrc = $this->resizeCaves($rect['W'], $rect['H'], $crop, $imgSrc);
         $this->imgResource = $img;
         $this->initLoad($img);
-        $Rect['X'] = (int)$Rect['X'];
-        $Rect['Y'] = (int)$Rect['Y'];
-        $Rect['W'] = (int)$Rect['W'];
-        $Rect['H'] = (int)$Rect['H'];
+        $rect['X'] = (int)$rect['X'];
+        $rect['Y'] = (int)$rect['Y'];
+        $rect['W'] = (int)$rect['W'];
+        $rect['H'] = (int)$rect['H'];
 
         if (is_resource($imgSrc)) {
-            imagecopymerge($img, $imgSrc, $Rect['X'], $Rect['Y'], 0, 0, $Rect['W'], $Rect['H'], $Percent);
+            imagecopymerge($img, $imgSrc, $rect['X'], $rect['Y'], 0, 0, $rect['W'], $rect['H'], $percent);
             imagedestroy($imgSrc);
             return TRUE;
         } else  return FALSE;
@@ -270,14 +277,14 @@ class Gd
         $this->initLoad($img);
         $imageX = $this->imgWidth;
         $imageY = $this->imgHeight;
-        $SARatio = $imageX / $imageY;
-        $RARatio = $width / $height;
-        if (($crop !== FALSE && $RARatio < $SARatio) || ($crop === FALSE && $RARatio > $SARatio)) {
-            $newWidth = (int)($height * $SARatio);
+        $oldRatio = $imageX / $imageY;
+        $newRatio = $width / $height;
+        if (($crop !== FALSE && $newRatio < $oldRatio) || ($crop === FALSE && $newRatio > $oldRatio)) {
+            $newWidth = (int)($height * $oldRatio);
             $newHeight = $height;
         } else {
             $newWidth = $width;
-            $newHeight = (int)($width / $SARatio);
+            $newHeight = (int)($width / $oldRatio);
         }
         $newImg = $this->createImage($width, $height);
 
@@ -469,21 +476,33 @@ class Gd
     /**
      * Get loaded image calculate new maintain ratio height with given width
      * @param int $width
+     * @param null $oriHeight
+     * @param null $oriWidth
      * @return float
      */
-    public function getNewHeight($width = 0)
+    public function getNewHeight($width = 0, $oriWidth = null, $oriHeight = null)
     {
-        return $this->imgHeight / ($this->imgWidth / $width);
+        if($oriWidth === null)
+            $oriWidth = $this->imgWidth;
+        if($oriHeight === null)
+            $oriHeight = $this->imgHeight;
+        return $oriHeight / ($oriWidth / $width);
     }
 
     /**
      * Get Loaded Image Calculate new maintain ratio width with given height
      * @param int $height
+     * @param null $oriWidth
+     * @param null $oriHeight
      * @return float
      */
-    public function getNewWidth($height = 0)
+    public function getNewWidth($height = 0, $oriWidth = null, $oriHeight = null)
     {
-        return $this->imgWidth / ($this->imgHeight / $height);
+        if($oriWidth === null)
+            $oriWidth = $this->imgWidth;
+        if($oriHeight === null)
+            $oriHeight = $this->imgHeight;
+        return $oriWidth / ($oriHeight / $height);
     }
 
     /**
@@ -1677,55 +1696,56 @@ class Gd
     }
 
     /**
-     * @param string $Output
-     * @param string $IType
-     * @param string $File
-     * @param array $Params
+     * @param string $outputType
+     * @param string $imageType
+     * @param string $file
+     * @param array $params
      * @param null $img
      * @return bool|null
      */
-    public function output($Output = 'o', $IType = 'png', $File = '', $Params = [], $img = NULL)
+    public function output($outputType = 'o', $imageType = 'png', $file = '', $params = [], $img = NULL)
     {
         if (NULL === $img) $img = $this->imgResource;
         if (!$this->isGDResource($img)) return FALSE;
         $this->initSave($img);
-        switch (strtolower($IType)) {
+        switch (strtolower($imageType)) {
             case 'gif':
-                $FncNm = 'imagegif';
+                $functionName = 'imagegif';
                 $Mime = 'gif';
                 break;
             case 'jpg':
-                $FncNm = 'imagejpeg';
+                $functionName = 'imagejpeg';
                 $Mime = 'jpg';
                 break;
             case 'png':
-                $FncNm = 'imagepng';
+                $functionName = 'imagepng';
                 $Mime = 'png';
                 break;
             case 'wbmp':
-                $FncNm = 'imagewbmp';
+                $functionName = 'imagewbmp';
                 $Mime = 'vnd.wap.wbmp';
                 break;
             default:
                 return $img;
         }
-        if (!is_array($Params)) $Params = [$Params];
-        $Params = array_values($Params);
-        switch ($Output) {
+        if (!is_array($params))
+            $params = [$params];
+        $params = array_values($params);
+        switch ($outputType) {
             case 'o':
                 header("Content-Type: image/{$Mime}");
-                call_user_func_array($FncNm, [$img, NULL] + $Params);
+                call_user_func_array($functionName, array_merge([$img, NULL], $params));
                 break;
 
             case 'f':
-                call_user_func_array($FncNm, [$img, $File] + $Params);
+                call_user_func_array($functionName, array_merge([$img, $file], $params));
                 break;
 
             case 'd':
                 header('Content-Type: application/octet-stream');
                 header("Content-Transfer-Encoding: Binary");
-                header("Content-disposition: attachment; filename=\"" . basename($File) . "\"");
-                call_user_func_array($FncNm, [$img, NULL] + $Params);
+                header("Content-disposition: attachment; filename=\"" . basename($file) . "\"");
+                call_user_func_array($functionName, array_merge([$img, NULL], $params));
                 break;
 
             case 'r':

@@ -3,12 +3,10 @@
 
 namespace Npf\Core;
 
-use Aptoma\Twig\Extension\MarkdownEngine\MichelfMarkdownEngine;
-use Aptoma\Twig\Extension\MarkdownExtension;
 use finfo;
 use Npf\Exception\InternalError;
+use Npf\Library\Xml;
 use ReflectionException;
-use SimpleXMLElement;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -81,6 +79,14 @@ class View
     }
 
     /**
+     * @return string
+     */
+    final public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
      * @return void
      */
     final public function cached()
@@ -101,7 +107,7 @@ class View
      */
     final public function addTwigExtension($twigExtension)
     {
-        if (empty($twigExtension) && is_string($twigExtension) || is_object($twigExtension))
+        if (!empty($twigExtension) && (is_string($twigExtension) || is_object($twigExtension)))
             $this->twigExtension[] = $twigExtension;
     }
 
@@ -130,8 +136,13 @@ class View
     {
         if (!empty($type) && is_string($type)) {
             switch ($type) {
-                case 'json':
                 case 'xml':
+                    $this->type = $type;
+                    if (empty($data) || !is_string($data))
+                        $data = $this->generalConfig->get('xmlRoot', 'root');
+                    $this->data = $data;
+                    break;
+                case 'json':
                 case 'none':
                 case false:
                     $this->type = $type;
@@ -152,7 +163,8 @@ class View
                     break;
                 case 'twig':
                     $this->type = 'twig';
-                    if (empty($path) && $callerInfo = $this->app->getCallerInfo($viewLevel))
+                    $path = '';
+                    if ($callerInfo = $this->app->getCallerInfo($viewLevel))
                         $path = Common::strPop('/', $callerInfo['file']);
                     if (!file_exists($path))
                         $path = '';
@@ -170,49 +182,39 @@ class View
 
     /**
      * @throws InternalError
-     * @throws LoaderError
-     * @throws ReflectionException
-     * @throws RuntimeError
-     * @throws SyntaxError
      */
     final public function error()
     {
-        $response = $this->app->response->fetch();
-        if (false !== $response['statusCode'])
-            http_response_code($response['statusCode']);
-        $data = $response['body'];
-        if (!$this->app->profiler->enable())
-            unset($data['profiler']);
-        elseif (isset($content['profiler']['debug']))
-            $data['profiler']['debug'] = array_values($data['profiler']['debug']);
+        $this->app->ignoreError();
         $errorDisplay = $this->app->config('Profiler')->get('errorOutput');
+        if ($errorDisplay === 'auto')
+            $errorDisplay = $this->app->request->isXHR() ? 'json' : 'twig';
         switch ($errorDisplay) {
 
             case 'html':
             case 'twig':
+                $this->type = 'twig';
                 $corePath = Common::strPop('/', str_replace('\\', '/', __FILE__));
                 $mainPath = Common::strPop('/', $corePath);
                 $this->addTwigPath($mainPath);
                 $this->data = $this->app->config('Profiler')->get('errorTwig', 'error.twig');
-                $this->renderTwig($data);
                 break;
 
             case 'xml':
-                $this->renderXml($data);
+                $this->type = 'twig';
                 break;
 
             case 'none':
-                $this->renderNone(500);
-                break;
-
-            case 'static':
-                $this->renderStaticFile();
+                $this->type = 'none';
+                if (!$this->app->response->statusCode())
+                    $this->app->response->statusCode(500);
                 break;
 
             default:
-                $this->renderJson($data);
+                $this->type = 'json';
                 break;
         }
+        $this->app->noticeError();
     }
 
     /**
@@ -225,11 +227,15 @@ class View
     final public function render()
     {
         $response = $this->app->response->fetch();
+        if ($this->type === 'none' && !$response['statusCode'])
+            $response['statusCode'] = 204;
         if (false !== $response['statusCode'])
             http_response_code($response['statusCode']);
         $data = $response['body'];
         if (!$this->app->profiler->enable())
             unset($data['profiler']);
+        elseif (isset($content['profiler']['debug']))
+            $data['profiler']['debug'] = array_values($data['profiler']['debug']);
 
         switch ($this->type) {
 
@@ -246,7 +252,7 @@ class View
                 break;
 
             case 'none':
-                $this->renderNone(204);
+                $this->renderNone();
                 break;
 
             case 'static':
@@ -269,52 +275,52 @@ class View
 
     /**
      * Render None Response
-     * @param int $statusCode
      */
-    final private function renderNone($statusCode = 204)
+    final private function renderNone()
     {
-        $this->app->response->statusCode($statusCode);
         $this->output();
     }
 
     /**
      * Render Plan Text
+     * @param $headerOverWrite
      */
-    final private function renderPlan()
+    final private function renderPlan($headerOverWrite = false)
     {
-        $this->app->response->header('Content-Type', 'text/plain; charset=utf-8', true);
+        $this->app->response->header('Content-Type', 'text/plain; charset=utf-8', $headerOverWrite);
         $this->output($this->data);
     }
 
     /**
      * @param $data
+     * @param bool $headerOverWrite
      */
-    final private function renderXml($data)
+    final private function renderXml($data, $headerOverWrite = false)
     {
-        $rootName = $this->generalConfig->get('xmlRoot', 'root');
-        $xml = new SimpleXMLElement("<{$rootName}/>");
-        array_walk_recursive($data, [$xml, 'addChild']);
+        if (empty($this->data) || !is_string($this->data))
+            $this->data = $this->generalConfig->get('xmlRoot', 'root');
+        $xml = Xml::createXML($this->data, $data);
         if ($this->generalConfig->get('printPretty', false)) {
-            $domXml = new \DOMDocument('1.0');
-            $domXml->preserveWhiteSpace = false;
-            $domXml->formatOutput = true;
-            $domXml->loadXML($xml->asXML());
-            $result = $domXml->saveXML();
-        } else
-            $result = $xml->asXML();
-        $this->app->response->header('Content-Type', 'text/xml; charset=utf-8', true);
-        $this->output($result);
+            $xml->preserveWhiteSpace = false;
+            $xml->formatOutput = true;
+        } else {
+            $xml->preserveWhiteSpace = true;
+            $xml->formatOutput = false;
+        }
+        $this->app->response->header('Content-Type', 'text/xml; charset=utf-8', $headerOverWrite);
+        $this->output($xml->saveXML($xml->documentElement, LIBXML_NOEMPTYTAG));
     }
 
     /**
      * @param $data
+     * @param bool $headerOverWrite
      */
-    final private function renderJson($data)
+    final private function renderJson($data, $headerOverWrite = false)
     {
         $jsonFlag = JSON_UNESCAPED_UNICODE;
         if ($this->generalConfig->get('printPretty', false))
             $jsonFlag |= JSON_PRETTY_PRINT;
-        $this->app->response->header('Content-Type', 'text/json; charset=utf-8', true);
+        $this->app->response->header('Content-Type', 'text/json; charset=utf-8', $headerOverWrite);
         $this->output(json_encode($data, $jsonFlag));
     }
 
@@ -375,13 +381,14 @@ class View
 
     /**
      * @param $data
+     * @param bool $headerOverWrite
      * @throws InternalError
      * @throws LoaderError
      * @throws ReflectionException
      * @throws RuntimeError
      * @throws SyntaxError
      */
-    final private function renderTwig($data)
+    final private function renderTwig($data, $headerOverWrite = false)
     {
         $loader = new FilesystemLoader();
         $this->addTwigPath($this->app->getRootPath() . 'Template');
@@ -397,7 +404,6 @@ class View
                     $loader->addPath($path, $name);
             }
         $twig = new Environment($loader, $this->app->config('Twig')->get('environmentOption', []));
-        $this->twigExtension[] = new MarkdownExtension(new MichelfMarkdownEngine());
 
         if ($configExtensions = $this->app->config('Twig')->get('extension')) {
             if (!empty($configExtensions)) {
@@ -408,20 +414,19 @@ class View
             }
         }
         foreach ($this->twigExtension as $extension) {
+            if (is_string($extension) && !class_exists($extension))
+                throw new InternalError("Twig Extension {$extension} not found");
             if (is_string($extension))
-                if (!class_exists($extension))
-                    throw new InternalError("Twig Extension {$extension} not found");
+                $extension = new $extension($this->app, $twig);
             if (!is_object($extension))
-                $extension = new $extension($this, $twig);
-            if (!is_object($extension))
-                throw new InternalError("Twig Extension is not an object.\n" . json_encode($extension));
+                throw new InternalError("Twig Extension is not an object.\n" . get_class($extension));
             $twig->addExtension($extension);
         }
         if ($syntaxStyle = $this->app->config('Twig')->get('syntaxStyle'))
             $twig->setLexer(new Lexer($twig, $syntaxStyle));
         $appendHeader = $this->app->config('Twig')->get('appendHeader');
         $this->app->response->setHeaders($appendHeader);
-        $this->app->response->header('Content-Type', 'text/html; charset=utf-8');
+        $this->app->response->header('Content-Type', 'text/html; charset=utf-8', $headerOverWrite);
         $this->output($twig->render($this->data, $data));
     }
 

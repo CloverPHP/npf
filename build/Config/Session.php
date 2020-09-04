@@ -30,6 +30,10 @@ Class Session
     /**
      * @var int Redis Lock Time
      */
+    public $sessionTtl = 10800;
+    /**
+     * @var int Redis Lock Time
+     */
     public $lockTime = 600;
 
     /**

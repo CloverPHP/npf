@@ -234,6 +234,16 @@ namespace Npf\Core {
 
         /**
          * Check array is Assoc
+         * @param string $prefix
+         * @return bool
+         */
+        public static function getTempFile($prefix = '')
+        {
+            return tempnam(sys_get_temp_dir(), $prefix);
+        }
+
+        /**
+         * Check array is Assoc
          * @param array $arr
          * @return bool
          */
@@ -449,6 +459,10 @@ namespace Npf\Core {
 
                     case 'must':
                         $pass = $value === null ? false : true;
+                        break;
+
+                    case 'must+':
+                        $pass = !empty($value);
                         break;
 
                     case 'min':
@@ -1377,6 +1391,55 @@ namespace Npf\Core {
                     $data = $append;
             }
             return $data;
+        }
+
+        final static public function convertUtfAngle($content, $toFullAngle = false, $includeSymbol = false)
+        {
+            $fullAngle = [
+                'alphanumeric' => [
+                    '０', '１', '２', '３', '４', '５', '６', '７', '８', '９',
+                    'Ａ', 'Ｂ', 'Ｃ', 'Ｄ', 'Ｅ', 'Ｆ', 'Ｇ', 'Ｈ', 'Ｉ', 'Ｊ',
+                    'Ｋ', 'Ｌ', 'Ｍ', 'Ｎ', 'Ｏ', 'Ｐ', 'Ｑ', 'Ｒ', 'Ｓ', 'Ｔ',
+                    'Ｕ', 'Ｖ', 'Ｗ', 'Ｘ', 'Ｙ', 'Ｚ', 'ａ', 'ｂ', 'ｃ', 'ｄ',
+                    'ｅ', 'ｆ', 'ｇ', 'ｈ', 'ｉ', 'ｊ', 'ｋ', 'ｌ', 'ｍ', 'ｎ',
+                    'ｏ', 'ｐ', 'ｑ', 'ｒ', 'ｓ', 'ｔ', 'ｕ', 'ｖ', 'ｗ', 'ｘ',
+                    'ｙ', 'ｚ'
+                ],
+                'symbol' => [
+                    '－', '　', '：', '．', '，', '／', '％', '＃', '！', '＠',
+                    '＆', '（', '）', '＜', '＞', '＂', '＇', '？', '［', '］',
+                    '｛', '｝', '＼', '｜', '＋', '＝', '＿', '＾', '￥', '￣',
+                    '｀'
+                ],
+            ];
+            $semiAngle = [
+                'alphanumeric' => [ //半角
+                    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+                    'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+                    'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd',
+                    'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                    'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+                    'y', 'z'
+                ],
+                'symbol' => [
+                    '-', ' ', ':', '.', ',', '/', '%', '#', '!', '@',
+                    '&', '(', ')', '<', '>', '"', '\'', '?', '[', ']',
+                    '{', '}', '\\', '|', '+', '=', '_', '^', '$', '~',
+                    '`'
+                ],
+            ];
+            if ($includeSymbol) {
+                $fullAngle = array_merge($fullAngle['alphanumeric'], $fullAngle['symbol']);
+                $semiAngle = array_merge($semiAngle['alphanumeric'], $semiAngle['symbol']);
+            } else {
+                $fullAngle = $fullAngle['alphanumeric'];
+                $semiAngle = $semiAngle['alphanumeric'];
+            }
+            if ((boolean)$toFullAngle === false)
+                return str_replace($fullAngle, $semiAngle, $content);  //全角到半角
+            else
+                return str_replace($semiAngle, $fullAngle, $content);  //半角到全角
         }
     }
 }

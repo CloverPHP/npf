@@ -120,7 +120,7 @@ namespace Npf\Core {
                             return $_REQUEST;
 
                         case 'application/json':
-                        default:
+                        case 'text/json':
                             $params = json_decode($this->raw, true);
                             if (json_last_error() !== JSON_ERROR_NONE || $params === null) {
                                 $params = [];
@@ -135,6 +135,30 @@ namespace Npf\Core {
                                 $params = [];
                             return array_merge($_GET, $params);
                             break;
+
+                        case 'application/xml':
+                        case 'text/xml':
+                            $defaultXmlError = libxml_use_internal_errors(true);
+                            if ($xml = simplexml_load_string($this->raw, "SimpleXMLElement", LIBXML_NOCDATA)) {
+                                $json = json_encode($xml);
+                                $params = json_decode($json, TRUE);
+                            } else {
+                                $params = [];
+                                if ($this->raw !== '') {
+                                    $params = [
+                                        'data' => $this->raw,
+                                        'msg' => 'Invalid XML',
+                                    ];
+                                }
+                            }
+                            libxml_use_internal_errors($defaultXmlError);
+                            if (!is_array($params))
+                                $params = [];
+                            return array_merge($_GET, $params);
+                            break;
+
+                        default:
+                            return $_GET;
                     }
             }
         }

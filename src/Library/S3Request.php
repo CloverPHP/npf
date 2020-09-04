@@ -277,7 +277,7 @@ final class S3Request
         switch ($this->verb) {
             case 'PUT':
             case 'POST': // POST only used for CloudFront
-                if ($this->fp !== false) {
+                if ($this->fp != false) {
                     curl_setopt($curl, CURLOPT_PUT, true);
                     curl_setopt($curl, CURLOPT_INFILE, $this->fp);
                     if ($this->size >= 0)

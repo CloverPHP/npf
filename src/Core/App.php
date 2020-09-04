@@ -100,6 +100,11 @@ namespace Npf\Core {
         private $ignoreError = false;
 
         /**
+         * @var bool Ignore Error
+         */
+        private $ignoreException = false;
+
+        /**
          * App constructor.
          * @param string $roles
          * @param string $env
@@ -149,10 +154,14 @@ namespace Npf\Core {
          */
         final public function redirect($url, $statsCode = 302)
         {
-            $this->response->statusCode($statsCode);
-            $this->response->header('Location', $url, true);
-            if ($statsCode >= 300)
-                $this->view->setView('none');
+            if($this->request->isXHR()){
+                $this->response->header('Go', $url, true);
+            }else {
+                $this->response->statusCode($statsCode);
+                $this->response->header('Location', $url, true);
+                if ($statsCode >= 300)
+                    $this->view->setView('none');
+            }
             $this->finishingApp();
         }
 
@@ -439,12 +448,13 @@ namespace Npf\Core {
                         'profiler' => $profiler,
                     ]);
                     $this->rollback();
+                    $this->view->error();
                     $this->emit('sysReport', [&$this, $profiler]);
                     $this->emit('codeError', [&$this, $profiler]);
                     $this->emit('error', [&$this, $profiler]);
                     $this->emit('appBeforeClean', [&$this, $profiler]);
                     $this->clean();
-                    $this->view->error();
+                    $this->view->render();
                     exit(2);
                 } catch (\Exception $exception) {
                     $this->handleException($this->trace(), $exception, false);
@@ -463,6 +473,7 @@ namespace Npf\Core {
                 if ($exception instanceof Exception) {
                     $this->response = $exception->response();
                     $this->rollback();
+                    $this->view->error();
                     $this->response->add('profiler', $this->profiler->fetch());
                     $profiler = $this->response->get('profiler');
                     if ($exception->sysLog()) {
@@ -480,7 +491,6 @@ namespace Npf\Core {
                     $message = '';
                     if (method_exists($exception, 'getMessage'))
                         $message = $exception->getMessage();
-                    $this->rollback();
                     $profiler = [
                             'desc' => $message,
                             'trace' => $trace,
@@ -494,6 +504,8 @@ namespace Npf\Core {
                         'profiler' => $profiler,
                     ];
                     $this->response = new Response($output);
+                    $this->rollback();
+                    $this->view->error();
                     $this->profiler->logError('PHP Exception', "Message: " . implode("\n", $trace));
                     if ($event) {
                         $this->emit('sysReport', [&$this, $profiler]);
@@ -505,10 +517,26 @@ namespace Npf\Core {
                 if ($event)
                     $this->emit('appBeforeClean', [&$this, $profiler]);
                 $this->clean();
-                $this->view->error();
+                $this->view->render();
                 exit($exitCode);
             } catch (\Exception $ex) {
-                $this->handleException($this->trace(), $ex, false);
+                if (!$this->ignoreException) {
+                    $this->ignoreException = true;
+                    $this->handleException($this->trace(), $ex, false);
+                } else {
+                    if ($ex instanceof Exception) {
+                        $profiler = $this->response->get('profiler');
+                        $message = $profiler['desc'];
+                        $exitCode = 3;
+                    } else {
+                        $message = '';
+                        if (method_exists($ex, 'getMessage'))
+                            $message = $ex->getMessage();
+                        $exitCode = 4;
+                    }
+                    echo($message);
+                    exit($exitCode);
+                }
             }
         }
 
@@ -590,12 +618,13 @@ namespace Npf\Core {
                     'profiler' => $profiler,
                 ]);
                 $this->rollback();
+                $this->view->error();
                 $this->emit('sysReport', [&$this, $profiler]);
                 $this->emit('criticalError', [&$this, $profiler]);
                 $this->emit('critical', [&$this, $profiler]);
                 $this->emit('appBeforeClean', [&$this, $profiler]);
                 $this->clean();
-                $this->view->error();
+                $this->view->render();
             } catch (\Exception $e) {
                 exit(6);
             }

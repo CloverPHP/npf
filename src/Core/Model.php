@@ -554,7 +554,7 @@ namespace Npf\Core {
          * @return bool|mysqli_result
          * @throws DBQueryError
          */
-        protected function createUpdate(array $data, array $cond, $check = false, $ignore = false)
+        protected function addUpdate(array $data, array $cond, $check = false, $ignore = false)
         {
             return $this->db->action($this->getTableName(), $this->buildOne($data), $this->buildCond($cond), $check, $ignore);
         }

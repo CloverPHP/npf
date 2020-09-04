@@ -33,10 +33,6 @@ namespace Npf\Core {
         /**
          * @var string
          */
-        private $routeClass = '';
-        /**
-         * @var string
-         */
         private $appFile = '';
         /**
          * @var array
@@ -134,9 +130,6 @@ namespace Npf\Core {
                 !$this->isExistsAppClass($this->appFile)
             )
                 $this->isStatic = true;
-            $this->routeClass = (!empty($appRootPath) ? "{$appRootPath}\\" : "") . "Router";
-            if (!$this->isExistsAppClass($this->routeClass))
-                $this->routeClass = "Router";
         }
 
         /**
@@ -146,46 +139,54 @@ namespace Npf\Core {
          */
         final public function __invoke()
         {
+            //CORS Support
             if ($this->app->request->getMethod() === 'OPTIONS') {
                 $this->app->view->setView('none');
                 return;
             }
-            $appRouteClass = "{$this->rootDirectory}\\{$this->routeClass}";
-            $routerObj = new $appRouteClass($this->app, $this);
 
-            //Route Default Uri if not found
-            $appFile = $this->appFile;
-            if (!$this->isStatic && !$this->isExistsAppClass($this->appFile) && !empty($this->defaultWebRoute))
-                $this->proceedAppPath($this->defaultWebRoute);
-            if (!$this->isExistsAppClass($this->routeClass))
-                throw new UnknownClass("URI app router class not found: {$this->routeClass}", '', 'error', ['uri' => $appFile]);
-
-            $this->app->request->setUri($this->appFile);
-            if ($this->isStatic)
-                $this->routeStatic();
-            elseif (method_exists($routerObj, '__invoke')) {
-
+            //App Router
+            $routePath = explode("\\", "{$this->rootDirectory}\\{$this->appFile}");
+            $routerObj = null;
+            do {
+                array_pop($routePath);
+                $routeClass = implode("\\", $routePath) . "\\Router";
+                if (class_exists($routeClass)) {
+                    $routerObj = new $routeClass($this->app, $this);
+                    break;
+                }
+            } while (empty($routPath));
+            if (!empty($routerObj) && method_exists($routerObj, '__invoke')) {
                 //Execute Route Class for Sub App Prepare parameter
                 $params = $routerObj->__invoke($this->app);
+                unset($routerObj);
+            }
+
+            $this->app->request->setUri($this->appFile);
+
+            //Route Static File
+            if ($this->isStatic)
+                $this->routeStatic();
+            else {
+                //Route to app
+
+                //Route Default Uri if not found
+                if (!$this->isExistsAppClass($this->appFile) && !empty($this->defaultWebRoute))
+                    $this->proceedAppPath($this->defaultWebRoute);
+                if (!$this->isExistsAppClass($this->appFile))
+                    throw new UnknownClass("URI app class not found: {$this->appFile}");
 
                 //Prepare Parameter
                 $parameters = [&$this->app];
-                if (!empty($params) && !is_array($params)) {
+                if (!empty($params) && !is_array($params))
                     $parameters[] = &$params;
-                } elseif (!empty($params) && is_array($params)) {
+                elseif (!empty($params) && is_array($params))
                     foreach ($params as &$item)
                         $parameters[] = &$item;
-                } elseif (!is_array($params))
-                    throw new InternalError('Router.__invoke must return array for action parameters');
 
                 //Launch App Class
                 $this->launchApp($parameters);
-
-                //Remove Router Object
-                unset($routerObj);
-
-            } else
-                throw new UnknownClass('Router is not available.');
+            }
         }
 
         /**
@@ -196,7 +197,10 @@ namespace Npf\Core {
         final private function routeStatic()
         {
             if ($this->isExistsStaticFile($this->appFile)) {
-                $staticFile = $this->app->getRootPath() . str_replace("\\", "/", "{$this->rootDirectory}\\{$this->appFile}");
+                $staticFile = file_exists($this->appFile) ?
+                    $this->appFile :
+                    $this->app->getRootPath() .
+                    str_replace("\\", "/", "{$this->rootDirectory}\\{$this->appFile}");
                 $this->app->view->setView('static', $staticFile);
             } else
                 throw new UnknownClass("URI static file not found: {$this->appFile}");
@@ -210,32 +214,23 @@ namespace Npf\Core {
         final private function launchApp(array &$parameters = [])
         {
             try {
-                if ($this->isExistsAppClass($this->appFile)) {
-                    $this->app->request->setUri($this->appFile);
-                    $refClass = new ReflectionClass("{$this->rootDirectory}\\{$this->appFile}");
-                } else {
-                    if (!empty($this->defaultWebRoute))
-                        $this->proceedAppPath($this->defaultWebRoute);
-                    if (empty($this->defaultWebRoute) || !$this->isExistsAppClass($this->appFile))
-                        throw new UnknownClass("URI app class not found: {$this->appFile}");
-                    else
-                        $refClass = new ReflectionClass("{$this->rootDirectory}\\{$this->appFile}");
-                }
+                $this->app->request->setUri($this->appFile);
+                $refClass = new ReflectionClass("{$this->rootDirectory}\\{$this->appFile}");
             } catch (ReflectionExceptionAlias $ex) {
                 throw new UnknownClass($ex->getMessage());
             }
             switch ($this->app->getRoles()) {
 
                 case 'cronjob':
-                    $this->launchCronjobRole($refClass, $parameters);
+                    $this->launchCronjob($refClass, $parameters);
                     break;
 
                 case 'daemon':
-                    $this->launchDaemonRole($refClass, $parameters);
+                    $this->launchDaemon($refClass, $parameters);
                     break;
 
                 default:
-                    $this->launchWebRole($refClass, $parameters);
+                    $this->launchWeb($refClass, $parameters);
                     break;
             }
         }
@@ -246,7 +241,7 @@ namespace Npf\Core {
          * @throws UnknownClass
          * @throws InternalError
          */
-        final private function launchCronjobRole(ReflectionClass &$refClass, array &$parameters = [])
+        final private function launchCronjob(ReflectionClass &$refClass, array &$parameters = [])
         {
             $cronLock = $this->app->config('Redis')->get('enable', false) && $this->generalConfig->get('cronLock', false);
             $cronBlock = sha1($this->app->request);
@@ -274,7 +269,7 @@ namespace Npf\Core {
          * @throws InternalError
          * @throws UnknownClass
          */
-        final private function launchDaemonRole(ReflectionClass &$refClass, array &$parameters = [])
+        final private function launchDaemon(ReflectionClass &$refClass, array &$parameters = [])
         {
             set_time_limit(0);
             $daemonBlock = sha1($this->app->request);
@@ -316,7 +311,7 @@ namespace Npf\Core {
          * @param array $parameters
          * @throws UnknownClass
          */
-        final private function launchWebRole(ReflectionClass &$refClass, array &$parameters = [])
+        final private function launchWeb(ReflectionClass &$refClass, array &$parameters = [])
         {
             $actionObj = $refClass->newInstanceArgs($parameters);
             if (method_exists($actionObj, '__invoke')) {
@@ -342,8 +337,18 @@ namespace Npf\Core {
          */
         final public function isExistsStaticFile($fileName)
         {
+            if (file_exists($fileName) && !is_dir($fileName))
+                return true;
             $staticFile = $this->app->getRootPath() . str_replace("\\", "/", "{$this->rootDirectory}\\{$fileName}");
             return file_exists($staticFile) && !is_dir($staticFile);
+        }
+
+        /**
+         * @return string
+         */
+        final public function getRequestUri()
+        {
+            return '/' . str_replace('\\', '/', $this->appFile);
         }
 
         /**
