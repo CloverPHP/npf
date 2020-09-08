@@ -39,7 +39,8 @@
     "react/http": "^0.8.4",
     "react/http-client": "^0.5.9",
     "react/mysql": "^0.5.4",
-    "clue/redis-react": "^2.3"
+    "clue/redis-react": "^2.3",
+    "mobiledetect/mobiledetectlib": "^2.8"
   },
   "scripts": {
     "post-package-install": [
