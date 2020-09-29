@@ -154,7 +154,7 @@ class View
      */
     final public function setNone()
     {
-        if($this->lockView)
+        if ($this->lockView)
             return;
         $this->type = 'none';
         $this->data = null;
@@ -166,7 +166,7 @@ class View
      */
     final public function setPlain($content)
     {
-        if($this->lockView)
+        if ($this->lockView)
             return;
         if (!empty($content)) {
             $this->type = 'plain';
@@ -179,7 +179,7 @@ class View
      */
     final public function setJson()
     {
-        if($this->lockView)
+        if ($this->lockView)
             return;
         $this->type = 'none';
         $this->data = null;
@@ -190,7 +190,7 @@ class View
      */
     final public function setXml($rooTag = null)
     {
-        if($this->lockView)
+        if ($this->lockView)
             return;
         $this->type = 'xml';
         if (empty($rooTag) || !is_string($rooTag))
@@ -205,7 +205,7 @@ class View
      */
     final public function setTwig($file, $paths = null, $viewLevel = 1)
     {
-        if($this->lockView)
+        if ($this->lockView)
             return;
         $this->type = 'twig';
         if (!empty($paths) && !is_string($paths))
@@ -232,7 +232,7 @@ class View
      */
     final public function setStatic($file = null)
     {
-        if($this->lockView)
+        if ($this->lockView)
             return;
         if (file_exists($file) && !is_dir($file)) {
             $this->type = 'static';
@@ -430,6 +430,7 @@ class View
      */
     final private function renderStaticFile()
     {
+        $responseCode = http_response_code();
         if (file_exists($this->data) && !is_dir($this->data)) {
             $routeConfig = $this->app->config('Route');
             $fileExt = pathinfo($this->data, PATHINFO_EXTENSION);
@@ -467,16 +468,16 @@ class View
             $headers = $this->app->response->getHeaders();
             foreach ($headers as $headerName => $headerContent)
                 header("{$headerName}: {$headerContent}");
-            if ($fileSize <= 0)
+            if ($fileSize <= 0 && $responseCode === false)
                 http_response_code(204);
-            if ((int)$requestLastModified === (int)$lastModified && $eTag === $requestETag && $this->cache)
+            if ((int)$requestLastModified === (int)$lastModified && $eTag === $requestETag && $this->cache && $responseCode === false)
                 http_response_code(304);
             else {
                 ignore_user_abort(true);
                 readfile($this->data);
                 clearstatcache();
             }
-        } else
+        } elseif ($responseCode === false)
             http_response_code(404);
     }
 
@@ -590,8 +591,7 @@ class View
             if ($webService) {
                 $requestETag = !empty($this->app->request->header("if_none_match")) ? trim($this->app->request->header("if_none_match")) : false;
                 if ($requestETag === $eTag && $this->cache) {
-                    $responseCode = http_response_code();
-                    if ($responseCode === 200 || $responseCode === false)
+                    if (http_response_code() === false)
                         http_response_code(304);
                     $output = false;
                 }
