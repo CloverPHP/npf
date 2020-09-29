@@ -181,7 +181,7 @@ class View
     {
         if ($this->lockView)
             return;
-        $this->type = 'none';
+        $this->type = 'json';
         $this->data = null;
     }
 
