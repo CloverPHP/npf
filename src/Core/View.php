@@ -208,7 +208,7 @@ class View
         if ($this->lockView)
             return;
         $this->type = 'twig';
-        if (!empty($paths) && !is_string($paths))
+        if (!empty($paths) && is_string($paths))
             $paths = [$paths];
         if (!is_array($paths))
             $paths = [];
