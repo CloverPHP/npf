@@ -42,6 +42,6 @@ final class Html
     final public function __invoke(App &$app, Module &$module)
     {
         $app->response->add('name', 'Hello World');
-        $app->view->setView('twig', 'Sample.twig');
+        $app->view->setTwig('Sample.twig');
     }
 }

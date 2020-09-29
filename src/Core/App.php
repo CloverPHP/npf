@@ -154,14 +154,15 @@ namespace Npf\Core {
          */
         final public function redirect($url, $statsCode = 302)
         {
-            if($this->request->isXHR()){
+            if ($this->request->isXHR()) {
                 $this->response->header('Go', $url, true);
-            }else {
+            } else {
                 $this->response->statusCode($statsCode);
                 $this->response->header('Location', $url, true);
                 if ($statsCode >= 300)
-                    $this->view->setView('none');
+                    $this->view->setNone();
             }
+            $this->view->lock();
             $this->finishingApp();
         }
 

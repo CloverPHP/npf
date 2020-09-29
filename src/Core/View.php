@@ -55,7 +55,15 @@ class View
      */
     private $generalConfig;
 
+    /**
+     * @var bool Cache Control
+     */
     private $cache = true;
+
+    /**
+     * @var bool Lock Current View
+     */
+    private $lockView = false;
 
     /**
      * View constructor.
@@ -103,6 +111,22 @@ class View
     }
 
     /**
+     * @return void
+     */
+    final public function lock()
+    {
+        $this->lockView = true;
+    }
+
+    /**
+     * @return void
+     */
+    final public function unlock()
+    {
+        $this->lockView = false;
+    }
+
+    /**
      * @param $twigExtension
      */
     final public function addTwigExtension($twigExtension)
@@ -126,6 +150,98 @@ class View
     }
 
     /**
+     * Set View as none type
+     */
+    final public function setNone()
+    {
+        if($this->lockView)
+            return;
+        $this->type = 'none';
+        $this->data = null;
+    }
+
+    /**
+     * Set View as none type
+     * @param $content
+     */
+    final public function setPlain($content)
+    {
+        if($this->lockView)
+            return;
+        if (!empty($content)) {
+            $this->type = 'plain';
+            $this->data = $content;
+        }
+    }
+
+    /**
+     * Set View as json type
+     */
+    final public function setJson()
+    {
+        if($this->lockView)
+            return;
+        $this->type = 'none';
+        $this->data = null;
+    }
+
+    /**
+     * @param null $rooTag
+     */
+    final public function setXml($rooTag = null)
+    {
+        if($this->lockView)
+            return;
+        $this->type = 'xml';
+        if (empty($rooTag) || !is_string($rooTag))
+            $rooTag = $this->generalConfig->get('xmlRoot', 'root');
+        $this->data = $rooTag;
+    }
+
+    /**
+     * @param $file
+     * @param $paths
+     * @param int $viewLevel
+     */
+    final public function setTwig($file, $paths = null, $viewLevel = 1)
+    {
+        if($this->lockView)
+            return;
+        $this->type = 'twig';
+        if (!empty($paths) && !is_string($paths))
+            $paths = [$paths];
+        if (!is_array($paths))
+            $paths = [];
+        $twigPaths = $paths;
+        $localPath = '';
+        if ($callerInfo = $this->app->getCallerInfo($viewLevel))
+            $localPath = Common::strPop('/', $callerInfo['file']);
+        if (!file_exists($localPath))
+            $localPath = '';
+        if (!empty($localPath))
+            $twigPaths[] = $localPath;
+        $this->data = [
+            'file' => $file,
+            'path' => $twigPaths,
+        ];
+    }
+
+    /**
+     * @param null $file
+     * @throws InternalError
+     */
+    final public function setStatic($file = null)
+    {
+        if($this->lockView)
+            return;
+        if (file_exists($file) && !is_dir($file)) {
+            $this->type = 'static';
+            $this->data = $file;
+        } else
+            throw new InternalError('Static File Not found on app.view.setView');
+    }
+
+    /**
      * Setup View File
      * @param string $type
      * @param null $data
@@ -134,49 +250,27 @@ class View
      */
     final public function setView($type, $data = null, $viewLevel = 1)
     {
-        if (!empty($type) && is_string($type)) {
-            switch ($type) {
-                case 'xml':
-                    $this->type = $type;
-                    if (empty($data) || !is_string($data))
-                        $data = $this->generalConfig->get('xmlRoot', 'root');
-                    $this->data = $data;
-                    break;
-                case 'json':
-                case 'none':
-                case false:
-                    $this->type = $type;
-                    if ($this->type === false)
-                        $this->type = 'none';
-                    $this->data = null;
-                    break;
-                case'plain':
-                    $this->type = 'plain';
-                    $this->data = $data;
-                    break;
-                case'static':
-                    if (file_exists($data) && !is_dir($data)) {
-                        $this->type = 'static';
-                        $this->data = $data;
-                    } else
-                        throw new InternalError('Static File Not found on app.view.setView');
-                    break;
-                case 'twig':
-                    $this->type = 'twig';
-                    $path = '';
-                    if ($callerInfo = $this->app->getCallerInfo($viewLevel))
-                        $path = Common::strPop('/', $callerInfo['file']);
-                    if (!file_exists($path))
-                        $path = '';
-                    $this->data = [
-                        'file' => $data,
-                        'path' => $path,
-                    ];
-                    break;
-                default:
-                    throw new InternalError('Unknown View Type on app.view.setView');
-                    break;
-            }
+        switch ($type) {
+            case 'html':
+            case 'twig':
+                $this->setTwig($data, [], 1);
+                break;
+            case'static':
+                $this->setStatic($data);
+                break;
+            case 'xml':
+                $this->setXml($data);
+                break;
+            case'plain':
+                $this->setPlain($data);
+                break;
+            case 'none':
+            case false:
+                $this->setNone();
+                break;
+            default:
+                $this->setJson();
+                break;
         }
     }
 
@@ -193,25 +287,27 @@ class View
 
             case 'html':
             case 'twig':
-                $this->type = 'twig';
                 $corePath = Common::strPop('/', str_replace('\\', '/', __FILE__));
                 $mainPath = Common::strPop('/', $corePath);
-                $this->addTwigPath($mainPath);
-                $this->data = $this->app->config('Profiler')->get('errorTwig', 'error.twig');
+                $this->setTwig(
+                    $this->app->config('Profiler')->get('errorTwig', 'error.twig'),
+                    [
+                        $mainPath
+                    ]);
                 break;
 
             case 'xml':
-                $this->type = 'twig';
+                $this->setXml();
                 break;
 
             case 'none':
-                $this->type = 'none';
+                $this->setNone();
                 if (!$this->app->response->statusCode())
                     $this->app->response->statusCode(500);
                 break;
 
             default:
-                $this->type = 'json';
+                $this->setJson();
                 break;
         }
         $this->app->noticeError();
@@ -261,7 +357,12 @@ class View
 
             case 'twig':
                 if (!empty($this->data['file']) && !empty($this->data['path'])) {
-                    $this->addTwigPath($this->data['path']);
+                    if (is_string($this->data['path']))
+                        $this->addTwigPath($this->data['path']);
+                    else {
+                        foreach ($this->data['path'] as $name => $path)
+                            $this->addTwigPath($path, is_numeric($name) ? null : $name);
+                    }
                     $this->data = $this->data['file'];
                     $this->renderTwig($data);
                 } else

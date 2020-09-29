@@ -141,7 +141,8 @@ namespace Npf\Core {
         {
             //CORS Support
             if ($this->app->request->getMethod() === 'OPTIONS') {
-                $this->app->view->setView('none');
+                $this->app->view->setNone();
+                $this->app->view->lock();
                 return;
             }
 
@@ -202,6 +203,7 @@ namespace Npf\Core {
                     $this->app->getRootPath() .
                     str_replace("\\", "/", "{$this->rootDirectory}\\{$this->appFile}");
                 $this->app->view->setView('static', $staticFile);
+                $this->app->view->lock();
             } else
                 throw new UnknownClass("URI static file not found: {$this->appFile}");
         }
