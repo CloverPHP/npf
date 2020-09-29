@@ -159,10 +159,11 @@ namespace Npf\Core {
             } else {
                 $this->response->statusCode($statsCode);
                 $this->response->header('Location', $url, true);
-                if ($statsCode >= 300)
+                if ($statsCode >= 300) {
                     $this->view->setNone();
+                    $this->view->lock();
+                }
             }
-            $this->view->lock();
             $this->finishingApp();
         }
 
