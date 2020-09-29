@@ -142,6 +142,7 @@ namespace Npf\Core {
             //CORS Support
             if ($this->app->request->getMethod() === 'OPTIONS') {
                 $this->app->view->setNone();
+                $this->app->response->statusCode(200);
                 $this->app->view->lock();
                 return;
             }
