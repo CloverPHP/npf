@@ -558,5 +558,15 @@ namespace Npf\Core {
         {
             return $this->db->action($this->getTableName(), $this->buildOne($data), $this->buildCond($cond), $check, $ignore);
         }
+
+        /**
+         * @param $queryStr
+         * @return bool|mysqli_result
+         * @throws DBQueryError
+         */
+        protected function query($queryStr)
+        {
+            return $this->db->special($queryStr);
+        }
     }
 }
