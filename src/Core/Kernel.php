@@ -2,6 +2,8 @@
 
 namespace Npf\Core {
 
+    use Npf\Exception\ErrorException;
+
     /**
      * Kernel, handling error, exception, critical error.
      * Class Core
@@ -90,15 +92,16 @@ namespace Npf\Core {
 
         /**
          * Error Handle
-         * @param $errNo
-         * @param $errMsg
+         * @param $severity
+         * @param $message
+         * @throws ErrorException
          */
-        final public function handleError($errNo, $errMsg)
+        final public function handleError($severity, $message)
         {
-            if (!isset($this->app))
-                $this->app = new App(static::$appInfo['role'], static::$appInfo['env'], static::$appInfo['name']);
-            $trace = $this->app->trace();
-            $this->app->handleError($trace, $errNo, $errMsg);
+            // This error code is not included in error_reporting
+            if (!(error_reporting() & $severity))
+                return;
+            throw new ErrorException($message, $severity);
         }
 
         /**
