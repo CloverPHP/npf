@@ -3,6 +3,7 @@
 namespace Npf\Core {
 
     use Npf\Exception\DBQueryError;
+    use Npf\Exception\ErrorException;
 
     /**
      * Class ExceptionNormal
@@ -28,7 +29,17 @@ namespace Npf\Core {
             parent::__construct($desc, 0);
             $stack = debug_backtrace(0);
             $trace = [];
-            $start = $this instanceof DBQueryError ? 3 : 0;
+            switch (true) {
+                case $this instanceof DBQueryError:
+                    $start = 3;
+                    break;
+
+                case $this instanceof ErrorException:
+                    $start = 2;
+                    break;
+                default:
+                    $start = 0;
+            }
             $iPos = 0;
             for ($i = $start; $i < count($stack); $i++) {
                 $iPos++;
