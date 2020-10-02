@@ -85,6 +85,7 @@ namespace Npf\Core {
             $this->indexFile = $this->routeConfig->get('indexFile', 'Index');
             $this->defaultWebRoute = !in_array($app->getRoles(), ['cronjob', 'daemon'], true) ? (string)$this->routeConfig->get('defaultWebRoute', '') : '';
             $pathInfo = isset($_SERVER['REQUEST_URI']) ? explode("?", $_SERVER['REQUEST_URI'])[0] : '';
+            $this->app->request->setPathInfo($pathInfo);
             $pathInfo = preg_replace('#^/\w+\.php#', '', $pathInfo);
             $pathInfo = (!$pathInfo || $pathInfo === '/') ?
                 $this->indexFile : (substr($pathInfo, 0, 1) === '/' ? substr($pathInfo, 1) : $pathInfo);

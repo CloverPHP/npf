@@ -20,6 +20,10 @@ namespace Npf\Core {
          */
         private $uri = '';
         /**
+         * @var string Uri
+         */
+        private $pathInfo = '';
+        /**
          * @var App
          */
         private $app = '';
@@ -207,6 +211,26 @@ namespace Npf\Core {
         final public function setUri($Uri)
         {
             $this->uri = $Uri;
+            return $this;
+        }
+
+        /**
+         * Return Uri
+         * @return mixed|null
+         */
+        final public function getPathInfo()
+        {
+            return $this->pathInfo;
+        }
+
+        /**
+         * Set Uri
+         * @param $pathInfo
+         * @return Request
+         */
+        final public function setPathInfo($pathInfo)
+        {
+            $this->pathInfo = $pathInfo;
             return $this;
         }
 
