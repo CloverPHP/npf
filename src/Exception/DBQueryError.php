@@ -10,7 +10,7 @@ namespace Npf\Exception {
      */
     class DBQueryError extends Exception
     {
-        protected $error = 'unexpected_error';
+        protected $error = 'db_query_error';
         protected $sysLog = true;
     }
 }
