@@ -34,7 +34,7 @@ namespace Npf\Core {
 
         private $method = 'RUN';
 
-        private $protocol = '';
+        private $schema = '';
 
         /**
          * Request constructor.
@@ -61,7 +61,7 @@ namespace Npf\Core {
             $this->method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '__RUN__';
             if ($this->method !== '__RUN__') {
                 $this->initHeader();
-                $this->protocol = $this->isSecure() ? 'https' : 'http';
+                $this->schema = $this->isSecure() ? 'https' : 'http';
             }
         }
 
@@ -173,7 +173,16 @@ namespace Npf\Core {
          */
         final public function getProtocol()
         {
-            return $this->protocol;
+            return $this->schema;
+        }
+
+        /**
+         * Get Protocol
+         * @return bool
+         */
+        final public function getSchema()
+        {
+            return $this->schema;
         }
 
         /**
