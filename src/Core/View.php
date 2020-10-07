@@ -603,9 +603,8 @@ class View
                     $eTag = sprintf('%s-%s-%s', mb_strlen($content), sha1($content), hash('crc32b', $content));
                     $this->app->response->header("ETag", $eTag, true);
                     $requestETag = !empty($this->app->request->header("if_none_match")) ? trim($this->app->request->header("if_none_match")) : false;
-                    if ($requestETag === $eTag && $this->cache) {
-                        if ($statusCode === false)
-                            http_response_code(304);
+                    if ($requestETag === $eTag && $this->cache && $statusCode === false) {
+                        http_response_code(304);
                         $needOutput = false;
                     }
                 }
