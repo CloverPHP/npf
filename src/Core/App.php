@@ -428,43 +428,6 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $trace
-         * @param $errNo
-         * @param $errMsg
-         */
-        final public function handleError($trace, $errNo, $errMsg)
-        {
-            if (!$this->ignoreError) {
-                try {
-                    $this->profiler->logError("Code Error", "Error: ({$errNo})\n{$errMsg}\nTrace:\n" . implode(",", $trace));
-                    $profiler = [
-                            'desc' => $errMsg,
-                            'trace' => $trace,
-                            'params' => $this->request->get("*"),
-                            'headers' => $this->request->header("*"),
-                        ] + $this->profiler->fetch();
-                    $this->response = new Response([
-                        'status' => 'error',
-                        'error' => 'unexpected_error',
-                        'code' => 'UNHANDLE_ERROR',
-                        'profiler' => $profiler,
-                    ]);
-                    $this->rollback();
-                    $this->view->error();
-                    $this->emit('sysReport', [&$this, $profiler]);
-                    $this->emit('codeError', [&$this, $profiler]);
-                    $this->emit('error', [&$this, $profiler]);
-                    $this->emit('appBeforeClean', [&$this, $profiler]);
-                    $this->clean();
-                    $this->view->render();
-                    exit(2);
-                } catch (\Exception $exception) {
-                    $this->handleException($this->trace(), $exception, false);
-                }
-            }
-        }
-
-        /**
          * @param array $trace
          * @param \Exception $exception
          * @param bool $event
@@ -488,7 +451,7 @@ namespace Npf\Core {
                         $this->emit('appException', [&$this, $profiler]);
                         $this->emit('exception', [&$this, $profiler]);
                     }
-                    $exitCode = 3;
+                    $exitCode = 2;
                 } else {
                     $message = '';
                     if (method_exists($exception, 'getMessage'))
@@ -514,7 +477,7 @@ namespace Npf\Core {
                         $this->emit('codeException', [&$this, $profiler]);
                         $this->emit('exception', [&$this, $profiler]);
                     }
-                    $exitCode = 4;
+                    $exitCode = 3;
                 }
                 if ($event)
                     $this->emit('appBeforeClean', [&$this, $profiler]);
@@ -529,12 +492,12 @@ namespace Npf\Core {
                     if ($ex instanceof Exception) {
                         $profiler = $this->response->get('profiler');
                         $message = $profiler['desc'];
-                        $exitCode = 3;
+                        $exitCode = 2;
                     } else {
                         $message = '';
                         if (method_exists($ex, 'getMessage'))
                             $message = $ex->getMessage();
-                        $exitCode = 4;
+                        $exitCode = 3;
                     }
                     echo($message);
                     exit($exitCode);

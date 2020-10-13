@@ -25,6 +25,10 @@ namespace Npf\Core {
          * @var bool
          */
         private $status = false;
+        /**
+         * @var array
+         */
+        private $cookieParams = [];
 
         /**
          * Session constructor.
@@ -35,6 +39,48 @@ namespace Npf\Core {
         {
             $this->app = &$app;
             $this->config = $app->config('Session');
+            $this->cookieParams = [
+                'lifeTime' => $this->config->get('cookieLifetime', 0),
+                'urlPath' => $this->config->get('cookiePath', null),
+                'domain' => $this->config->get('cookieDomain', null),
+                'security' => $this->config->get('cookieSecurity', false),
+                'httpOnly' => $this->config->get('cookieHttpOnly', true)
+            ];
+        }
+
+        public function lifeTime($lifeTime = null)
+        {
+            if (!$this->status)
+                $this->cookieParams['lifeTime'] = (int)$lifeTime;
+            return $this->cookieParams['lifeTime'];
+        }
+
+        public function urlPath($urlPath = null)
+        {
+            if (!empty($urlPath) && !$this->status)
+                $this->cookieParams['urlPath'] = $urlPath;
+            return $this->cookieParams['urlPath'];
+        }
+
+        public function cookieDomain($domain = null)
+        {
+            if (!empty($domain) && !$this->status)
+                $this->cookieParams['domain'] = (string)$domain;
+            return $this->cookieParams['domain'];
+        }
+
+        public function cookieSecurity($security = null)
+        {
+            if (!empty($security) && !$this->status)
+                $this->cookieParams['security'] = (boolean)$security;
+            return $this->cookieParams['security'];
+        }
+
+        public function cookieHttpOnly($httpOnly = null)
+        {
+            if (!empty($httpOnly) && !$this->status)
+                $this->cookieParams['httpOnly'] = (boolean)$httpOnly;
+            return $this->cookieParams['httpOnly'];
         }
 
         /**
@@ -96,11 +142,11 @@ namespace Npf\Core {
                 }
 
                 session_set_cookie_params(
-                    $this->config->get('cookieLifetime', 0),
-                    $this->config->get('cookiePath', null),
-                    $this->config->get('cookieDomain', null),
-                    $this->config->get('cookieSecurity', false),
-                    $this->config->get('cookieHttpOnly', true)
+                    $this->cookieParams['lifeTime'],
+                    $this->cookieParams['urlPath'],
+                    $this->cookieParams['domain'],
+                    $this->cookieParams['security'],
+                    $this->cookieParams['httpOnly']
                 );
                 $sessionName = $this->config->get('name', 'PHPSESSID');
                 session_name($sessionName);

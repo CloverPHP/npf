@@ -245,14 +245,15 @@ class View
      * Setup View File
      * @param string $type
      * @param null $data
+     * @param int $viewLevel
      * @throws InternalError
      */
-    final public function setView($type, $data = null)
+    final public function setView($type, $data = null, $viewLevel = 1)
     {
         switch ($type) {
             case 'html':
             case 'twig':
-                $this->setTwig($data, [], 1);
+                $this->setTwig($data, [], $viewLevel);
                 break;
             case'static':
                 $this->setStatic($data);
