@@ -28,7 +28,7 @@ class View
     /**
      * @var string
      */
-    private $type = 'json';
+    private $type = '';
 
     /**
      * @var mixed
@@ -281,8 +281,14 @@ class View
     {
         $this->app->ignoreError();
         $errorDisplay = $this->app->config('Profiler')->get('errorOutput');
-        if ($errorDisplay === 'auto')
-            $errorDisplay = $this->app->request->isXHR() ? 'json' : 'twig';
+        if ($errorDisplay === 'auto') {
+            if (!empty($this->type))
+                $errorDisplay = $this->type;
+            elseif (!in_array($this->app->getRoles(), ['cronjob', 'daemon'], true))
+                $errorDisplay = $this->app->request->isXHR() ? 'json' : 'twig';
+            else
+                $errorDisplay = 'json';
+        }
         switch ($errorDisplay) {
 
             case 'html':
@@ -323,6 +329,8 @@ class View
     final public function render()
     {
         $response = $this->app->response->fetch();
+        if ($this->type === '')
+            $this->setJson();
         if ($this->type === 'none' && !$response['statusCode'])
             $response['statusCode'] = 204;
         $data = $response['body'];
@@ -339,10 +347,6 @@ class View
 
             case 'xml':
                 $this->renderXml($data, false, $response['statusCode']);
-                break;
-
-            case 'json':
-                $this->renderJson($data, false, $response['statusCode']);
                 break;
 
             case 'none':
@@ -368,7 +372,9 @@ class View
                 break;
 
             default:
-                throw new InternalError('Unknown View Type on app.view.render');
+                $this->type = 'json';
+                $this->renderJson($data, false, $response['statusCode']);
+                break;
         }
     }
 
