@@ -1360,6 +1360,46 @@ namespace Npf\Core {
         }
 
         /**
+         * @param $fromDate
+         * @param $toDate
+         * @return mixed
+         */
+        final private function dateDiff($fromDate, $toDate)
+        {
+            $fromDate = date_create($fromDate);
+            $toDate = date_create($toDate);
+            $diff = date_diff($fromDate, $toDate, true);
+            return $diff->days;
+        }
+
+        /**
+         * @param $start
+         * @param $end
+         * @return array
+         */
+        final private function dateRange($start, $end)
+        {
+            $result = [];
+            try {
+                $begin = new DateTime($start);
+                $end = new DateTime($end);
+
+                $interval = \DateInterval::createFromDateString('1 day');
+                $period = new \DatePeriod($begin, $interval, $end);
+
+                foreach ($period as $dt)
+                    /**
+                     * @var $dt DateTime
+                     */
+                    $result[] = $dt->format("Y-m-d");
+            } catch (\Exception $ex) {
+                $result = [];
+            }
+            return $result;
+        }
+
+
+        /**
          * Get Initial DateTime or current DateTime
          * @param bool $current
          * @return string
