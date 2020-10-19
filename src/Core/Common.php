@@ -1364,7 +1364,7 @@ namespace Npf\Core {
          * @param $toDate
          * @return mixed
          */
-        final private function dateDiff($fromDate, $toDate)
+        public static function dateDiff($fromDate, $toDate)
         {
             $fromDate = date_create($fromDate);
             $toDate = date_create($toDate);
@@ -1377,7 +1377,7 @@ namespace Npf\Core {
          * @param $end
          * @return array
          */
-        final private function dateRange($start, $end)
+        public static function dateRange($start, $end)
         {
             $result = [];
             try {
