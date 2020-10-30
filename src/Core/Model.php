@@ -561,12 +561,13 @@ namespace Npf\Core {
 
         /**
          * @param $queryStr
+         * @param int $resultMode
          * @return bool|mysqli_result
          * @throws DBQueryError
          */
-        protected function query($queryStr)
+        protected function query($queryStr, $resultMode = 0)
         {
-            return $this->db->special($queryStr);
+            return $this->db->query($queryStr, $resultMode = 0);
         }
     }
 }
