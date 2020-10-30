@@ -1383,6 +1383,7 @@ namespace Npf\Core {
             try {
                 $begin = new DateTime($start);
                 $end = new DateTime($end);
+                $end = $end->modify('+1 day');
 
                 $interval = \DateInterval::createFromDateString('1 day');
                 $period = new \DatePeriod($begin, $interval, $end);
