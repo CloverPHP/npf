@@ -567,7 +567,7 @@ namespace Npf\Core {
          */
         protected function query($queryStr, $resultMode = 0)
         {
-            return $this->db->query($queryStr, $resultMode = 0);
+            return $this->db->query($queryStr, $resultMode);
         }
     }
 }
