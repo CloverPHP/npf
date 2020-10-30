@@ -130,14 +130,28 @@ namespace Npf\Core\Db {
         }
 
         /**
-         * Query DB and return the result instant
+         * Alias with Query
          * @param $queryStr
+         * @param int $resultMode
          * @return array|bool|null
          * @throws DBQueryError
          */
-        final public function special($queryStr)
+        public function special($queryStr, $resultMode = 0)
+        {
+            return $this->query($queryStr, $resultMode);
+        }
+
+        /**
+         * Query DB and return the result instant
+         * @param $queryStr
+         * @param int $resultMode
+         * @return array|bool|null
+         * @throws DBQueryError
+         */
+        final public function query($queryStr, $resultMode = 0)
         {
             $results = null;
+            $resultMode = (int)$resultMode;
             if (!empty($queryStr)) {
                 $resResult = $this->driver->query($queryStr);
                 if (NULL === $resResult || is_bool($resResult))
@@ -149,15 +163,38 @@ namespace Npf\Core\Db {
                             break;
 
                         case 1:
-                            if ($this->driver->numFields($resResult) === 0)
-                                $results = $this->driver->fetchCell(0, 0, $resResult);
-                            else
-                                $results = $this->driver->fetchAssoc($resResult);
+                            switch ($resultMode) {
+
+                                case 2:
+                                    $results[] = $this->driver->fetchRow($resResult);
+                                    break;
+
+                                case 1:
+                                    $results[] = $this->driver->fetchAssoc($resResult);
+                                    break;
+
+                                default:
+                                    if ($this->driver->numFields($resResult) === 0 && $resultMode = 0)
+                                        $results = $this->driver->fetchCell(0, 0, $resResult);
+                                    else
+                                        $results = $this->driver->fetchAssoc($resResult);
+                                    break;
+                            }
                             break;
 
                         default:
-                            while ($row = $this->driver->fetchAssoc($resResult))
-                                $results[] = $row;
+                            switch ($resultMode) {
+
+                                case 2:
+                                    while ($row = $this->driver->fetchRow($resResult))
+                                        $results[] = $row;
+                                    break;
+
+                                default:
+                                    while ($row = $this->driver->fetchAssoc($resResult))
+                                        $results[] = $row;
+                                    break;
+                            }
                     }
                     $this->driver->free($resResult);
                 }
