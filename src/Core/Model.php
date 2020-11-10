@@ -320,13 +320,13 @@ namespace Npf\Core {
 
         /**
          * @param string $field
-         * @param null $cond
+         * @param array $cond
          * @param null $groupBy
          * @param null $having
          * @return bool|int
          * @throws DBQueryError
          */
-        protected function getSum($field = '*', $cond = null, $groupBy = null, $having = null)
+        protected function getSum($field = '*', array $cond = null, $groupBy = null, $having = null)
         {
             return $this->db->sum(
                 $this->getTableName(),
@@ -339,13 +339,13 @@ namespace Npf\Core {
 
         /**
          * @param string $field
-         * @param null $cond
+         * @param array $cond
          * @param null $groupBy
          * @param null $having
          * @return bool|int
          * @throws DBQueryError
          */
-        protected function getCount($field = '*', $cond = null, $groupBy = null, $having = null)
+        protected function getCount($field = '*', array $cond = null, $groupBy = null, $having = null)
         {
             return $this->db->count(
                 $this->getTableName(),
@@ -436,7 +436,7 @@ namespace Npf\Core {
          * @return mixed
          * @throws DBQueryError
          */
-        protected function getCellByCond($field, array $cond = [], $orderBy = null, $seek = 0)
+        protected function getCellByCond($field, array $cond = null, $orderBy = null, $seek = 0)
         {
             $result = $this->db->cell(
                 $this->getTableName(),
@@ -502,7 +502,7 @@ namespace Npf\Core {
          * @return bool|int|mysqli_result
          * @throws DBQueryError
          */
-        protected function deleteOneByCond($cond, $orderBy = null, $limit = 0)
+        protected function deleteOneByCond(array $cond = null, $orderBy = null, $limit = 0)
         {
             return $this->db->delete($this->getTableName(), $this->buildCond($cond), $this->buildOrder($orderBy), $limit);
         }
@@ -514,7 +514,7 @@ namespace Npf\Core {
          * @return bool|int|mysqli_result
          * @throws DBQueryError
          */
-        protected function deleteAll($cond = null, $orderBy = null, $limit = null)
+        protected function deleteAll(array $cond = null, $orderBy = null, $limit = null)
         {
             return $this->db->delete($this->getTableName(), $this->buildCond($cond), $this->buildOrder($orderBy), $limit);
         }
@@ -527,7 +527,7 @@ namespace Npf\Core {
          * @return bool|int|mysqli_result
          * @throws DBQueryError
          */
-        protected function updateOneByCond(array $data, array $cond, $orderBy = null, $ignore = false)
+        protected function updateOneByCond(array $data, array $cond = null, $orderBy = null, $ignore = false)
         {
             return $this->db->update($this->getTableName(), $this->buildOne($data), $this->buildCond($cond), $this->buildOrder($orderBy), 1, $ignore);
         }
@@ -541,7 +541,7 @@ namespace Npf\Core {
          * @return bool|mysqli_result
          * @throws DBQueryError
          */
-        protected function updateAll(array $data, array $cond, $orderBy = null, $limit = null, $ignore = false)
+        protected function updateAll(array $data, array $cond = null, $orderBy = null, $limit = null, $ignore = false)
         {
             return $this->db->update($this->getTableName(), $this->buildOne($data), $this->buildCond($cond), $this->buildOrder($orderBy), $limit, $ignore);
         }
@@ -554,7 +554,7 @@ namespace Npf\Core {
          * @return bool|mysqli_result
          * @throws DBQueryError
          */
-        protected function addUpdate(array $data, array $cond, $check = false, $ignore = false)
+        protected function addUpdate(array $data, array $cond = null, $check = false, $ignore = false)
         {
             return $this->db->action($this->getTableName(), $this->buildOne($data), $this->buildCond($cond), $check, $ignore);
         }
