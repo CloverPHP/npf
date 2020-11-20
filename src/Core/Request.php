@@ -34,7 +34,9 @@ namespace Npf\Core {
 
         private $method = 'RUN';
 
-        private $schema = '';
+        private $schema = 'cmd';
+
+        private $fullRequestUri = '';
 
         /**
          * Request constructor.
@@ -201,6 +203,17 @@ namespace Npf\Core {
         final public function getContentType()
         {
             return $this->contentType;
+        }
+
+        /**
+         * Return Uri
+         * @return mixed|null
+         */
+        final public function getFullRequestUri()
+        {
+            if (empty($this->fullRequestUri))
+                $this->fullRequestUri = "{$this->getSchema()}://{$this->header('host')}{$this->pathInfo}";
+            return $this->fullRequestUri;
         }
 
         /**
