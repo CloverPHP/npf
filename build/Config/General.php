@@ -21,6 +21,10 @@ class General
      */
     public $timezone = 'Asia/Kuala_Lumpur';
     /**
+     * @var boolean Output Compress
+     */
+    public $compressOutput = true;
+    /**
      * @var string Cross Origin Resource Sharing Support, fill * / url to enable or false to disable.
      */
     public $corsSupport = '*';

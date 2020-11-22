@@ -66,6 +66,11 @@ class View
     private $lockView = false;
 
     /**
+     * @var bool Lock Current View
+     */
+    private $expireTtl = 0;
+
+    /**
      * View constructor.
      * @param App $app
      */
@@ -124,6 +129,17 @@ class View
     final public function unlock()
     {
         $this->lockView = false;
+    }
+
+    /**
+     * @param $expireTtl
+     * @return void
+     */
+    final public function setViewExpire($expireTtl)
+    {
+        $this->expireTtl = (int)$expireTtl;
+        if ($this->expireTtl < 0)
+            $this->expireTtl = 0;
     }
 
     /**
@@ -530,6 +546,7 @@ class View
             $headers = $this->app->response->getHeaders();
             foreach ($headers as $headerName => $headerContent)
                 header("{$headerName}: {$headerContent}");
+
             if ($fileSize <= 0 && $statusCode === false)
                 http_response_code(204);
             if ((int)$requestLastModified === (int)$lastModified && $eTag === $requestETag && $this->cache && $statusCode === false)
@@ -578,9 +595,6 @@ class View
             //Check is web service
             if ($webService) {
 
-                if (!empty($statusCode) && (int)$statusCode > 0)
-                    http_response_code($statusCode);
-
                 //Checking Accepted Compress Encoding and compress content
                 $acceptEncode = !empty($this->app->request->header("accept_encoding")) ? $this->app->request->header("accept_encoding") : '';
                 if (
@@ -595,15 +609,10 @@ class View
                 //Output content length and expire/cache control
                 $length = strlen($content);
                 $this->app->response->setHeaders([
-                    "Cache-Control" => "max-age=0, must-revalidate",
-                    "Expires" => gmdate("D, d M Y H:i:s", (int)Common::timestamp()) . " GMT",
+                    "Cache-Control" => "max-age={$this->expireTtl}, must-revalidate",
+                    "Expires" => gmdate("D, d M Y H:i:s", (int)Common::timestamp() + $this->expireTtl) . " GMT",
                     "Content-Length" => $length,
                 ], true);
-
-                //Additional Header add-on
-                $headers = $this->app->response->getHeaders();
-                foreach ($headers as $headerName => $headerContent)
-                    header("{$headerName}: {$headerContent}");
 
                 //Response ETag for cache validate and check and return 304 if not modified
                 if ($length > 0) {
@@ -611,10 +620,19 @@ class View
                     $this->app->response->header("ETag", $eTag, true);
                     $requestETag = !empty($this->app->request->header("if_none_match")) ? trim($this->app->request->header("if_none_match")) : false;
                     if ($requestETag === $eTag && $this->cache && $statusCode === false) {
-                        http_response_code(304);
+                        $statusCode = 304;
                         $needOutput = false;
                     }
                 }
+
+                //Send Http Status
+                if (!empty($statusCode) && (int)$statusCode > 0)
+                    http_response_code($statusCode);
+
+                //Send Out Header
+                $headers = $this->app->response->getHeaders();
+                foreach ($headers as $headerName => $headerContent)
+                    header("{$headerName}: {$headerContent}");
             }
 
             //StdOut if output needed
