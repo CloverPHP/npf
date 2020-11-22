@@ -68,7 +68,7 @@ class View
     /**
      * @var bool Lock Current View
      */
-    private $expireTtl = 0;
+    private $expiryTtl = 0;
 
     /**
      * View constructor.
@@ -135,11 +135,11 @@ class View
      * @param $expireTtl
      * @return void
      */
-    final public function setViewExpire($expireTtl)
+    final public function setViewExpiry($expireTtl)
     {
-        $this->expireTtl = (int)$expireTtl;
-        if ($this->expireTtl < 0)
-            $this->expireTtl = 0;
+        $this->expiryTtl = (int)$expireTtl;
+        if ($this->expiryTtl < 0)
+            $this->expiryTtl = 0;
     }
 
     /**
@@ -609,8 +609,8 @@ class View
                 //Output content length and expire/cache control
                 $length = strlen($content);
                 $this->app->response->setHeaders([
-                    "Cache-Control" => "max-age={$this->expireTtl}, must-revalidate",
-                    "Expires" => gmdate("D, d M Y H:i:s", (int)Common::timestamp() + $this->expireTtl) . " GMT",
+                    "Cache-Control" => "max-age={$this->expiryTtl}, must-revalidate",
+                    "Expires" => gmdate("D, d M Y H:i:s", (int)Common::timestamp() + $this->expiryTtl) . " GMT",
                     "Content-Length" => $length,
                 ], true);
 
