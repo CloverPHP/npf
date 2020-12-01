@@ -14,7 +14,14 @@ namespace Npf\Library {
          * @var App
          */
         private $app;
-        private $cipher = 'AES-256-CTR';
+        private $supportMode = [
+            'AES-256-ECB',
+            'AES-256-CBC',
+            'AES-256-CFB',
+            'AES-256-OFB',
+            'AES-256-CTR',
+        ];
+        private $cipherMode = 'AES-256-CTR';
         private $secret_key = '';
         private $iv = '';
 
@@ -56,7 +63,7 @@ namespace Npf\Library {
          */
         private function ivLen()
         {
-            return openssl_cipher_iv_length($this->cipher);
+            return openssl_cipher_iv_length($this->cipherMode);
         }
 
         /**
@@ -84,7 +91,7 @@ namespace Npf\Library {
         public function encrypt($content)
         {
             $iv = !empty($this->iv) ? $this->iv : $this->genIV();
-            $cryptTxt = openssl_encrypt($content, $this->cipher, $this->secret_key, OPENSSL_RAW_DATA, $iv);
+            $cryptTxt = openssl_encrypt($content, $this->cipherMode, $this->secret_key, OPENSSL_RAW_DATA, $iv);
             return base64_encode($cryptTxt);
         }
 
@@ -107,8 +114,19 @@ namespace Npf\Library {
         {
             $iv = !empty($this->iv) ? $this->iv : $this->genIV();
             $cryptTxt = base64_decode($cryptTxt);
-            $content = openssl_decrypt($cryptTxt, $this->cipher, $this->secret_key, OPENSSL_RAW_DATA, $iv);
+            $content = openssl_decrypt($cryptTxt, $this->cipherMode, $this->secret_key, OPENSSL_RAW_DATA, $iv);
             return $content;
+        }
+
+        /**
+         * @param null $cipherMode
+         * @return string
+         */
+        public function cipherMode($cipherMode = null)
+        {
+            if (!empty($cipherMode) && in_array($cipherMode, $this->supportMode, true))
+                $this->cipherMode = $cipherMode;
+            return $this->cipherMode;
         }
     }
 }

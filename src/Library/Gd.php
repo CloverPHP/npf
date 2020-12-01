@@ -1,75 +1,46 @@
 <?php
 
-/**
- * Created by PhpStorm.
- * Author: LYK
- * Date: 9/20/2013
- * Time: 5:13 PM
- * Reference : http://www.tuxradar.com/practicalphp/11/2/(1-30)
- */
-
 namespace Npf\Library;
 
-/**
- * Class GD
- * Draw some image graphic effects.
- * @package Framework\Utils\Helper
- */
 class Gd
 {
 
     private $imgResource, $imgWidth, $imgHeight;
 
     /**
+     * Is GD Resource
      * @param null $img
      * @return bool
      */
-    public function importImage($img = NULL)
+    private function isGDResource($img = null)
     {
-        if ($this->isGDResource($img)) {
-            $this->imgResource = $img;
-            $this->initLoad();
-            return TRUE;
-        } elseif (is_string($img)) {
-            $img = @imagecreatefromstring($img);
-            if ($img !== FALSE) {
-                $this->imgResource = $img;
-                return TRUE;
-            } else  return FALSE;
-        } else  return FALSE;
-    }
-
-    /**
-     * Is GD Resource
-     * @param NULL $img
-     * @return bool
-     */
-    private function isGDResource($img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!is_resource($img)) return FALSE;
-        if (get_resource_type($img) === 'gd') return TRUE;
-        return TRUE;
+        if (null === $img) $img = $this->imgResource;
+        if (!is_resource($img)) return false;
+        if (get_resource_type($img) === 'gd') return true;
+        return false;
     }
 
     /**
      * Initial Load and Initial Save and Check Resource
-     * @param NULL $img
-     * @return bool
+     * @param null $img
+     * @return Gd
      */
-    private function initLoad($img = NULL)
+    private function initImage($img = null)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        imagealphablending($img, TRUE);
-        imagesavealpha($img, TRUE);
-        $this->imgWidth = imagesx($img);
-        $this->imgHeight = imagesy($img);
-        return TRUE;
+        if ($this->isGDResource($img)) {
+            imagepalettetotruecolor($img);
+            imageantialias($img, true);
+            imagealphablending($img, true);
+            imagesavealpha($img, true);
+            $this->imgWidth = imagesx($img);
+            $this->imgHeight = imagesy($img);
+            $this->imgResource = $img;
+        }
+        return $this;
     }
 
     /**
-     * Section: Special Process
+     * Section: Get Image Info
      */
 
     /**
@@ -77,401 +48,120 @@ class Gd
      * @param int $red
      * @param int $green
      * @param int $blue
-     * @param int $Alpha
-     * @param NULL $img
+     * @param int $alpha
      * @return bool|int
      */
-    public function getColor($red = 0, $green = 0, $blue = 0, $Alpha = 0, $img = NULL)
+    public function getColor($red = 0, $green = 0, $blue = 0, $alpha = 0)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
+        if (!$this->isGDResource($this->imgResource)) return false;
         $red = (int)$red;
         $green = (int)$green;
         $blue = (int)$blue;
-        $Alpha = (int)$Alpha;
-        return @imagecolorallocatealpha($img, $red, $green, $blue, $Alpha);
+        $alpha = (int)$alpha;
+        return @imagecolorallocatealpha($this->imgResource,
+            (int)$red,
+            (int)$green,
+            (int)$blue,
+            (int)$alpha);
     }
 
     /**
      * Get Loaded Image Given Position Pixel Color
      * @param int $x
      * @param int $y
-     * @param bool $Assoc
-     * @param NULL $img
+     * @param bool $assoc
      * @return array|bool|int
      */
-    public function getPixelColor($x = 0, $y = 0, $Assoc = FALSE, $img = NULL)
+    public function getPixelColor($x = 0, $y = 0, $assoc = false)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $x = (int)$x;
         $y = (int)$y;
-        $Assoc = (boolean)$Assoc;
-        $color = imagecolorat($img, $x, $y);
-        if ($Assoc !== TRUE) return $color;
-        else  return imagecolorsforindex($img, $color);
+        $assoc = (boolean)$assoc;
+        $color = imagecolorat($this->imgResource, $x, $y);
+        if ($assoc !== true)
+            return $color;
+        else
+            return imagecolorsforindex($this->imgResource, $color);
     }
 
     /**
      * Get Loaded Image Orientation
-     * @param NULL $img
      * @return bool|string
      */
-    public function getOrientation($img = NULL)
+    public function getOrientation()
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (imagesx($img) > imagesy($img))
+        if (imagesx($this->imgResource) > imagesy($this->imgResource))
             return 'LANDSCAPE';
         else
             return 'PORTRAIT';
     }
 
     /**
-     * Image Process - Copy image from file to memory (partial of rect)
      * @param $file
-     * @param NULL $rect
-     * @param NULL $img
-     * @return bool
+     * @return Gd
      */
-    public function copyImageFromFile($file, $rect = NULL, $img = NULL)
+    final public function loadImage($file)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (!is_array($rect)) $rect = [];
-        if (!isset($rect['X'])) $rect['X'] = (int)0;
-        if (!isset($rect['Y'])) $rect['Y'] = (int)0;
-        if (!isset($rect['L'])) $rect['L'] = (int)0;
-        if (!isset($rect['T'])) $rect['T'] = (int)0;
-        $imgSrc = $this->loadImageFromFile($file);
+        $this->initImage($this->getImgResFromFile($file));
+        return $this;
+    }
 
-        if ($imgSrc !== FALSE) {
-            $imgWidth = (int)imagesx($imgSrc);
-            $imgHeight = (int)imagesy($imgSrc);
-            if(!empty($rect['W']) && empty($rect['H']))
-                $rect['H'] = $this->getNewHeight($rect['W'], $imgWidth, $imgHeight);
-            elseif(empty($rect['W']) && !empty($rect['H']))
-                $rect['W'] = $this->getNewWidth($rect['H'], $imgWidth, $imgHeight);
-            elseif (empty($rect['H']) && empty($rect['H'])) {
-                $rect['W'] = $imgWidth;
-                $rect['H'] = $imgHeight;
+    /**
+     * Load File Image To Memory
+     * @param string|resource $file
+     * @return bool|resource|string
+     */
+    public function getImgResFromFile($file = '')
+    {
+        $img = false;
+        if ($this->isGDResource($file)) {
+            imagepalettetotruecolor($file);
+            imageantialias($file, true);
+            imagealphablending($file, true);
+            imagesavealpha($file, true);
+            return $file;
+        } elseif (file_exists($file)) {
+            if (function_exists('exif_imagetype'))
+                $imgType = exif_imagetype($file);
+            else {
+                $imgInfo = getimagesize($file);
+                $imgType = $imgInfo[2];
             }
-            $this->imgResource = $img;
-            $this->initLoad($img);
-            $rect['X'] = (int)$rect['X'];
-            $rect['Y'] = (int)$rect['Y'];
-            $rect['W'] = (int)$rect['W'];
-            $rect['H'] = (int)$rect['H'];
-            $rect['L'] = (int)$rect['L'];
-            $rect['T'] = (int)$rect['T'];
-
-            imagecopyresampled($img, $imgSrc, $rect['X'], $rect['Y'], $rect['L'], $rect['T'], $rect['W'], $rect['H'], imagesx($imgSrc),
-                imagesy($imgSrc));
-            imagealphablending($img, TRUE);
-            imagedestroy($imgSrc);
-            return TRUE;
-        } else  return FALSE;
+            switch ($imgType) {
+                case IMAGETYPE_GIF:
+                    if (imagetypes() & IMG_GIF) $img = @imagecreatefromgif($file);
+                    break;
+                case IMAGETYPE_JPEG:
+                    if (imagetypes() & IMG_JPG) $img = @imagecreatefromjpeg($file);
+                    break;
+                case IMAGETYPE_PNG:
+                    if (imagetypes() & IMG_PNG) $img = @imagecreatefrompng($file);
+                    break;
+                case IMAGETYPE_XBM:
+                    if (imagetypes() & IMG_XPM) $img = @imagecreatefromxbm($file);
+                    break;
+                case IMAGETYPE_WBMP:
+                    if (imagetypes() & IMG_WBMP) $img = @imagecreatefromwbmp($file);
+                    break;
+                default:
+                    $img = @imagecreatefromstring(file_get_contents($file));
+            }
+        } else
+            $img = @imagecreatefromstring($file);
+        if (!$this->isGDResource($img))
+            return false;
+        else {
+            imagepalettetotruecolor($img);
+            imageantialias($img, true);
+            imagealphablending($img, true);
+            imagesavealpha($img, true);
+            return $img;
+        }
     }
 
     /**
      * Section: Graphic Tool
      */
-
-    /**
-     * Load File Image To Memory
-     * @param string $File
-     * @return bool|resource|string
-     */
-    public function loadImageFromFile($File = '')
-    {
-        $img = FALSE;
-        if ($this->isGDResource($File)) {
-            $this->imgResource = $File;
-            $this->initLoad();
-            return $this->imgResource;
-        } elseif (file_exists($File)) {
-            if (function_exists('exif_imagetype')) $imgType = exif_imagetype($File);
-            else {
-                $imgInfo = getimagesize($File);
-                $imgType = $imgInfo[2];
-            }
-            switch ($imgType) {
-                case IMAGETYPE_GIF:
-                    if (imagetypes() & IMG_GIF) $img = @imagecreatefromgif($File);
-                    break;
-                case IMAGETYPE_JPEG:
-                    if (imagetypes() & IMG_JPG) $img = @imagecreatefromjpeg($File);
-                    break;
-                case IMAGETYPE_PNG:
-                    if (imagetypes() & IMG_PNG) $img = @imagecreatefrompng($File);
-                    break;
-                case IMAGETYPE_XBM:
-                    if (imagetypes() & IMAGETYPE_XBM) $img = @imagecreatefromxbm($File);
-                    break;
-                case IMAGETYPE_WBMP:
-                    if (imagetypes() & IMG_WBMP) $img = @imagecreatefromwbmp($File);
-                    break;
-                default: #Try load the to image
-                    $img = @imagecreatefromstring(file_get_contents($File));
-            }
-            if (!$this->isGDResource($img)) return FALSE;
-            else {
-                $this->imgResource = $img;
-                $this->initLoad();
-                return $this->imgResource;
-            }
-        } else  return FALSE;
-    }
-
-    /**
-     * Image Process - Merge Image from Load from file and memory with percentage override.
-     * @param $File
-     * @param NULL $rect
-     * @param int $percent
-     * @param string $crop
-     * @param NULL $img
-     * @return bool
-     */
-    public function mergeImageFromFile($File, $rect = NULL, $percent = 100, $crop = '', $img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        $percent = (int)$percent;
-        if (!is_array($rect)) $rect = [];
-        if (!isset($rect['X'])) $rect['X'] = (int)0;
-        if (!isset($rect['Y'])) $rect['Y'] = (int)0;
-        if (empty($rect['W'])) $rect['W'] = (int)imagesx($img);
-        if (empty($rect['H'])) $rect['H'] = (int)imagesy($img);
-        $imgSrc = $this->loadImageFromFile($File);
-        $imgSrc = $this->resizeCaves($rect['W'], $rect['H'], $crop, $imgSrc);
-        $this->imgResource = $img;
-        $this->initLoad($img);
-        $rect['X'] = (int)$rect['X'];
-        $rect['Y'] = (int)$rect['Y'];
-        $rect['W'] = (int)$rect['W'];
-        $rect['H'] = (int)$rect['H'];
-
-        if (is_resource($imgSrc)) {
-            imagecopymerge($img, $imgSrc, $rect['X'], $rect['Y'], 0, 0, $rect['W'], $rect['H'], $percent);
-            imagedestroy($imgSrc);
-            return TRUE;
-        } else  return FALSE;
-    }
-
-    /**
-     * Image Process - Resize Caves, Crop or resize image
-     * @param int $width
-     * @param int $height
-     * @param bool $crop
-     * @param string $Align
-     * @param NULL $img
-     * @return bool|NULL
-     */
-    public function resizeCaves($width = 0, $height = 0, $crop = FALSE, $Align = 'cc', $img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        $width = (int)$width;
-        $height = (int)$height;
-        if (empty($width) && empty($height)) return $img;
-        $this->initLoad($img);
-        $imageX = $this->imgWidth;
-        $imageY = $this->imgHeight;
-        $oldRatio = $imageX / $imageY;
-        $newRatio = $width / $height;
-        if (($crop !== FALSE && $newRatio < $oldRatio) || ($crop === FALSE && $newRatio > $oldRatio)) {
-            $newWidth = (int)($height * $oldRatio);
-            $newHeight = $height;
-        } else {
-            $newWidth = $width;
-            $newHeight = (int)($width / $oldRatio);
-        }
-        $newImg = $this->createImage($width, $height);
-
-        switch (strtolower($Align)) {
-            case 'lt':
-                $x = 0;
-                $y = 0;
-                break;
-
-            case 'cb':
-            case 'ct':
-                $x = ($width - $newWidth) / 2;
-                $y = $height - $newHeight;
-                break;
-
-            case 'rt':
-                $x = $width - $newWidth;
-                $y = 0;
-                break;
-
-            case 'lb':
-                $x = 0;
-                $y = $height - $newHeight;
-                break;
-
-            case 'rb':
-                $x = $width - $newWidth;
-                $y = $height - $newHeight;
-                break;
-
-            default:
-                $x = ($width - $newWidth) / 2;
-                $y = ($height - $newHeight) / 2;
-        }
-        imagecopyresampled($newImg, $img, $x, $y, 0, 0, $newWidth, $newHeight, $imageX, $imageY);
-        imagedestroy($img);
-        return $this->imgResource;
-    }
-
-    /**
-     * Create image to memory
-     * @param $width
-     * @param $height
-     * @return bool|resource
-     */
-    public function createImage($width, $height)
-    {
-        $width = (int)$width;
-        $height = (int)$height;
-        if (!empty($width) && !empty($height)) {
-            $this->imgResource = imagecreatetruecolor($width, $height);
-            imagefill($this->imgResource, 0, 0, imagecolorallocatealpha($this->imgResource, 255, 255, 255, 127));
-            $this->initLoad();
-            return $this->imgResource;
-        } else  return FALSE;
-    }
-
-    /**
-     * Image Process - Fill Color Start From Given Position
-     * @param int $color
-     * @param int $x
-     * @param int $y
-     * @param NULL $img
-     * @return bool
-     */
-    public function fillImage($color = 0, $x = 0, $y = 0, $img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        $x = (int)$x;
-        $y = (int)$y;
-        $color = (int)$color;
-        return @imagefill($img, $x, $y, $color);
-    }
-
-    /**
-     * Image Process - Draw a rectangle from given position
-     * @param int $x1
-     * @param int $y1
-     * @param int $x2
-     * @param int $y2
-     * @param int $color
-     * @param bool $fill
-     * @param NULL $img
-     * @return bool
-     */
-    public function drawRectangle($x1 = 0, $y1 = 0, $x2 = 0, $y2 = 0, $color = 0, $fill = false, $img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        $x1 = (int)$x1;
-        $y1 = (int)$y1;
-        $x2 = (int)$x2;
-        $y2 = (int)$y2;
-        $color = (int)$color;
-        $fill = (boolean)$fill;
-        if ($fill)
-            return @imagefilledrectangle($img, $x1, $y1, $x2, $y2, $color);
-        else
-            return @imagerectangle($img, $x1, $y1, $x2, $y2, $color);
-    }
-
-    /**
-     * Image Process - Draw a rectangle from given position
-     * @param int $x1
-     * @param int $y1
-     * @param int $x2
-     * @param int $y2
-     * @param int $color
-     * @param NULL $img
-     * @return bool
-     */
-    public function drawLine($x1 = 0, $y1 = 0, $x2 = 0, $y2 = 0, $color = 0, $img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        $x1 = (int)$x1;
-        $y1 = (int)$y1;
-        $x2 = (int)$x2;
-        $y2 = (int)$y2;
-        $color = (int)$color;
-        return @imageline($img, $x1, $y1, $x2, $y2, $color);
-    }
-
-    /**
-     * Image Process - Rotate Image
-     * @param int $angle
-     * @param int $Background
-     * @param bool $IgnoreTrans
-     * @param NULL $img
-     * @return bool|resource
-     */
-    public function rotateImage($angle = 0, $Background = 0, $IgnoreTrans = FALSE, $img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        $angle = (double)$angle;
-        $Background = (int)$Background;
-        $IgnoreTrans = (boolean)$IgnoreTrans;
-        if (!empty($angle)) {
-            $this->initSave($img);
-            $result = imagerotate($this->imgResource, $angle, $Background, $IgnoreTrans);
-            imagedestroy($img);
-            $this->initLoad($result);
-            $this->imgResource = $result;
-            return $this->imgResource = $result;
-        } else
-            return FALSE;
-    }
-
-    /**
-     * Initial Save and Check Resource
-     * @param NULL $img
-     * @return bool
-     */
-    private function initSave($img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        imagesavealpha($img, TRUE);
-        return TRUE;
-    }
-
-    /**
-     * Image Process - Resize Image
-     * @param int $width
-     * @param int $height
-     * @param NULL $img
-     * @return bool|NULL
-     */
-    public function resize($width = 0, $height = 0, $img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        $width = (int)$width;
-        $height = (int)$height;
-        if (empty($width) && empty($height)) return $img;
-        $this->initLoad($img);
-        $imageX = $this->imgWidth;
-        $imageY = $this->imgHeight;
-        if (!empty($width) && empty($height)) $height = $this->getNewHeight($width);
-        if (empty($width) && !empty($height)) $width = $this->getNewWidth($height);
-        $newImg = $this->createImage($width, $height);
-        imagecopyresampled($newImg, $img, 0, 0, 0, 0, $width, $height, $imageX, $imageY);
-        imagedestroy($img);
-        return $this->imgResource;
-    }
 
     /**
      * Get loaded image calculate new maintain ratio height with given width
@@ -482,9 +172,9 @@ class Gd
      */
     public function getNewHeight($width = 0, $oriWidth = null, $oriHeight = null)
     {
-        if($oriWidth === null)
+        if ($oriWidth === null)
             $oriWidth = $this->imgWidth;
-        if($oriHeight === null)
+        if ($oriHeight === null)
             $oriHeight = $this->imgHeight;
         return $oriHeight / ($oriWidth / $width);
     }
@@ -498,207 +188,341 @@ class Gd
      */
     public function getNewWidth($height = 0, $oriWidth = null, $oriHeight = null)
     {
-        if($oriWidth === null)
+        if ($oriWidth === null)
             $oriWidth = $this->imgWidth;
-        if($oriHeight === null)
+        if ($oriHeight === null)
             $oriHeight = $this->imgHeight;
         return $oriWidth / ($oriHeight / $height);
     }
 
     /**
-     * Image Process - Flip Image
-     * @param bool $Vertical
-     * @param bool $Horizontal
-     * @param NULL $img
-     * @return bool|resource
-     */
-    public function flipImage($Vertical = FALSE, $Horizontal = FALSE, &$img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (empty($Vertical) && empty($Horizontal)) return FALSE;
-        $startX = 0;
-        $startY = 0;
-        $imageX = $this->imgWidth;
-        $imageY = $this->imgHeight;
-        if ($Horizontal === TRUE) {
-            $startX = $imageX - 1;
-            $imageX *= -1;
-        }
-        if ($Vertical === TRUE) {
-            $startY = $imageY - 1;
-            $imageY *= -1;
-        }
-        $result = imagecreatetruecolor($this->imgWidth, $this->imgHeight);
-        imagecopyresampled($result, $img, 0, 0, $startX, $startY, $this->imgWidth, $this->imgHeight, $imageX, $imageY);
-        imagedestroy($img);
-        $this->imgResource = $result;
-        $this->initLoad($result);
-        return $result;
-    }
-
-    /**
-     * Image Process - Masking Color with Alpha
-     * @param $maskImage
+     * Image Process - Resize Caves, Crop or resize image
+     * @param int $width
+     * @param int $height
      * @param bool $crop
-     * @param NULL $img
-     * @return bool|resource
+     * @param string $align
+     * @return Gd
      */
-    public function maskAlpha($maskImage, $crop = TRUE, $img = NULL)
+    public function resizeCaves($width = 0, $height = 0, $crop = false, $align = 'cc')
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-
-        $mask = $this->loadImageFromFile($maskImage);
-        if (!$this->isGDResource($mask)) return FALSE;
-
-        $imageX = $this->getWidth($mask);
-        $imageY = $this->getHeight($mask);
-        $resize = $this->resizeCaves($imageX, $imageY, $crop, $img);
-        $result = $this->createImage($imageX, $imageY);
-        if (is_resource($resize) && is_resource($result)) {
-            for ($x = 0; $x < $imageX; $x++)
-                for ($y = 0; $y < $imageY; $y++) {
-                    $OColor = imagecolorsforindex($resize, imagecolorat($resize, $x, $y));
-                    $MColor = imagecolorsforindex($mask, imagecolorat($mask, $x, $y));
-                    if ($MColor['alpha'] > 0) imagesetpixel($result, $x, $y, imagecolorallocatealpha($result, $OColor['red'],
-                        $OColor['green'], $OColor['blue'], 127 - $MColor['alpha']));
-                }
-        }
-        imagedestroy($resize);
-        imagedestroy($mask);
-        return $result;
-    }
-
-    /**
-     * * Get Loaded Image Width
-     * @param NULL $img
-     * @return bool|int
-     */
-    public function getWidth($img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        return imagesx($img);
-    }
-
-    /**
-     * Get Loaded Image Height
-     * @param NULL $img
-     * @return bool|int
-     */
-    public function getHeight($img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        return imagesy($img);
-    }
-
-    /**
-     * Image Process - Masking Color
-     * @param $maskImage
-     * @param $color
-     * @param bool $MatchAlpha
-     * @param bool $crop
-     * @param NULL $img
-     * @return bool|resource
-     */
-    public function maskColor($maskImage, $color, $MatchAlpha = TRUE, $crop = TRUE, $img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-
-        $mask = $this->loadImageFromFile($maskImage);
-        if (!$this->isGDResource($mask)) return FALSE;
-
-        $imageX = $this->imgWidth;
-        $imageY = $this->imgHeight;
-        $resize = $this->resizeCaves($imageX, $imageY, $crop, $img);
-        $result = $this->createImage($imageX, $imageY);
-
-        if (!is_resource($resize))
-            return FALSE;
-
-        if (!is_array($color)) $SColor = [
-            'red' => (int)$color,
-            'green' => (int)$color,
-            'blue' => (int)$color,
-            'alpha' => (int)$color];
-        else  $SColor = [
-            'red' => array_key_exists('red', $color) ? (int)$color['red'] : 0,
-            'green' => array_key_exists('green', $color) ? (int)$color['green'] : 0,
-            'blue' => array_key_exists('blue', $color) ? (int)$color['blue'] : 0,
-            'alpha' => array_key_exists('alpha', $color) ? (int)$color['alpha'] : 0
-        ];
-
-        for ($x = 0; $x < $imageX; $x++)
-            for ($y = 0; $y < $imageY; $y++) {
-                $OColor = imagecolorsforindex($resize, imagecolorat($resize, $x, $y));
-                $MColor = imagecolorsforindex($mask, imagecolorat($mask, $x, $y));
-                if (($MatchAlpha === TRUE && $SColor === $MColor) || ($MatchAlpha === FALSE && $SColor['red'] === $MColor['red'] &&
-                        $SColor['green'] === $MColor['green'] && $SColor['blue'] === $MColor['blue'])
-                ) imagesetpixel($result,
-                    $x, $y, imagecolorallocatealpha($result, $OColor['red'], $OColor['green'], $OColor['blue'], $MColor['alpha']));
+        $width = (int)$width;
+        $height = (int)$height;
+        if (!empty($width) || !empty($height)) {
+            $imageX = $this->imgWidth;
+            $imageY = $this->imgHeight;
+            $oldRatio = $imageX / $imageY;
+            $newRatio = $width / $height;
+            if (($crop !== false && $newRatio < $oldRatio) || ($crop === false && $newRatio > $oldRatio)) {
+                $newWidth = (int)($height * $oldRatio);
+                $newHeight = $height;
+            } else {
+                $newWidth = $width;
+                $newHeight = (int)($width / $oldRatio);
             }
-        imagedestroy($resize);
-        imagedestroy($mask);
-        return $result;
+            $imgOri = $this->imgResource;
+            $this->createImage($width, $height);
+
+            switch (strtolower($align)) {
+                case 'lt':
+                    $x = 0;
+                    $y = 0;
+                    break;
+
+                case 'cb':
+                case 'ct':
+                    $x = ($width - $newWidth) / 2;
+                    $y = $height - $newHeight;
+                    break;
+
+                case 'rt':
+                    $x = $width - $newWidth;
+                    $y = 0;
+                    break;
+
+                case 'lb':
+                    $x = 0;
+                    $y = $height - $newHeight;
+                    break;
+
+                case 'rb':
+                    $x = $width - $newWidth;
+                    $y = $height - $newHeight;
+                    break;
+
+                default:
+                    $x = ($width - $newWidth) / 2;
+                    $y = ($height - $newHeight) / 2;
+            }
+            imagecopyresampled($this->imgResource, $imgOri, $x, $y, 0, 0, $newWidth, $newHeight, $imageX, $imageY);
+            $this->fxAntiAlias();
+            imagedestroy($imgOri);
+        }
+        return $this;
+    }
+
+    /**
+     * Create image to memory
+     * @param $width
+     * @param $height
+     * @return Gd
+     */
+    public function createImage($width, $height)
+    {
+        $width = (int)$width;
+        $height = (int)$height;
+        if (!empty($width) && !empty($height)) {
+            $img = imagecreatetruecolor($width, $height);
+            imagefill($img, 0, 0, $this->getColor(255, 255, 255, 127));
+            $this->initImage($img);
+        }
+        return $this;
+    }
+
+    /**
+     * Image Process - Resize Image
+     * @param array $affine
+     * @param array|null $rect
+     * @return Gd
+     */
+    public function affine(array $affine, array $rect = [])
+    {
+        try {
+            $img = @imageaffine($this->imgResource, $affine, $rect);
+        } catch (\Exception $ex) {
+            return $this;
+        }
+        if ($this->isGDResource($img))
+            $this->initImage($img);
+        return $this;
+    }
+
+    /**
+     * Image Process - Resize Image
+     * @param int $width
+     * @param int $height
+     * @return Gd
+     */
+    public function resize($width = 0, $height = 0)
+    {
+        $width = (int)$width;
+        $height = (int)$height;
+        $imageX = $this->imgWidth;
+        $imageY = $this->imgHeight;
+        if (!empty($width) && empty($height)) $height = $this->getNewHeight($width);
+        if (empty($width) && !empty($height)) $width = $this->getNewWidth($height);
+        $imageOri = $this->imgResource;
+        $this->createImage($width, $height);
+        imagecopyresampled($this->imgResource, $imageOri, 0, 0, 0, 0, $width, $height, $imageX, $imageY);
+        imagedestroy($imageOri);
+        return $this;
+    }
+
+    /**
+     * Image Process - Merge Image from Load from file and memory with percentage override.
+     * @param $file
+     * @param array $rect
+     * @param int $percent
+     * @return Gd
+     */
+    public function copyImageFromFile($file, array $rect = null, $percent = 100)
+    {
+        $percent = (int)$percent;
+        if (!is_array($rect)) $rect = [];
+        if (!isset($rect['X'])) $rect['X'] = (int)0;
+        if (!isset($rect['Y'])) $rect['Y'] = (int)0;
+        $imgSrc = $this->getImgResFromFile($file);
+        if ($this->isGDResource($imgSrc)) {
+
+            $imgWidth = (int)imagesx($imgSrc);
+            $imgHeight = (int)imagesy($imgSrc);
+            if (!empty($rect['W']) && empty($rect['H']))
+                $rect['H'] = $this->getNewHeight($rect['W'], $imgWidth, $imgHeight);
+            elseif (empty($rect['W']) && !empty($rect['H']))
+                $rect['W'] = $this->getNewWidth($rect['H'], $imgWidth, $imgHeight);
+            elseif (empty($rect['H']) && empty($rect['H'])) {
+                $rect['W'] = $imgWidth;
+                $rect['H'] = $imgHeight;
+            }
+            $rect['X'] = (int)$rect['X'];
+            $rect['Y'] = (int)$rect['Y'];
+            $rect['W'] = (int)$rect['W'];
+            $rect['H'] = (int)$rect['H'];
+
+            imagecopymerge($this->imgResource, $imgSrc, $rect['X'], $rect['Y'], 0, 0, $rect['W'], $rect['H'], $percent);
+            imagedestroy($imgSrc);
+        }
+        return $this;
+    }
+
+    public function autoCrop($mode = IMG_CROP_DEFAULT, $threshold = .5, $color = -1)
+    {
+        $cropped = imagecropauto($this->imgResource, $mode, $threshold, $color);
+        if ($cropped !== false) {
+            imagedestroy($this->imgResource);
+            $this->initImage($cropped);
+        }
+        return $this;
+    }
+
+    /**
+     * Image Process - Rotate Image
+     * @param int $angle
+     * @param int $bgColor
+     * @param bool $ignoreTrans
+     * @return Gd
+     */
+    public function rotateImage($angle = 0, $bgColor = 0, $ignoreTrans = false)
+    {
+        $angle = (double)$angle;
+        $bgColor = (int)$bgColor;
+        $ignoreTrans = (boolean)$ignoreTrans;
+        if (!empty($angle)) {
+            $this->initImage(imagerotate($this->imgResource, $angle, $bgColor, $ignoreTrans));
+            $this->fxAntiAlias();
+        }
+        return $this;
+    }
+
+    /**
+     * Image Process - Fill Color Start From Given Position
+     * @param int $color
+     * @param int $x
+     * @param int $y
+     * @return Gd
+     */
+    public function fillImage($color = 0, $x = 0, $y = 0)
+    {
+        $x = (int)$x;
+        $y = (int)$y;
+        $color = (int)$color;
+        imagefill($this->imgResource, $x, $y, $color);
+        return $this;
+    }
+
+    /**
+     * Image Process - Flip Image
+     * @param bool $vertical
+     * @param bool $horizontal
+     * @return Gd
+     */
+    public function flipImage($vertical = false, $horizontal = false)
+    {
+        if (!empty($vertical) || !empty($horizontal)) {
+            $startX = 0;
+            $startY = 0;
+            $imageX = $this->imgWidth;
+            $imageY = $this->imgHeight;
+            if ($horizontal === true) {
+                $startX = $imageX - 1;
+                $imageX *= -1;
+            }
+            if ($vertical === true) {
+                $startY = $imageY - 1;
+                $imageY *= -1;
+            }
+            $imgOri = $this->imgResource;
+            $this->createImage($this->imgWidth, $this->imgHeight);
+            imagecopyresampled($this->imgResource, $imgOri, 0, 0, $startX, $startY, $this->imgWidth, $this->imgHeight, $imageX, $imageY);
+            imagedestroy($imgOri);
+        }
+        return $this;
     }
 
     /**
      * Image Process - Rounded Corner
      * @param int $radius
-     * @param NULL $img
-     * @return bool|NULL
+     * @param bool $topLeft
+     * @param bool $topRight
+     * @param bool $bottomLeft
+     * @param bool $bottomRight
+     * @return Gd
      */
-    public function roundedCorner($radius = 10, $img = NULL)
+    public function roundedCorner($radius = 10, $topLeft = true, $topRight = true, $bottomLeft = true, $bottomRight = true)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $radius = (int)$radius;
-        if (empty($radius)) return FALSE;
-
-        $imageX = $this->imgWidth;
-        $imageY = $this->imgHeight;
-        imagealphablending($img, FALSE);
-
-        $imgCorner = imagecreatetruecolor($radius, $radius);
-        $background = imagecolorallocatealpha($imgCorner, 255, 255, 255, 127);
-        imagefill($imgCorner, 0, 0, $background);
-
-        $this->smoothArc($radius, $radius, $radius * 2, $radius * 2, 0, 0, 360, $imgCorner);
-
-        $this->cornerFill($imgCorner, $img, $radius, 0, 0, $background);
-
-        $imgCorner = imagerotate($imgCorner, 90, 0);
-        $this->cornerFill($imgCorner, $img, $radius, 0, $imageY - $radius, $background);
-
-        $imgCorner = imagerotate($imgCorner, 90, 0);
-        $this->cornerFill($imgCorner, $img, $radius, $imageX - $radius, $imageY - $radius, $background);
-
-        $imgCorner = imagerotate($imgCorner, 90, 0);
-        $this->cornerFill($imgCorner, $img, $radius, $imageX - $radius, 0, $background);
-
-        imagealphablending($img, TRUE);
-        return $img;
+        if (!empty($radius)) {
+            imagealphablending($this->imgResource, false);
+            $ghostColor = $this->getColor(255, 255, 255, 127);
+            if ($topLeft) {
+                imagearc($this->imgResource, $radius - 1, $radius - 1, $radius * 2, $radius * 2, 180, 270, $ghostColor);
+                imagefilltoborder($this->imgResource, 0, 0, $ghostColor, $ghostColor);
+            }
+            if ($topRight) {
+                imagearc($this->imgResource, $this->imgWidth - $radius, $radius - 1, $radius * 2, $radius * 2, 270, 0, $ghostColor);
+                imagefilltoborder($this->imgResource, $this->imgWidth - 1, 0, $ghostColor, $ghostColor);
+            }
+            if ($bottomLeft) {
+                imagearc($this->imgResource, $radius - 1, $this->imgHeight - $radius, $radius * 2, $radius * 2, 90, 180, $ghostColor);
+                imagefilltoborder($this->imgResource, 0, $this->imgHeight - 1, $ghostColor, $ghostColor);
+            }
+            if ($bottomRight) {
+                imagearc($this->imgResource, $this->imgWidth - $radius, $this->imgHeight - $radius, $radius * 2, $radius * 2, 0, 90, $ghostColor);
+                imagefilltoborder($this->imgResource, $this->imgWidth - 1, $this->imgHeight - 1, $ghostColor, $ghostColor);
+            }
+            imagealphablending($this->imgResource, true);
+        }
+        return $this;
     }
 
     /**
+     * Image Process - Draw a rectangle from given position
+     * @param int $x1
+     * @param int $y1
+     * @param int $x2
+     * @param int $y2
+     * @param int $color
+     * @param bool $fill
+     * @return Gd
+     */
+    public function drawRectangle($x1 = 0, $y1 = 0, $x2 = 0, $y2 = 0, $color = 0, $fill = false)
+    {
+        $x1 = (int)$x1;
+        $y1 = (int)$y1;
+        $x2 = (int)$x2;
+        $y2 = (int)$y2;
+        $color = (int)$color;
+        $fill = (boolean)$fill;
+        if ($fill)
+            imagefilledrectangle($this->imgResource, $x1, $y1, $x2, $y2, $color);
+        else
+            imagerectangle($this->imgResource, $x1, $y1, $x2, $y2, $color);
+        return $this;
+    }
+
+    /**
+     * Image Process - Draw a rectangle from given position
+     * @param int $x1
+     * @param int $y1
+     * @param int $x2
+     * @param int $y2
+     * @param int $color
+     * @return Gd
+     */
+    public function drawLine($x1 = 0, $y1 = 0, $x2 = 0, $y2 = 0, $color = 0)
+    {
+        $x1 = (int)$x1;
+        $y1 = (int)$y1;
+        $x2 = (int)$x2;
+        $y2 = (int)$y2;
+        $color = (int)$color;
+        imageline($this->imgResource, $x1, $y1, $x2, $y2, $color);
+        return $this;
+    }
+
+
+    /**
      * Image Process - Smooth Arc
-     * @param $cX
-     * @param $cY
+     * @param $x
+     * @param $y
      * @param $width
      * @param $height
      * @param int $color
      * @param int $start
      * @param int $stop
-     * @param NULL $img
-     * @return bool
+     * @return Gd
      */
-    public function smoothArc($cX, $cY, $width, $height, $color = 0, $start = 0, $stop = 360, $img = NULL)
+    public function smoothArc($x, $y, $width, $height, $color = 0, $start = 0, $stop = 360)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $start = deg2rad($start);
         $stop = deg2rad($stop);
         $color = (int)$color;
@@ -707,14 +531,14 @@ class Gd
         while ($start > 2 * M_PI) $start -= 2 * M_PI;
         while ($stop > 2 * M_PI) $stop -= 2 * M_PI;
         if ($start > $stop) {
-            $this->smoothArc($cX, $cY, $width, $height, $color, rad2deg($start), 2 * M_PI, $img);
-            $this->smoothArc($cX, $cY, $width, $height, $color, 0, rad2deg($stop), $img);
-            return FALSE;
+            $this->smoothArc($x, $y, $width, $height, $color, rad2deg($start), 2 * M_PI);
+            $this->smoothArc($x, $y, $width, $height, $color, 0, rad2deg($stop));
+            return $this;
         }
         $a = 1.0 * round($width / 2);
         $b = 1.0 * round($height / 2);
-        $cX = 1.0 * round($cX);
-        $cY = 1.0 * round($cY);
+        $x = 1.0 * round($x);
+        $y = 1.0 * round($y);
         $aaAngle = atan(($b * $b) / ($a * $a) * tan(0.25 * M_PI));
         $aaAngleX = $a * cos($aaAngle);
         $aaAngleY = $b * sin($aaAngle);
@@ -723,27 +547,26 @@ class Gd
         for ($i = 0; $i < 4; $i++)
             if ($start < ($i + 1) * M_PI / 2)
                 if ($start > $i * M_PI / 2) {
-                    if ($stop > ($i + 1) * M_PI / 2) $this->smoothArcDrawSegment($img, $cX, $cY, $a, $b, $aaAngleX, $aaAngleY,
+                    if ($stop > ($i + 1) * M_PI / 2) $this->smoothArcDrawSegment($x, $y, $a, $b, $aaAngleX, $aaAngleY,
                         $color, $start, ($i + 1) * M_PI / 2, $i);
                     else {
-                        $this->smoothArcDrawSegment($img, $cX, $cY, $a, $b, $aaAngleX, $aaAngleY, $color, $start, $stop, $i);
+                        $this->smoothArcDrawSegment($x, $y, $a, $b, $aaAngleX, $aaAngleY, $color, $start, $stop, $i);
                         break;
                     }
                 } else {
-                    if ($stop > ($i + 1) * M_PI / 2) $this->smoothArcDrawSegment($img, $cX, $cY, $a, $b, $aaAngleX, $aaAngleY,
+                    if ($stop > ($i + 1) * M_PI / 2) $this->smoothArcDrawSegment($x, $y, $a, $b, $aaAngleX, $aaAngleY,
                         $color, $i * M_PI / 2, ($i + 1) * M_PI / 2, $i);
                     else {
-                        $this->smoothArcDrawSegment($img, $cX, $cY, $a, $b, $aaAngleX, $aaAngleY, $color, $i * M_PI / 2, $stop,
+                        $this->smoothArcDrawSegment($x, $y, $a, $b, $aaAngleX, $aaAngleY, $color, $i * M_PI / 2, $stop,
                             $i);
                         break;
                     }
                 }
-        return TRUE;
+        return $this;
     }
 
     /**
      * Smooth Arc Draw Segment
-     * @param $img
      * @param $cx
      * @param $cy
      * @param $a
@@ -755,10 +578,10 @@ class Gd
      * @param $stop
      * @param $seg
      */
-    private function smoothArcDrawSegment($img, $cx, $cy, $a, $b, $aaAngleX, $aaAngleY, $fillColor, $start,
+    private function smoothArcDrawSegment($cx, $cy, $a, $b, $aaAngleX, $aaAngleY, $fillColor, $start,
                                           $stop, $seg)
     {
-        $color = array_values(imagecolorsforindex($img, $fillColor));
+        $color = array_values(imagecolorsforindex($this->imgResource, $fillColor));
         $xStart = abs($a * cos($start));
         $yStart = abs($b * sin($start));
         $xStop = abs($a * cos($stop));
@@ -771,10 +594,10 @@ class Gd
         if ($xStop != 0) $dyStop = $yStop / $xStop;
         if ($yStart != 0) $dxStart = $xStart / $yStart;
         if ($yStop != 0) $dxStop = $xStop / $yStop;
-        if (abs($xStart) >= abs($yStart)) $aaStartX = TRUE;
-        else  $aaStartX = FALSE;
-        if ($xStop >= $yStop) $aaStopX = TRUE;
-        else  $aaStopX = FALSE;
+        if (abs($xStart) >= abs($yStart)) $aaStartX = true;
+        else  $aaStartX = false;
+        if ($xStop >= $yStop) $aaStopX = true;
+        else  $aaStopX = false;
         for ($x = 0; $x < $a; $x += 1) {
             $_y1 = $dyStop * $x;
             $_y2 = $dyStart * $x;
@@ -804,25 +627,25 @@ class Gd
                         $ya = +1;
                     }
                     if ($stop < ($i + 1) * (M_PI / 2) && $x <= $xStop) {
-                        $diffColor1 = imagecolorexactalpha($img, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
+                        $diffColor1 = imagecolorexactalpha($this->imgResource, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
                             $error1);
                         $y1 = $_y1;
-                        if ($aaStopX) imagesetpixel($img, $cx + $xp * ($x) + $xa, $cy + $yp * ($y1 + 1) + $ya, $diffColor1);
+                        if ($aaStopX) imagesetpixel($this->imgResource, $cx + $xp * ($x) + $xa, $cy + $yp * ($y1 + 1) + $ya, $diffColor1);
                     } else {
                         $y = $b * sqrt(1 - ($x * $x) / ($a * $a));
                         $error = $y - (int)($y);
                         $y = (int)($y);
-                        $diffColor = imagecolorexactalpha($img, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) * $error);
+                        $diffColor = imagecolorexactalpha($this->imgResource, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) * $error);
                         $y1 = $y;
-                        if ($x < $aaAngleX) imagesetpixel($img, $cx + $xp * $x + $xa, $cy + $yp * ($y1 + 1) + $ya, $diffColor);
+                        if ($x < $aaAngleX) imagesetpixel($this->imgResource, $cx + $xp * $x + $xa, $cy + $yp * ($y1 + 1) + $ya, $diffColor);
                     }
                     if ($start > $i * M_PI / 2 && $x <= $xStart) {
-                        $diffColor2 = imagecolorexactalpha($img, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
+                        $diffColor2 = imagecolorexactalpha($this->imgResource, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
                             $error2);
                         $y2 = $_y2;
-                        if ($aaStartX) imagesetpixel($img, $cx + $xp * $x + $xa, $cy + $yp * ($y2 - 1) + $ya, $diffColor2);
+                        if ($aaStartX) imagesetpixel($this->imgResource, $cx + $xp * $x + $xa, $cy + $yp * ($y2 - 1) + $ya, $diffColor2);
                     } else  $y2 = 0;
-                    if ($y2 <= $y1) imageline($img, $cx + $xp * $x + $xa, $cy + $yp * $y1 + $ya, $cx + $xp * $x + $xa, $cy +
+                    if ($y2 <= $y1) imageline($this->imgResource, $cx + $xp * $x + $xa, $cy + $yp * $y1 + $ya, $cx + $xp * $x + $xa, $cy +
                         $yp * $y2 + $ya, $fillColor);
                 }
             }
@@ -842,26 +665,26 @@ class Gd
                         $ya = 1;
                     }
                     if ($start > $i * M_PI / 2 && $x < $xStart) {
-                        $diffColor2 = imagecolorexactalpha($img, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
+                        $diffColor2 = imagecolorexactalpha($this->imgResource, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
                             $error2);
                         $y1 = $_y2;
-                        if ($aaStartX) imagesetpixel($img, $cx + $xp * $x + $xa, $cy + $yp * ($y1 + 1) + $ya, $diffColor2);
+                        if ($aaStartX) imagesetpixel($this->imgResource, $cx + $xp * $x + $xa, $cy + $yp * ($y1 + 1) + $ya, $diffColor2);
 
                     } else {
                         $y = $b * sqrt(1 - ($x * $x) / ($a * $a));
                         $error = $y - (int)($y);
                         $y = (int)$y;
-                        $diffColor = imagecolorexactalpha($img, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) * $error);
+                        $diffColor = imagecolorexactalpha($this->imgResource, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) * $error);
                         $y1 = $y;
-                        if ($x < $aaAngleX) imagesetpixel($img, $cx + $xp * $x + $xa, $cy + $yp * ($y1 + 1) + $ya, $diffColor);
+                        if ($x < $aaAngleX) imagesetpixel($this->imgResource, $cx + $xp * $x + $xa, $cy + $yp * ($y1 + 1) + $ya, $diffColor);
                     }
                     if ($stop < ($i + 1) * M_PI / 2 && $x <= $xStop) {
-                        $diffColor1 = imagecolorexactalpha($img, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
+                        $diffColor1 = imagecolorexactalpha($this->imgResource, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
                             $error1);
                         $y2 = $_y1;
-                        if ($aaStopX) imagesetpixel($img, $cx + $xp * $x + $xa, $cy + $yp * ($y2 - 1) + $ya, $diffColor1);
+                        if ($aaStopX) imagesetpixel($this->imgResource, $cx + $xp * $x + $xa, $cy + $yp * ($y2 - 1) + $ya, $diffColor1);
                     } else  $y2 = 0;
-                    if ($y2 <= $y1) imageline($img, $cx + $xp * $x + $xa, $cy + $yp * $y1 + $ya, $cx + $xp * $x + $xa, $cy +
+                    if ($y2 <= $y1) imageline($this->imgResource, $cx + $xp * $x + $xa, $cy + $yp * $y1 + $ya, $cx + $xp * $x + $xa, $cy +
                         $yp * $y2 + $ya, $fillColor);
                 }
             }
@@ -895,23 +718,23 @@ class Gd
                         $ya = 1;
                     }
                     if ($stop < ($i + 1) * (M_PI / 2) && $y <= $yStop) {
-                        $diffColor1 = imagecolorexactalpha($img, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
+                        $diffColor1 = imagecolorexactalpha($this->imgResource, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
                             $error1);
                         $x1 = $_x1;
-                        if (!$aaStopX) imagesetpixel($img, $cx + $xp * ($x1 - 1) + $xa, $cy + $yp * ($y) + $ya, $diffColor1);
+                        if (!$aaStopX) imagesetpixel($this->imgResource, $cx + $xp * ($x1 - 1) + $xa, $cy + $yp * ($y) + $ya, $diffColor1);
                     }
                     if ($start > $i * M_PI / 2 && $y < $yStart) {
-                        $diffColor2 = imagecolorexactalpha($img, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
+                        $diffColor2 = imagecolorexactalpha($this->imgResource, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
                             $error2);
                         $x2 = $_x2;
-                        if (!$aaStartX) imagesetpixel($img, $cx + $xp * ($x2 + 1) + $xa, $cy + $yp * ($y) + $ya, $diffColor2);
+                        if (!$aaStartX) imagesetpixel($this->imgResource, $cx + $xp * ($x2 + 1) + $xa, $cy + $yp * ($y) + $ya, $diffColor2);
                     } else {
                         $x = $a * sqrt(1 - ($y * $y) / ($b * $b));
                         $error = $x - (int)($x);
                         $x = (int)($x);
-                        $diffColor = imagecolorexactalpha($img, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) * $error);
+                        $diffColor = imagecolorexactalpha($this->imgResource, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) * $error);
                         $x1 = $x;
-                        if ($y < $aaAngleY && $y <= $yStop) imagesetpixel($img, $cx + $xp * ($x1 + 1) + $xa, $cy + $yp * $y +
+                        if ($y < $aaAngleY && $y <= $yStop) imagesetpixel($this->imgResource, $cx + $xp * ($x1 + 1) + $xa, $cy + $yp * $y +
                             $ya, $diffColor);
                     }
                 }
@@ -931,23 +754,23 @@ class Gd
                         $ya = 1;
                     }
                     if ($start > $i * M_PI / 2 && $y < $yStart) {
-                        $diffColor2 = imagecolorexactalpha($img, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
+                        $diffColor2 = imagecolorexactalpha($this->imgResource, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
                             $error2);
                         $x1 = $_x2;
-                        if (!$aaStartX) imagesetpixel($img, $cx + $xp * ($x1 - 1) + $xa, $cy + $yp * $y + $ya, $diffColor2);
+                        if (!$aaStartX) imagesetpixel($this->imgResource, $cx + $xp * ($x1 - 1) + $xa, $cy + $yp * $y + $ya, $diffColor2);
                     }
                     if ($stop < ($i + 1) * M_PI / 2 && $y <= $yStop) {
-                        $diffColor1 = imagecolorexactalpha($img, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
+                        $diffColor1 = imagecolorexactalpha($this->imgResource, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) *
                             $error1);
                         $x2 = $_x1;
-                        if (!$aaStopX) imagesetpixel($img, $cx + $xp * ($x2 + 1) + $xa, $cy + $yp * $y + $ya, $diffColor1);
+                        if (!$aaStopX) imagesetpixel($this->imgResource, $cx + $xp * ($x2 + 1) + $xa, $cy + $yp * $y + $ya, $diffColor1);
                     } else {
                         $x = $a * sqrt(1 - ($y * $y) / ($b * $b));
                         $error = $x - (int)($x);
                         $x = (int)($x);
-                        $diffColor = imagecolorexactalpha($img, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) * $error);
+                        $diffColor = imagecolorexactalpha($this->imgResource, $color[0], $color[1], $color[2], 127 - (127 - $color[3]) * $error);
                         $x1 = $x;
-                        if ($y < $aaAngleY && $y < $yStart) imagesetpixel($img, $cx + $xp * ($x1 + 1) + $xa, $cy + $yp * $y +
+                        if ($y < $aaAngleY && $y < $yStart) imagesetpixel($this->imgResource, $cx + $xp * ($x1 + 1) + $xa, $cy + $yp * $y +
                             $ya, $diffColor);
                     }
                 }
@@ -974,174 +797,165 @@ class Gd
             }
     }
 
-    ##########################################################################################
-    # Section: Special FX Effect
-    ##########################################################################################
+    /**
+     * Image Effect - Gaussian Blur
+     * @param int $level
+     * @return Gd
+     */
+    public function fxAntiAlias($level = 1)
+    {
+        $level = (int)$level;
+        if (!empty($level)) {
+            $matrix = [
+                [-1, -1, -1],
+                [-1, 16, -1],
+                [-1, -1, -1]
+            ];
+            for ($i = 0; $i < $level; $i++) imageconvolution($this->imgResource, $matrix, 8, 0);
+        }
+        return $this;
+    }
 
     /**
      * Image Effect - Gamma Correction
      * @param int $gamma
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxGammaCorrection($gamma = 100, &$img = NULL)
+    public function fxGammaCorrection($gamma)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $gamma = (double)$gamma;
         if (!empty($gamma))
-            imagegammacorrect($img, 100, $gamma);
-        return $img;
+            imagegammacorrect($this->imgResource, 1, $gamma);
+        return $this;
     }
+
+    /**
+     * Section: Image FX Effect Process
+     */
 
     /**
      * Image Effect - Blur
      * @param int $level
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxBlur($level = 0, &$img = NULL)
+    public function fxBlur($level = 0)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $level = (int)$level;
         if (!function_exists('imagefilter'))
-            for ($i = 0; $i < $level; $i++) imagefilter($img, IMG_FILTER_SELECTIVE_BLUR);
-        else  return FALSE;
-        return $img;
+            for ($i = 0; $i < $level; $i++) imagefilter($this->imgResource, IMG_FILTER_SELECTIVE_BLUR);
+        return $this;
     }
 
     /**
      * Image Effect - Contrast
      * @param int $level
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxContrast($level = 0, &$img = NULL)
+    public function fxContrast($level = 0)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (!function_exists('imagefilter') || !imagefilter($img, IMG_FILTER_CONTRAST, $level)) return FALSE;
-        return $img;
+        if (function_exists('imagefilter'))
+            imagefilter($this->imgResource, IMG_FILTER_CONTRAST, $level);
+        return $this;
     }
 
     /**
      * Image Effect - Brightness
      * @param int $level
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxBrightness($level = 0, &$img = NULL)
+    public function fxBrightness($level = 0)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (!function_exists('imagefilter') || !imagefilter($img, IMG_FILTER_BRIGHTNESS, $level)) return FALSE;
-        return $img;
+        if (!function_exists('imagefilter'))
+            imagefilter($this->imgResource, IMG_FILTER_BRIGHTNESS, $level);
+        return $this;
     }
 
     /**
      * Image Effect - Smooth
      * @param int $level
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxSmooth($level = 0, &$img = NULL)
+    public function fxSmooth($level = 0)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (!function_exists('imagefilter') || !imagefilter($img, IMG_FILTER_SMOOTH, $level)) return FALSE;
-        return $img;
+        if (!function_exists('imagefilter'))
+            imagefilter($this->imgResource, IMG_FILTER_SMOOTH, $level);
+        return $this;
     }
 
     /**
      * Image Effect - Sketchy
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxSketchy(&$img = NULL)
+    public function fxSketchy()
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (!function_exists('imagefilter') || !imagefilter($img, IMG_FILTER_MEAN_REMOVAL)) return FALSE;
-        return $img;
+        if (!function_exists('imagefilter'))
+            imagefilter($this->imgResource, IMG_FILTER_MEAN_REMOVAL);
+        return $this;
     }
 
     /**
      * Image Effect - Emboss
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxEmboss(&$img = NULL)
+    public function fxEmboss()
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (!function_exists('imagefilter') || !imagefilter($img, IMG_FILTER_EMBOSS)) return FALSE;
-        return $img;
+        if (!function_exists('imagefilter'))
+            imagefilter($this->imgResource, IMG_FILTER_EMBOSS);
+        return $this;
     }
 
     /**
      * Image Effect - Edge
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxEdge(&$img = NULL)
+    public function fxEdge()
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (!function_exists('imagefilter') || !imagefilter($img, IMG_FILTER_EDGEDETECT)) return FALSE;
-        return $img;
+        if (!function_exists('imagefilter'))
+            imagefilter($this->imgResource, IMG_FILTER_EDGEDETECT);
+        return $this;
     }
 
     /**
      * Image Effect - Invert
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxInvert(&$img = NULL)
+    public function fxInvert()
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (!function_exists('imagefilter') || !imagefilter($img, IMG_FILTER_NEGATE)) return FALSE;
-        return $img;
+        if (!function_exists('imagefilter'))
+            imagefilter($this->imgResource, IMG_FILTER_NEGATE);
+        return $this;
     }
 
     /**
      * Image Effect - Interlace
      * @param int $color
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxInterlace($color = 0, &$img = NULL)
+    public function fxInterlace($color = 0)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $color = (int)$color;
         $imageX = $this->imgWidth;
         $imageY = $this->imgHeight;
-        for ($y = 1; $y < $imageY; $y += 2) imageline($img, 0, $y, $imageX, $y, $color);
-        return $img;
+        for ($y = 1; $y < $imageY; $y += 2)
+            imageline($this->imgResource, 0, $y, $imageX, $y, $color);
+        return $this;
     }
 
     /**
      * Image Effect - Greyscale
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxGreyscale(&$img = NULL)
+    public function fxGreyscale()
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (!function_exists('imagefilter') || !imagefilter($img, IMG_FILTER_GRAYSCALE)) {
-            $imageX = $this->imgWidth;
-            $imageY = $this->imgHeight;
-            for ($y = 0; $y < $imageY; ++$y)
-                for ($x = 0; $x < $imageX; ++$x) {
-                    $color = imagecolorsforindex($img, imagecolorat($img, $x, $y));
-                    $Grey = (int)(($color['red'] + $color['green'] + $color['blue']) / 3);
-                    imagesetpixel($img, $x, $y, imagecolorallocatealpha($img, $Grey, $Grey, $Grey, $color['alpha']));
+        if (!function_exists('imagefilter') || !imagefilter($this->imgResource, IMG_FILTER_GRAYSCALE)) {
+            for ($y = 0; $y < $this->imgHeight; ++$y)
+                for ($x = 0; $x < $this->imgWidth; ++$x) {
+                    $color = imagecolorsforindex($this->imgResource, imagecolorat($this->imgResource, $x, $y));
+                    $grey = (int)(($color['red'] + $color['green'] + $color['blue']) / 3);
+                    imagesetpixel($this->imgResource, $x, $y, imagecolorallocatealpha($this->imgResource, $grey, $grey, $grey, $color['alpha']));
                 }
         }
-        return $img;
+        return $this;
     }
 
     /**
@@ -1150,55 +964,58 @@ class Gd
      * @param bool $green
      * @param bool $blue
      * @param int $compare
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxColorFilter($red = FALSE, $green = FALSE, $blue = FALSE, $compare = 127, &$img = NULL)
+    public function fxColorFilter($red = false, $green = false, $blue = false, $compare = 0)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $imageX = $this->imgWidth;
         $imageY = $this->imgHeight;
-        $type = ($red === TRUE ? 'Y' : 'N') . ($green === TRUE ? 'Y' : 'N') . ($blue === TRUE ? 'Y' : 'N');
+        $type = ($red === true ? 'Y' : 'N') . ($green === true ? 'Y' : 'N') . ($blue === true ? 'Y' : 'N');
         for ($y = 0; $y < $imageY; ++$y)
             for ($x = 0; $x < $imageX; ++$x) {
-                $color = imagecolorsforindex($img, imagecolorat($img, $x, $y));
-                $Greyscale = TRUE;
+                $color = imagecolorsforindex($this->imgResource, imagecolorat($this->imgResource, $x, $y));
+                $greyscale = true;
                 switch ($type) {
 
                     case 'YNN':
-                        if ($color['red'] - $color['green'] > $compare && $color['red'] - $color['blue'] > $compare) $Greyscale = FALSE;
+                        if ($color['red'] - $color['green'] > $compare && $color['red'] - $color['blue'] > $compare)
+                            $greyscale = false;
                         break;
 
                     case 'NYN':
-                        if ($color['green'] - $color['red'] > $compare && $color['green'] - $color['blue'] > $compare) $Greyscale = FALSE;
+                        if ($color['green'] - $color['red'] > $compare && $color['green'] - $color['blue'] > $compare)
+                            $greyscale = false;
                         break;
 
                     case 'NNY':
-                        if ($color['blue'] - $color['red'] > $compare && $color['blue'] - $color['green'] > $compare) $Greyscale = FALSE;
+                        if ($color['blue'] - $color['red'] > $compare && $color['blue'] - $color['green'] > $compare)
+                            $greyscale = false;
                         break;
 
                     case 'YYN':
-                        if ($color['red'] - $color['blue'] > $compare && $color['green'] - $color['blue'] > $compare) $Greyscale = FALSE;
+                        if ($color['red'] - $color['blue'] > $compare && $color['green'] - $color['blue'] > $compare)
+                            $greyscale = false;
                         break;
 
                     case 'YNY':
-                        if ($color['red'] - $color['green'] > $compare && $color['blue'] - $color['green'] > $compare) $Greyscale = FALSE;
+                        if ($color['red'] - $color['green'] > $compare && $color['blue'] - $color['green'] > $compare)
+                            $greyscale = false;
                         break;
 
                     case 'NYY':
-                        if ($color['blue'] - $color['red'] > $compare && $color['green'] - $color['red'] > $compare) $Greyscale = FALSE;
+                        if ($color['blue'] - $color['red'] > $compare && $color['green'] - $color['red'] > $compare)
+                            $greyscale = false;
                         break;
 
                     default:
-                        $Greyscale = FALSE;
+                        $greyscale = false;
                 }
-                if ($Greyscale === TRUE) {
+                if ($greyscale === true) {
                     $Grey = (int)(($color['red'] + $color['green'] + $color['blue']) / 3);
-                    imagesetpixel($img, $x, $y, imagecolorallocatealpha($img, $Grey, $Grey, $Grey, $color['alpha']));
+                    imagesetpixel($this->imgResource, $x, $y, imagecolorallocatealpha($this->imgResource, $Grey, $Grey, $Grey, $color['alpha']));
                 }
             }
-        return $img;
+        return $this;
     }
 
     /**
@@ -1206,30 +1023,25 @@ class Gd
      * @param int $red
      * @param int $green
      * @param int $blue
-     * @param int $Alpha
-     * @param NULL $img
-     * @return bool|NULL
+     * @param int $alpha
+     * @return Gd
      */
-    public function fxColorize($red = 0, $green = 0, $blue = 0, $Alpha = 0, &$img = NULL)
+    public function fxColorize($red = 0, $green = 0, $blue = 0, $alpha = 0)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $red = (int)$red;
         $green = (int)$green;
         $blue = (int)$blue;
-        if (empty($red) && empty($green) && empty($blue) && empty($blue)) return FALSE;
-        if (!function_exists('imagefilter') || !imagefilter($img, IMG_FILTER_COLORIZE, $red, $green, $blue,
-                $Alpha)
+        if (empty($red) && empty($green) && empty($blue) && empty($blue)) return $this;
+        if (!function_exists('imagefilter') || !imagefilter($this->imgResource, IMG_FILTER_COLORIZE, $red, $green, $blue,
+                $alpha)
         ) {
-            $imageX = $this->imgWidth;
-            $imageY = $this->imgHeight;
-            for ($y = 0; $y < $imageY; ++$y)
-                for ($x = 0; $x < $imageX; ++$x) {
-                    $color = imagecolorsforindex($img, imagecolorat($img, $x, $y));
+            for ($y = 0; $y < $this->imgHeight; ++$y)
+                for ($x = 0; $x < $this->imgWidth; ++$x) {
+                    $color = imagecolorsforindex($this->imgResource, imagecolorat($this->imgResource, $x, $y));
                     $iRed = $color['red'] + $red;
                     $iGreen = $color['green'] + $green;
                     $iBlue = $color['blue'] + $blue;
-                    $iAlpha = $color['alpha'] + $Alpha;
+                    $iAlpha = $color['alpha'] + $alpha;
                     if ($iRed > 255) $iRed = 255;
                     if ($iGreen > 255) $iGreen = 255;
                     if ($iBlue > 255) $iBlue = 255;
@@ -1238,176 +1050,211 @@ class Gd
                     if ($iGreen < 0) $iGreen = 0;
                     if ($iBlue < 0) $iBlue = 0;
                     if ($iAlpha < 0) $iBlue = 0;
-                    imagesetpixel($img, $x, $y, imagecolorallocatealpha($img, $iRed, $iGreen, $iBlue, $iAlpha));
+                    imagesetpixel($this->imgResource, $x, $y, imagecolorallocatealpha($this->imgResource, $iRed, $iGreen, $iBlue, $iAlpha));
                 }
         }
-        return $img;
+        return $this;
     }
 
     /**
      * Image Effect - Noise
      * @param int $noise
      * @param int $level
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxNoise($noise = 50, $level = 20, &$img = NULL)
+    public function fxNoise($noise = 50, $level = 20)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $level = (int)$level;
         $noise = (int)$noise;
-        if (empty($level) && empty($noise)) return FALSE;
-        $imageX = $this->imgWidth;
-        $imageY = $this->imgHeight;
-        for ($x = 0; $x < $imageX; $x++)
-            for ($y = 0; $y < $imageY; $y++)
+        if (empty($level) && empty($noise)) return $this;
+        for ($x = 0; $x < $this->imgWidth; $x++)
+            for ($y = 0; $y < $this->imgHeight; $y++)
                 if (rand(0, 100) <= $noise) {
-                    $color = imagecolorsforindex($img, imagecolorat($img, $x, $y));
-                    $Modifier = rand($level * -1, $level);
-                    $red = $color['red'] + $Modifier;
-                    $green = $color['green'] + $Modifier;
-                    $blue = $color['blue'] + $Modifier;
+                    $color = imagecolorsforindex($this->imgResource, imagecolorat($this->imgResource, $x, $y));
+                    $modifier = rand($level * -1, $level);
+                    $red = $color['red'] + $modifier;
+                    $green = $color['green'] + $modifier;
+                    $blue = $color['blue'] + $modifier;
                     if ($red > 255) $red = 255;
                     if ($green > 255) $green = 255;
                     if ($blue > 255) $blue = 255;
                     if ($red < 0) $red = 0;
                     if ($green < 0) $green = 0;
                     if ($blue < 0) $blue = 0;
-                    imagesetpixel($img, $x, $y, imagecolorallocatealpha($img, $red, $green, $blue, $color['alpha']));
+                    imagesetpixel($this->imgResource, $x, $y, imagecolorallocatealpha($this->imgResource, $red, $green, $blue, $color['alpha']));
                 }
-        return $img;
+        return $this;
     }
 
     /**
      * Image Effect - Scatter
      * @param int $level
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxScatter($level = 4, &$img = NULL)
+    public function fxScatter($level = 4)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $level = (int)$level;
-        if (empty($level)) return FALSE;
-        $imageX = $this->imgWidth;
-        $imageY = $this->imgHeight;
-        for ($y = 0; $y < $imageY; $y++)
-            for ($x = 0; $x < $imageX; $x++) {
-                $DistX = rand(-($level), $level);
-                $DistY = rand(-($level), $level);
-                if ($x + $DistX >= $imageX) continue;
-                if ($x + $DistX < 0) continue;
-                if ($y + $DistY >= $imageY) continue;
-                if ($y + $DistY < 0) continue;
-                $Oldcol = imagecolorat($img, $x, $y);
-                $newImgCol = imagecolorat($img, $x + $DistX, $y + $DistY);
-                imagesetpixel($img, $x, $y, $newImgCol);
-                imagesetpixel($img, $x + $DistX, $y + $DistY, $Oldcol);
-            }
-        return $img;
+        if (!empty($level)) {
+            $imageX = $this->imgWidth;
+            $imageY = $this->imgHeight;
+            for ($y = 0; $y < $imageY; $y++)
+                for ($x = 0; $x < $imageX; $x++) {
+                    $DistX = rand(-($level), $level);
+                    $DistY = rand(-($level), $level);
+                    if ($x + $DistX >= $imageX) continue;
+                    if ($x + $DistX < 0) continue;
+                    if ($y + $DistY >= $imageY) continue;
+                    if ($y + $DistY < 0) continue;
+                    $oldColor = imagecolorat($this->imgResource, $x, $y);
+                    $newColor = imagecolorat($this->imgResource, $x + $DistX, $y + $DistY);
+                    imagesetpixel($this->imgResource, $x, $y, $newColor);
+                    imagesetpixel($this->imgResource, $x + $DistX, $y + $DistY, $oldColor);
+                }
+        }
+        return $this;
     }
 
     /**
      * Image Effect - Pixelate
      * @param int $level
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxPixelate($level = 12, &$img = NULL)
+    public function fxPixelate($level = 8)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $level = (int)$level;
-        if (empty($level)) return FALSE;
-        if (!function_exists('imagefilter') || !imagefilter($img, IMG_FILTER_PIXELATE, $level, TRUE)) {
-            $imageX = $this->imgWidth;
-            $imageY = $this->imgHeight;
-            $pixelSize = (int)$level;
-
-            for ($x = 0; $x < $imageX; $x += $pixelSize)
-                for ($y = 0; $y < $imageY; $y += $pixelSize) {
-                    $tCol = imagecolorat($img, $x, $y);
-                    $nCol = ['r' => 0, 'g' => 0, 'b' => 0, 'a' => 0];
-                    $cols = [];
-                    for ($l = $y; $l < $y + $pixelSize; ++$l)
-                        for ($k = $x; $k < $x + $pixelSize; ++$k) {
-                            if ($k < 0) {
-                                $cols[] = $tCol;
-                                continue;
+        if (!empty($level)) {
+            if (!function_exists('imagefilter') || !imagefilter($this->imgResource, IMG_FILTER_PIXELATE, $level, true)) {
+                $pixelSize = (int)$level;
+                for ($x = 0; $x < $this->imgWidth; $x += $pixelSize)
+                    for ($y = 0; $y < $this->imgHeight; $y += $pixelSize) {
+                        $tCol = imagecolorat($this->imgResource, $x, $y);
+                        $nCol = ['r' => 0, 'g' => 0, 'b' => 0, 'a' => 0];
+                        $cols = [];
+                        for ($l = $y; $l < $y + $pixelSize; ++$l)
+                            for ($k = $x; $k < $x + $pixelSize; ++$k) {
+                                if ($k < 0) {
+                                    $cols[] = $tCol;
+                                    continue;
+                                }
+                                if ($k >= $this->imgWidth) {
+                                    $cols[] = $tCol;
+                                    continue;
+                                }
+                                if ($l < 0) {
+                                    $cols[] = $tCol;
+                                    continue;
+                                }
+                                if ($l >= $this->imgHeight) {
+                                    $cols[] = $tCol;
+                                    continue;
+                                }
+                                $cols[] = imagecolorat($this->imgResource, $k, $l);
                             }
-                            if ($k >= $imageX) {
-                                $cols[] = $tCol;
-                                continue;
-                            }
-                            if ($l < 0) {
-                                $cols[] = $tCol;
-                                continue;
-                            }
-                            if ($l >= $imageY) {
-                                $cols[] = $tCol;
-                                continue;
-                            }
-                            $cols[] = imagecolorat($img, $k, $l);
+                        foreach ($cols as $col) {
+                            $color = imagecolorsforindex($this->imgResource, $col);
+                            $nCol['r'] += $color['red'];
+                            $nCol['g'] += $color['green'];
+                            $nCol['b'] += $color['blue'];
+                            $nCol['a'] += $color['alpha'];
                         }
-                    foreach ($cols as $col) {
-                        $color = imagecolorsforindex($img, $col);
-                        $nCol['r'] += $color['red'];
-                        $nCol['g'] += $color['green'];
-                        $nCol['b'] += $color['blue'];
-                        $nCol['a'] += $color['alpha'];
+                        $pixelCount = count($cols);
+                        $nCol['r'] /= $pixelCount;
+                        $nCol['g'] /= $pixelCount;
+                        $nCol['b'] /= $pixelCount;
+                        $nCol['a'] /= $pixelCount;
+                        $nCol['Result'] = imagecolorallocatealpha($this->imgResource, $nCol['r'], $nCol['g'], $nCol['b'], $nCol['a']);
+                        imagefilledrectangle($this->imgResource, $x, $y, $x + $pixelSize - 1, $y + $pixelSize - 1, $nCol['Result']);
                     }
-                    $pixelCount = count($cols);
-                    $nCol['r'] /= $pixelCount;
-                    $nCol['g'] /= $pixelCount;
-                    $nCol['b'] /= $pixelCount;
-                    $nCol['a'] /= $pixelCount;
-                    $nCol['Result'] = imagecolorallocatealpha($img, $nCol['r'], $nCol['g'], $nCol['b'], $nCol['a']);
-                    imagefilledrectangle($img, $x, $y, $x + $pixelSize - 1, $y + $pixelSize - 1, $nCol['Result']);
-                }
+            }
         }
-        return $img;
+        return $this;
+    }
+
+    /**
+     * Image Effect - Box Blur
+     * @param int $level
+     * @return Gd
+     */
+    public function fxBoxBlur($level = 1)
+    {
+        $level = (int)$level;
+        if (!empty($level)) {
+            $matrix = [
+                [1, 1, 1],
+                [1, 1, 1],
+                [1, 1, 1]
+            ];
+            for ($i = 0; $i < $level; $i++) imageconvolution($this->imgResource, $matrix, 9, 0);
+        }
+        return $this;
     }
 
     /**
      * Image Effect - Gaussian Blur
      * @param int $level
-     * @param NULL $img
-     * @return bool|resource
+     * @return Gd
      */
-    public function fxGaussianBlur($level = 1, &$img = NULL)
+    public function fxGaussianBlur($level = 1)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $level = (int)$level;
-        if (empty($level)) return $img;
-        $Gaussian = [
-            [1.0, 2.0, 1.0],
-            [2.0, 4.0, 2.0],
-            [1.0, 2.0, 1.0]
-        ];
-        for ($i = 0; $i < $level; $i++) imageconvolution($img, $Gaussian, 16, 0);
-        return $img;
+        if (!empty($level)) {
+            $matrix = [
+                [1, 2, 1],
+                [2, 4, 2],
+                [1, 2, 1]
+            ];
+            for ($i = 0; $i < $level; $i++) imageconvolution($this->imgResource, $matrix, 16, 0);
+        }
+        return $this;
+    }
+
+    /**
+     * Image Effect - Gaussian Blur
+     * @param int $level
+     * @return Gd
+     */
+    public function fxSharpen($level = 1)
+    {
+        $level = (int)$level;
+        if (!empty($level)) {
+            $matrix = [
+                [0, -1, 0],
+                [-1, 5, -1],
+                [0, -1, 0]
+            ];
+            for ($i = 0; $i < $level; $i++) imageconvolution($this->imgResource, $matrix, 1, 0);
+        }
+        return $this;
+    }
+
+    /**
+     * Image Effect - Custom Convolution
+     * @param array $matrix
+     * @param int $offset
+     * @param int $level
+     * @return Gd
+     */
+    public function fxCustom(array $matrix, $offset = 0, $level = 1)
+    {
+        $level = (int)$level;
+        $div = array_sum(array_map('array_sum', $matrix));
+        if (!empty($level))
+            for ($i = 0; $i < $level; $i++) imageconvolution($this->imgResource, $matrix, $div, $offset);
+        return $this;
     }
 
     /**
      * Image Effect - Fish Eye
-     * @param NULL $img
-     * @return bool|resource
+     * @return Gd
      */
-    public function fxFishEye(&$img = NULL)
+    public function fxFishEye()
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        $imageX = $this->imgWidth;
-        $imageY = $this->imgHeight;
-        $CImageX = $imageX / 2; //Source middle
-        $CImageY = $imageY / 2;
-        if ($imageX > $imageY) $OW = 2 * $imageY / pi(); //Width for the destination image
-        else  $OW = 2 * $imageX / pi();
-        $newImg = imagecreatetruecolor($OW + 1, $OW + 1);
-        imagefill($newImg, 0, 0, imagecolorallocatealpha($newImg, 255, 255, 255, 0));
+        $CImageX = $this->imgWidth / 2; //Source middle
+        $CImageY = $this->imgHeight / 2;
+        if ($this->imgWidth > $this->imgHeight) $OW = 2 * $this->imgHeight / pi(); //Width for the destination image
+        else  $OW = 2 * $this->imgWidth / pi();
+        $imgOri = $this->imgResource;
+        $this->createImage($OW + 1, $OW + 1);
         $OM = $OW / 2;
         for ($y = 0; $y <= $OW; ++$y)
             for ($x = 0; $x <= $OW; ++$x) {
@@ -1416,73 +1263,63 @@ class Gd
                 $OH = hypot($OTX, $OTY); //distance
                 $Arc = (2 * $OM * asin($OH / $OM)) / (2);
                 $Factor = $Arc / $OH;
-                if ($OH <= $OM) imagesetpixel($newImg, $x, $y, imagecolorat($img, round($OTX * $Factor + $CImageX),
+                if ($OH <= $OM) imagesetpixel($this->imgResource, $x, $y, imagecolorat($imgOri, round($OTX * $Factor + $CImageX),
                     round($OTY * $Factor + $CImageY)));
             }
-        imagedestroy($img);
-        $this->imgResource = $newImg;
-        $this->initLoad();
-        return $this->imgResource;
+        imagedestroy($imgOri);
+        return $this;
     }
 
     /**
      * Image Effect - Dream
      * @param int $percent
      * @param int $type
-     * @param NULL $img
-     * @return bool|NULL
+     * @return Gd
      */
-    public function fxDream($percent = 30, $type = 0, $img = NULL)
+    public function fxDream($percent = 30, $type = 0)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $imageX = $this->imgWidth;
         $imageY = $this->imgHeight;
-        $effect = $this->createImage(255, 255);
+        $imageOri = $this->imgResource;
+        $this->createImage(255, 255);
         $type = is_int($type) ? $type : rand(0, 5);
         for ($x = 0; $x <= 255; $x++)
             for ($y = 0; $y <= 255; $y++) {
                 switch ($type) {
                     case 1:
-                        $col = imagecolorallocate($effect, 255, $y, $x);
+                        $col = imagecolorallocate($this->imgResource, 255, $y, $x);
                         break;
 
                     case 2:
-                        $col = imagecolorallocate($effect, $y, 255, $x);
+                        $col = imagecolorallocate($this->imgResource, $y, 255, $x);
                         break;
 
                     case 3:
-                        $col = imagecolorallocate($effect, $x, 255, $y);
+                        $col = imagecolorallocate($this->imgResource, $x, 255, $y);
                         break;
 
                     case 4:
-                        $col = imagecolorallocate($effect, $x, $y, 255);
+                        $col = imagecolorallocate($this->imgResource, $x, $y, 255);
                         break;
 
                     case 5:
-                        $col = imagecolorallocate($effect, $y, $x, 255);
+                        $col = imagecolorallocate($this->imgResource, $y, $x, 255);
                         break;
 
                     default:
-                        $col = imagecolorallocate($effect, 255, $x, $y);
+                        $col = imagecolorallocate($this->imgResource, 255, $x, $y);
                 }
-                imagesetpixel($effect, $x, $y, $col);
+                imagesetpixel($this->imgResource, $x, $y, $col);
             }
-        if (!$effect || !is_resource($effect))
-            return FALSE;
-        imagecopymerge($img, $effect, 0, 0, 0, 0, $imageX, $imageY, $percent);
-        imagedestroy($effect);
-        $this->imgResource = $img;
-        $this->initLoad();
-        return $this->imgResource;
+        $this->resize( $imageX, $imageY);
+        imagecopymerge($imageOri, $this->imgResource, 0, 0, 0, 0, $imageX, $imageY, $percent);
+        imagedestroy($this->imgResource);
+        $this->initImage($imageOri);
+        return $this;
     }
 
-    ##########################################################################################
-    # Section: Special FX Font Effect
-    ##########################################################################################
-
     /**
-     * Build and return TRUE tye font box information
+     * Build and return true tye font box information
      * @param $content
      * @param $font
      * @param int $size
@@ -1515,20 +1352,21 @@ class Gd
     }
 
     /**
-     * Draw TRUE type font text
+     * Draw true type font text
      * @param $ttfBox
-     * @param NULL $img
-     * @return bool
+     * @return bool|Gd
      */
-    public function ttfText($ttfBox, $img = NULL)
+    public function ttfText($ttfBox)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (!$this->isTTFBox($ttfBox)) return FALSE;
-        $this->ttfBoxText($ttfBox['Size'], $ttfBox['Angle'], $ttfBox['X'], $ttfBox['Y'], $ttfBox['Color'], $ttfBox['Font'],
+        if (!$this->isTTFBox($ttfBox)) return false;
+        $this->drawTtfText($ttfBox['Size'], $ttfBox['Angle'], $ttfBox['X'], $ttfBox['Y'], $ttfBox['Color'], $ttfBox['Font'],
             $ttfBox['Content']);
-        return TRUE;
+        return $this;
     }
+
+##########################################################################################
+# Section: Special FX Font Effect
+##########################################################################################
 
     /**
      * Check the parameter is generate by ttfBox or not.
@@ -1542,12 +1380,12 @@ class Gd
                 $ttfBox) && array_key_exists('Color', $ttfBox) && array_key_exists('Angle', $ttfBox) &&
             array_key_exists('Content', $ttfBox) && !empty($ttfBox['Content']) && !empty($ttfBox['Font']) && !
             empty($ttfBox['Size'])
-        ) return TRUE;
-        return FALSE;
+        ) return true;
+        return false;
     }
 
     /**
-     * Draw a TRUE type font box text, process part
+     * Draw a true type font box text, process part
      * @param $size
      * @param $angle
      * @param $x
@@ -1556,72 +1394,63 @@ class Gd
      * @param $font
      * @param $text
      * @param int $blur
-     * @param NULL $img
-     * @return array|bool
+     * @return Gd
      */
-    private function ttfBoxText($size, $angle, $x, $y, $color, $font, $text, $blur = 0, $img = NULL)
+    private function drawTtfText($size, $angle, $x, $y, $color, $font, $text, $blur = 0)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
         $angle = (double)$angle;
         $x = (int)$x;
         $y = (int)$y;
         $color = (int)$color;
         $blur = (int)$blur;
         if ($blur > 0) {
-            $TxtImg = imagecreatetruecolor(imagesx($img), imagesy($img));
-            imagefill($TxtImg, 0, 0, imagecolorallocate($TxtImg, 0x00, 0x00, 0x00));
-            imagettftext($TxtImg, $size, $angle, $x, $y, imagecolorallocate($TxtImg, 0xFF, 0xFF, 0xFF), $font, $text);
-            for ($i = 1; $i <= $blur; $i++) imagefilter($TxtImg, IMG_FILTER_GAUSSIAN_BLUR);
-            for ($xOff = 0; $xOff < imagesx($TxtImg); $xOff++)
-                for ($yOff = 0; $yOff < imagesy($TxtImg); $yOff++) {
-                    $Visible = (imagecolorat($TxtImg, $xOff, $yOff) & 0xFF) / 255;
-                    if ($Visible > 0) imagesetpixel($img, $xOff, $yOff, imagecolorallocatealpha($img, ($color >> 16) &
+            $textImg = imagecreatetruecolor(imagesx($this->imgResource), imagesy($this->imgResource));
+            imagefill($textImg, 0, 0, imagecolorallocate($textImg, 0x00, 0x00, 0x00));
+            imagettftext($textImg, $size, $angle, $x, $y, imagecolorallocate($textImg, 0xFF, 0xFF, 0xFF), $font, $text);
+            for ($i = 1; $i <= $blur; $i++) imagefilter($textImg, IMG_FILTER_GAUSSIAN_BLUR);
+            for ($xOff = 0; $xOff < imagesx($textImg); $xOff++)
+                for ($yOff = 0; $yOff < imagesy($textImg); $yOff++) {
+                    $Visible = (imagecolorat($textImg, $xOff, $yOff) & 0xFF) / 255;
+                    if ($Visible > 0) imagesetpixel($this->imgResource, $xOff, $yOff, imagecolorallocatealpha($this->imgResource, ($color >> 16) &
                         0xFF, ($color >> 8) & 0xFF, $color & 0xFF, (1 - $Visible) * 127));
                 }
-            imagedestroy($TxtImg);
+            imagedestroy($textImg);
         } else
-            imagettftext($img, $size, $angle, $x, $y, $color, $font, $text);
-        return TRUE;
+            imagettftext($this->imgResource, $size, $angle, $x, $y, $color, $font, $text);
+        return $this;
     }
 
     /**
-     * Draw TRUE type font text with grow
+     * Draw true type font text with grow
      * @param $ttfBox
      * @param int $grow
      * @param int $color
-     * @param NULL $img
-     * @return bool
+     * @return Gd
      */
-    public function ttfTextGrow($ttfBox, $grow = 10, $color = 0, $img = NULL)
+    public function ttfTextGrow($ttfBox, $grow = 10, $color = 0)
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (!$this->isTTFBox($ttfBox)) return FALSE;
+        if (!$this->isTTFBox($ttfBox)) return $this;
         $grow = (int)$grow;
         $color = (int)$color;
-        imagealphablending($img, TRUE);
-        $this->ttfBoxText($ttfBox['Size'], $ttfBox['Angle'], $ttfBox['X'], $ttfBox['Y'], $color, $ttfBox['Font'],
-            $ttfBox['Content'], $grow, $img);
-        $this->ttfBoxText($ttfBox['Size'], $ttfBox['Angle'], $ttfBox['X'], $ttfBox['Y'], $ttfBox['Color'], $ttfBox['Font'],
-            $ttfBox['Content'], 0, $img);
-        return TRUE;
+        imagealphablending($this->imgResource, true);
+        $this->drawTtfText($ttfBox['Size'], $ttfBox['Angle'], $ttfBox['X'], $ttfBox['Y'], $color, $ttfBox['Font'],
+            $ttfBox['Content'], $grow);
+        $this->drawTtfText($ttfBox['Size'], $ttfBox['Angle'], $ttfBox['X'], $ttfBox['Y'], $ttfBox['Color'], $ttfBox['Font'],
+            $ttfBox['Content'], 0);
+        return $this;
     }
 
     /**
-     * Draw TRUE type font text with shadow
+     * Draw true type font text with shadow
      * @param $ttfBox
      * @param int $shadow
      * @param int $color
      * @param string $direction
-     * @param NULL $img
-     * @return bool
+     * @return Gd
      */
-    public function ttfTextShadow($ttfBox, $shadow = 10, $color = 0, $direction = 'rb', $img = NULL)
+    public function ttfTextShadow($ttfBox, $shadow = 10, $color = 0, $direction = 'rb')
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if (!$this->isTTFBox($ttfBox)) return FALSE;
+        if (!$this->isTTFBox($ttfBox)) return $this;
         $color = (int)$color;
         $shadowX = (int)$ttfBox['X'];
         $shadowY = (int)$ttfBox['Y'];
@@ -1662,11 +1491,11 @@ class Gd
                 $shadowX += ($shadow / 2);
                 $shadowY += ($shadow / 2);
         }
-        $this->ttfBoxText($ttfBox['Size'], $ttfBox['Angle'], $shadowX, $shadowY, $color, $ttfBox['Font'], $ttfBox['Content'],
-            $shadow, $img);
-        $this->ttfBoxText($ttfBox['Size'], $ttfBox['Angle'], $ttfBox['X'], $ttfBox['Y'], $ttfBox['Color'], $ttfBox['Font'],
-            $ttfBox['Content'], 0, $img);
-        return TRUE;
+        $this->drawTtfText($ttfBox['Size'], $ttfBox['Angle'], $shadowX, $shadowY, $color, $ttfBox['Font'], $ttfBox['Content'],
+            $shadow);
+        $this->drawTtfText($ttfBox['Size'], $ttfBox['Angle'], $ttfBox['X'], $ttfBox['Y'], $ttfBox['Color'], $ttfBox['Font'],
+            $ttfBox['Content'], 0);
+        return $this;
     }
 
     /**
@@ -1679,20 +1508,37 @@ class Gd
     }
 
     /**
-     * @param null $img
      * @return bool|resource
      */
-    public function duplicateNewImage($img = NULL)
+    public function duplicateNewImage()
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        $width = imagesx($img);
-        $height = imagesy($img);
+        $width = $this->getWidth();
+        $height = $this->getHeight();
         $newImg = imagecreatetruecolor($width, $height);
-        imagealphablending($newImg, FALSE);
-        imagesavealpha($newImg, TRUE);
-        imagecopyresampled($newImg, $img, 0, 0, 0, 0, $width, $height, $width, $height);
+        imageantialias($newImg, true);
+        imagealphablending($newImg, false);
+        imagesavealpha($newImg, true);
+        imagecopyresampled($newImg, $this->imgResource, 0, 0, 0, 0, $width, $height, $width, $height);
+        imageconvolution($newImg, array(array(-1, -1, -1), array(-1, 16, -1), array(-1, -1, -1)), 8, 0);
         return $newImg;
+    }
+
+    /**
+     * * Get Loaded Image Width
+     * @return bool|int
+     */
+    public function getWidth()
+    {
+        return $this->imgWidth;
+    }
+
+    /**
+     * Get Loaded Image Height
+     * @return bool|int
+     */
+    public function getHeight()
+    {
+        return $this->imgHeight;
     }
 
     /**
@@ -1700,74 +1546,68 @@ class Gd
      * @param string $imageType
      * @param string $file
      * @param array $params
-     * @param null $img
-     * @return bool|null
+     * @return Gd|string|resource
      */
-    public function output($outputType = 'o', $imageType = 'png', $file = '', $params = [], $img = NULL)
+    public function output($outputType = 'o', $imageType = 'png', $file = '', $params = [])
     {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        $this->initSave($img);
         switch (strtolower($imageType)) {
             case 'gif':
-                $functionName = 'imagegif';
-                $Mime = 'gif';
+                $imgFuncName = 'imagegif';
+                $mime = 'gif';
                 break;
             case 'jpg':
-                $functionName = 'imagejpeg';
-                $Mime = 'jpg';
+                $imgFuncName = 'imagejpeg';
+                $mime = 'jpg';
                 break;
             case 'png':
-                $functionName = 'imagepng';
-                $Mime = 'png';
+                $imgFuncName = 'imagepng';
+                $mime = 'png';
                 break;
             case 'wbmp':
-                $functionName = 'imagewbmp';
-                $Mime = 'vnd.wap.wbmp';
+                $imgFuncName = 'imagewbmp';
+                $mime = 'vnd.wap.wbmp';
                 break;
-            default:
-                return $img;
+            case 'webp':
+                $imgFuncName = 'imagewebp';
+                $mime = 'webp';
+                break;
+            case 'xbm':
+                $imgFuncName = 'imagexbm';
+                $mime = 'xbm';
+                break;
         }
-        if (!is_array($params))
-            $params = [$params];
-        $params = array_values($params);
-        switch ($outputType) {
-            case 'o':
-                header("Content-Type: image/{$Mime}");
-                call_user_func_array($functionName, array_merge([$img, NULL], $params));
-                break;
+        if (!empty($imgFuncName) && !empty($mime)) {
+            if (!is_array($params))
+                $params = [$params];
+            $params = array_values($params);
+            switch ($outputType) {
+                case 'o':
+                    header("Content-Type: image/{$mime}");
+                    call_user_func_array($imgFuncName, array_merge([$this->imgResource, null], $params));
+                    break;
 
-            case 'f':
-                call_user_func_array($functionName, array_merge([$img, $file], $params));
-                break;
+                case 'f':
+                    call_user_func_array($imgFuncName, array_merge([$this->imgResource, $file], $params));
+                    break;
 
-            case 'd':
-                header('Content-Type: application/octet-stream');
-                header("Content-Transfer-Encoding: Binary");
-                header("Content-disposition: attachment; filename=\"" . basename($file) . "\"");
-                call_user_func_array($functionName, array_merge([$img, NULL], $params));
-                break;
+                case 'd':
+                    header('Content-Type: application/octet-stream');
+                    header("Content-Transfer-Encoding: Binary");
+                    header("Content-disposition: attachment; filename=\"" . basename($file) . "\"");
+                    call_user_func_array($imgFuncName, array_merge([$this->imgResource, null], $params));
+                    break;
 
-            case 'r':
-                return $img;
+                case 's':
+                    $tmp = tmpfile();
+                    call_user_func_array($imgFuncName, array_merge([$this->imgResource, $tmp], $params));
+                    rewind($tmp);
+                    return stream_get_contents($tmp);
+                    break;
+
+                case 'r':
+                    return $this->imgResource;
+            }
         }
-        return TRUE;
-    }
-
-    /**
-     * @param null $img
-     * @return bool
-     */
-    public function close($img = NULL)
-    {
-        if (NULL === $img) $img = $this->imgResource;
-        if (!$this->isGDResource($img)) return FALSE;
-        if ($img === $this->imgResource) $this->imgResource = NULL;
-        return imagedestroy($img);
-    }
-
-    public function __destruct()
-    {
-        if ($this->isGDResource($this->imgResource)) imagedestroy($this->imgResource);
+        return $this;
     }
 }

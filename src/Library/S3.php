@@ -59,7 +59,6 @@ class S3
     const STORAGE_CLASS_RRS = 'REDUCED_REDUNDANCY';
     const STORAGE_CLASS_STANDARD_IA = 'STANDARD_IA';
     const SSE_NONE = '';
-    const SSE_AES256 = 'AES256';
     /**
      * Default delimiter to be used, for example while getBucket().
      * @var string

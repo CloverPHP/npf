@@ -47,6 +47,7 @@ final class Xml
      * @param array $arr - array to be converted
      * @param array $docType - optional docType
      * @return DomDocument
+     * @throws Exception
      */
     public static function createXML($node_name, $arr = [], $docType = [])
     {

@@ -20,9 +20,7 @@ namespace Npf\Core {
      * @property Rpc $rpc
      * @property XPathDom $XPathDom
      * @property Gd $gd
-     * @property Monitor $monitor
      * @property Aes $aes
-     * @property Daemon $daemon
      * @property UserAgent $UserAgent
      * @property S3 $S3
      * @property GeoIp $GeoIp
