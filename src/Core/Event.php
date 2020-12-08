@@ -179,7 +179,7 @@ namespace Npf\Core {
          * @param string $schedule
          * @return boolean
          */
-        final private function scheduleValidate($schedule)
+        private function scheduleValidate($schedule)
         {
             $parts = explode(" ", $schedule);
             if (6 !== count($parts))
@@ -240,7 +240,7 @@ namespace Npf\Core {
          * @param mixed $args
          * @return mixed
          */
-        final private function eventFire(callable $callable, $args = [])
+        private function eventFire(callable $callable, $args = [])
         {
             if (!is_array($args))
                 $args = [$args];
@@ -307,7 +307,7 @@ namespace Npf\Core {
          * @param $schedule
          * @return bool
          */
-        final private function scheduleMatch($schedule)
+        private function scheduleMatch($schedule)
         {
             $date = explode(":", date("s:i:H:d:m:N"));
             $schedule = explode(" ", $schedule);
@@ -337,7 +337,7 @@ namespace Npf\Core {
          * @return bool
          * @internal param string $event Event Name
          */
-        final private function timerEmit($eventName, $timestamp, $offset)
+        private function timerEmit($eventName, $timestamp, $offset)
         {
             if (is_string($eventName) && !empty($eventName) && isset($this->timerListener[$eventName])) {
                 foreach ($this->timerListener[$eventName] as $key => $event)
@@ -366,7 +366,7 @@ namespace Npf\Core {
          * Execute/Fire an terminal Event
          * @param int $sigNo
          */
-        final private function emitTermSignal($sigNo = 0)
+        private function emitTermSignal($sigNo = 0)
         {
             $this->eventParams[] = $sigNo;
             foreach ($this->termListener as $key => &$event)

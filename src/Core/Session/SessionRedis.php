@@ -79,7 +79,7 @@ namespace Npf\Core\Session {
          * @param string $sessionId Session ID
          * @return    bool
          */
-        final private function _acquire_lock($sessionId)
+        private function _acquire_lock($sessionId)
         {
             if (!empty($this->lockKey))
                 return $this->app->redis->expire($this->lockKey, $this->lockTime);
@@ -147,7 +147,7 @@ namespace Npf\Core\Session {
          * Releases a previously acquired lock
          * @return    bool
          */
-        final private function _release_lock()
+        private function _release_lock()
         {
             if (!empty($this->lockKey) && $this->lockStatus) {
                 if (false === $this->app->redis->del($this->lockKey)) {

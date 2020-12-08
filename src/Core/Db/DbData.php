@@ -308,7 +308,7 @@ namespace Npf\Core\Db {
          * @param $data
          * @return mixed
          */
-        final private function convertSplit($data)
+        private function convertSplit($data)
         {
             return str_replace([".", ","],
                 ["{$this->colLiteral}.{$this->colLiteral}",
@@ -321,7 +321,7 @@ namespace Npf\Core\Db {
          * @param bool $alias
          * @return string
          */
-        final private function getColSQL($column, $alias = true)
+        private function getColSQL($column, $alias = true)
         {
             $columnStr = "";
             if (!empty($column)) {
@@ -346,7 +346,7 @@ namespace Npf\Core\Db {
          * @param bool $Fnc
          * @return string
          */
-        final private function getColNm($colName, $colAlias = null, $alias = true, $Fnc = false)
+        private function getColNm($colName, $colAlias = null, $alias = true, $Fnc = false)
         {
             $result = '';
             $pattern = "/^\\{DB_([A-Z_]+)\\}/";
@@ -473,7 +473,7 @@ namespace Npf\Core\Db {
          * @param null $cond
          * @return string
          */
-        final private function getCondition($cond = null)
+        private function getCondition($cond = null)
         {
             $condStr = '';
             $matches = [];
@@ -539,7 +539,7 @@ namespace Npf\Core\Db {
          * @param $colValue
          * @return string
          */
-        final private function getCond($colName, $colValue)
+        private function getCond($colName, $colValue)
         {
             $condStr = '';
             switch (gettype($colValue)) {
@@ -654,7 +654,7 @@ namespace Npf\Core\Db {
          * @param null $colName
          * @return string
          */
-        final private function getColVal($colValue = null, $colName = null)
+        private function getColVal($colValue = null, $colName = null)
         {
             if ($colValue === null)
                 return "NULL";
@@ -716,7 +716,7 @@ namespace Npf\Core\Db {
          * @param null $having
          * @return string
          */
-        final private function getGroup($group = null, $having = null)
+        private function getGroup($group = null, $having = null)
         {
             if (is_array($group))
                 $group = array_values($group);
@@ -730,7 +730,7 @@ namespace Npf\Core\Db {
          * @param null $cond
          * @return string
          */
-        final private function getHaving($cond = null)
+        private function getHaving($cond = null)
         {
             return !empty($cond) ? " HAVING " . substr($this->getCondition($cond), 7) :
                 "";
@@ -741,7 +741,7 @@ namespace Npf\Core\Db {
          * @param null $order
          * @return string
          */
-        final private function getOrder($order = null)
+        private function getOrder($order = null)
         {
             $orderStr = '';
             if (!empty($order)) {
@@ -778,7 +778,7 @@ namespace Npf\Core\Db {
          * @param null $limit
          * @return string
          */
-        final private function getLimit($limit = null)
+        private function getLimit($limit = null)
         {
             $limitStr = '';
             if (!empty($limit)) {

@@ -597,7 +597,7 @@ final class Rpc
      * @param null $outputHandle
      * @return mixed
      */
-    final private function _execute($outputHandle = null)
+    private function _execute($outputHandle = null)
     {
         $this->createHandle();
 
@@ -663,7 +663,7 @@ final class Rpc
     /**
      * Clear Response
      */
-    final private function closeHandle()
+    private function closeHandle()
     {
         if (!empty($this->handle) && is_resource($this->handle))
             curl_close($this->handle);
@@ -673,7 +673,7 @@ final class Rpc
     /**
      * Clear Response
      */
-    final private function clearResponse()
+    private function clearResponse()
     {
         $this->response = [
             'errno' => 0,
@@ -691,7 +691,7 @@ final class Rpc
     /**
      * Process Request Body
      */
-    final private function processRequestContent()
+    private function processRequestContent()
     {
         if ($this->method === 'GET') {
             if (is_array($this->params) && !empty($this->params)) {
@@ -713,7 +713,7 @@ final class Rpc
      * Process Request Body
      * @return array
      */
-    final private function processRequestHeader()
+    private function processRequestHeader()
     {
         $result = [];
         if (is_array($this->headers) && !empty($this->headers)) {
@@ -728,7 +728,7 @@ final class Rpc
      * Process Request Proxy
      * @param resource $cHandle
      */
-    final private function processRequestProxy($cHandle)
+    private function processRequestProxy($cHandle)
     {
         if (is_array($this->proxy) && !empty($this->proxy) && isset($this->proxy['proxy'])) {
             curl_setopt($cHandle, CURLOPT_PROXY, $this->proxy['proxy']);
@@ -748,7 +748,7 @@ final class Rpc
      * Process Request Basic Auth
      * @param resource $cHandle
      */
-    final private function processRequestBasicAuth($cHandle)
+    private function processRequestBasicAuth($cHandle)
     {
         if (is_array($this->basicAuth) && !empty($this->basicAuth) && isset($this->basicAuth['userpwd'])) {
             curl_setopt($cHandle, CURLOPT_USERPWD, $this->basicAuth['userpwd']);
@@ -778,7 +778,7 @@ final class Rpc
      * Process Request Cookie
      * @param resource $cHandle
      */
-    final private function processRequestCookie($cHandle)
+    private function processRequestCookie($cHandle)
     {
         $result = [];
         if (is_array($this->cookie) && !empty($this->cookie)) {
@@ -794,7 +794,7 @@ final class Rpc
     /**
      * Clear Response
      */
-    final private function clearRequest()
+    private function clearRequest()
     {
         $this->port = 80;
         $this->CACert = '';

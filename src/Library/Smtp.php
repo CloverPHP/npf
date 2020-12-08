@@ -141,7 +141,7 @@ class Smtp
      * Disconnect from server if connected
      * @return Smtp
      */
-    final private function disconnect()
+    private function disconnect()
     {
         if (is_resource($this->socket)) {
             $this->logs[] = "Disconnected";
@@ -155,7 +155,7 @@ class Smtp
         return $this;
     }
 
-    final private function getHost()
+    private function getHost()
     {
         $prefix = '';
         if (!empty($this->mail['server']['secure']))
@@ -170,7 +170,7 @@ class Smtp
     /**
      * @return bool
      */
-    final private function connect()
+    private function connect()
     {
         $errorNo = 0;
         $errStr = '';

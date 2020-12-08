@@ -50,7 +50,7 @@ final class UserAgent extends MobileDetect
      * @link https://github.com/donatj/PhpUserAgent
      * @link http://donatstudios.com/PHP-Parser-HTTP_USER_AGENT
      */
-    final private function analyse($userAgent = null)
+    private function analyse($userAgent = null)
     {
         $platform = null;
         $browser = null;

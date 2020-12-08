@@ -119,7 +119,7 @@ namespace Npf\Core\Db {
          * @param mysqli|mixed $resLink Resource Link
          * @return bool
          */
-        final private function isResLink($resLink)
+        private function isResLink($resLink)
         {
             return $resLink instanceof mysqli;
         }
@@ -161,7 +161,7 @@ namespace Npf\Core\Db {
          * @param string $collate
          * @param int $timeOut
          */
-        final private function init($characterSet = 'UTF8MB4', $collate = 'UTF8MB4_UNICODE_CI', $timeOut = 1000)
+        private function init($characterSet = 'UTF8MB4', $collate = 'UTF8MB4_UNICODE_CI', $timeOut = 1000)
         {
             $this->resLink = mysqli_init();
             $this->option(MYSQLI_OPT_CONNECT_TIMEOUT, $timeOut);
@@ -344,7 +344,7 @@ namespace Npf\Core\Db {
          * @param $queryStr
          * @return array|mixed
          */
-        final private function querySplit($queryStr)
+        private function querySplit($queryStr)
         {
             $pattern = '%\s*((?:\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*\'|"[^"\\\\]*(?:\\\\.[^"\\\\]*)*"|/*[^*]*\*+([^*/][^*]*\*+)*/|\#.*|--.*|[^"\';#])+(?:;|$))%x';
             $matches = [];
@@ -473,7 +473,7 @@ namespace Npf\Core\Db {
          * @param $resResult
          * @return mysqli_result
          */
-        final private function getResResult($resResult)
+        private function getResResult($resResult)
         {
             return $resResult instanceof mysqli_result ? $resResult : $this->resResult;
         }
@@ -483,7 +483,7 @@ namespace Npf\Core\Db {
          * @param $resResult
          * @return boolean
          */
-        final private function isResResult($resResult)
+        private function isResResult($resResult)
         {
             return $resResult instanceof mysqli_result;
         }

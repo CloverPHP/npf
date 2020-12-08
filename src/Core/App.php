@@ -191,7 +191,7 @@ namespace Npf\Core {
          * @throws RuntimeError
          * @throws SyntaxError
          */
-        final private function finishingApp()
+        private function finishingApp()
         {
             $profiler = $this->profiler->fetch();
             $this->response->add('profiler', $profiler);
@@ -232,7 +232,7 @@ namespace Npf\Core {
          * @param $origin
          * @throws InternalError
          */
-        final private function corsSupport($origin)
+        private function corsSupport($origin)
         {
             $origin = $this->request->header('origin', $origin);
             $this->response->header('Access-Control-Allow-Origin', $origin, true);

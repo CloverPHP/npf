@@ -130,7 +130,7 @@ final class TwoFactorAuth
      * @param $secret
      * @return bool|string
      */
-    final private function _base32Decode($secret)
+    private function _base32Decode($secret)
     {
         if (empty($secret)) {
             return '';
@@ -174,7 +174,7 @@ final class TwoFactorAuth
      * @param string $userString The user submitted (unsafe) value
      * @return bool True if the two strings are identical
      */
-    final private function timingSafeEquals($safeString, $userString)
+    private function timingSafeEquals($safeString, $userString)
     {
         if (function_exists('hash_equals')) {
             return hash_equals($safeString, $userString);

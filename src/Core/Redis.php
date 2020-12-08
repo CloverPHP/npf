@@ -288,7 +288,7 @@ namespace Npf\Core {
          * @param string $key
          * @return boolean
          */
-        final private function hasHash($key)
+        private function hasHash($key)
         {
             $matches = [];
             if (empty($key))
@@ -331,7 +331,7 @@ namespace Npf\Core {
          * @param string $key
          * @return int
          */
-        final private function getIndex($key = '')
+        private function getIndex($key = '')
         {
             if (!is_string($key))
                 $key = '';
@@ -354,7 +354,7 @@ namespace Npf\Core {
          * @param string $key
          * @return string Hash
          */
-        final private function getHash($key)
+        private function getHash($key)
         {
             $matches = [];
             if (empty($key))

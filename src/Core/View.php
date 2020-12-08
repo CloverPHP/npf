@@ -398,7 +398,7 @@ class View
      * Render None Response
      * @param bool $statusCode
      */
-    final private function renderNone($statusCode = false)
+    private function renderNone($statusCode = false)
     {
         $this->output(false, $statusCode);
     }
@@ -408,7 +408,7 @@ class View
      * @param bool $statusCode
      * @param bool $headerOverWrite
      */
-    final private function renderPlan($headerOverWrite = false, $statusCode = false)
+    private function renderPlan($headerOverWrite = false, $statusCode = false)
     {
         $this->app->response->header('Content-Type', 'text/plain; charset=utf-8', $headerOverWrite);
         $this->output($this->data, $statusCode);
@@ -419,7 +419,7 @@ class View
      * @param bool $headerOverWrite
      * @param bool $statusCode
      */
-    final private function renderJson($data, $headerOverWrite = false, $statusCode = false)
+    private function renderJson($data, $headerOverWrite = false, $statusCode = false)
     {
         $jsonFlag = JSON_UNESCAPED_UNICODE;
         if ($this->generalConfig->get('printPretty', false))
@@ -433,7 +433,7 @@ class View
      * @param bool $headerOverWrite
      * @param bool $statusCode
      */
-    final private function renderXml($data, $headerOverWrite = false, $statusCode = false)
+    private function renderXml($data, $headerOverWrite = false, $statusCode = false)
     {
         if (empty($this->data) || !is_string($this->data))
             $this->data = $this->generalConfig->get('xmlRoot', 'root');
@@ -459,7 +459,7 @@ class View
      * @throws RuntimeError
      * @throws SyntaxError
      */
-    final private function renderTwig($data, $headerOverWrite = false, $statusCode = false)
+    private function renderTwig($data, $headerOverWrite = false, $statusCode = false)
     {
         $loader = new FilesystemLoader();
         $this->addTwigPath($this->app->getRootPath() . 'Template');
@@ -505,7 +505,7 @@ class View
      * @param bool $statusCode
      * @throws InternalError
      */
-    final private function renderStaticFile($statusCode = false)
+    private function renderStaticFile($statusCode = false)
     {
         if (!empty($statusCode) && (int)$statusCode > 0)
             http_response_code($statusCode);

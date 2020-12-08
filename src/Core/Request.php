@@ -57,7 +57,7 @@ namespace Npf\Core {
         /**
          * Initial Request
          */
-        final private function initialRequest()
+        private function initialRequest()
         {
             $this->contentType = explode(";", isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : 'COMMAND', 2)[0];
             $this->method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '__RUN__';
@@ -70,7 +70,7 @@ namespace Npf\Core {
         /**
          * Retrieve Header from $_SERVER
          */
-        final private function initHeader()
+        private function initHeader()
         {
             $this->headers = [];
             foreach ($_SERVER as $name => $value)
@@ -97,7 +97,7 @@ namespace Npf\Core {
          * 默认获取params方式(http post json)
          * @return array
          */
-        final private function getRequestParams()
+        private function getRequestParams()
         {
             $this->raw = file_get_contents('php://input');
             switch ($this->method) {

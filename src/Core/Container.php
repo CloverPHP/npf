@@ -49,7 +49,7 @@ namespace Npf\Core {
          * Generate Unique ID
          * @return string
          */
-        final private function __uniqueId()
+        private function __uniqueId()
         {
             return $this->__id = uniqid(uniqid('', TRUE), TRUE);
         }
@@ -217,7 +217,7 @@ namespace Npf\Core {
          * @param $arr
          * @return bool
          */
-        final private function __isAssoc($arr)
+        private function __isAssoc($arr)
         {
             return array_keys($arr) !== range(0, count($arr) - 1);
         }
@@ -280,7 +280,7 @@ namespace Npf\Core {
          * @param string $keyPrefix
          * @return array
          */
-        final private function __flattenData($data, $prefix = '', $postfix = '', $keyPrefix = '')
+        private function __flattenData($data, $prefix = '', $postfix = '', $keyPrefix = '')
         {
             $result = [];
             foreach ($data as $key => $item) {

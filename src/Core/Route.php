@@ -97,7 +97,7 @@ namespace Npf\Core {
          * @param $pathInfo
          * @throws ReflectionExceptionAlias
          */
-        final private function proceedAppPath($pathInfo)
+        private function proceedAppPath($pathInfo)
         {
             $this->appPath = array_values(explode("\\", str_replace('/', '\\', $pathInfo)));
             if (empty($this->appPath))
@@ -197,7 +197,7 @@ namespace Npf\Core {
          * @throws ReflectionExceptionAlias
          * @throws UnknownClass
          */
-        final private function routeStatic()
+        private function routeStatic()
         {
             if ($this->isExistsStaticFile($this->appFile)) {
                 $staticFile = file_exists($this->appFile) ?
@@ -215,7 +215,7 @@ namespace Npf\Core {
          * @throws InternalError
          * @throws UnknownClass
          */
-        final private function launchApp(array &$parameters = [])
+        private function launchApp(array &$parameters = [])
         {
             try {
                 $this->app->request->setUri($this->appFile);
@@ -245,7 +245,7 @@ namespace Npf\Core {
          * @throws UnknownClass
          * @throws InternalError
          */
-        final private function launchCronjob(ReflectionClass &$refClass, array &$parameters = [])
+        private function launchCronjob(ReflectionClass &$refClass, array &$parameters = [])
         {
             $cronLock = $this->app->config('Redis')->get('enable', false) && $this->generalConfig->get('cronLock', false);
             $cronBlock = sha1($this->app->request);
@@ -273,7 +273,7 @@ namespace Npf\Core {
          * @throws InternalError
          * @throws UnknownClass
          */
-        final private function launchDaemon(ReflectionClass &$refClass, array &$parameters = [])
+        private function launchDaemon(ReflectionClass &$refClass, array &$parameters = [])
         {
             set_time_limit(0);
             $daemonBlock = sha1($this->app->request);
@@ -315,7 +315,7 @@ namespace Npf\Core {
          * @param array $parameters
          * @throws UnknownClass
          */
-        final private function launchWeb(ReflectionClass &$refClass, array &$parameters = [])
+        private function launchWeb(ReflectionClass &$refClass, array &$parameters = [])
         {
             $actionObj = $refClass->newInstanceArgs($parameters);
             if (method_exists($actionObj, '__invoke')) {
