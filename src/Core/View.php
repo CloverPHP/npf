@@ -1,12 +1,11 @@
 <?php
-
+declare(strict_types=1);
 
 namespace Npf\Core;
 
 use finfo;
 use Npf\Exception\InternalError;
 use Npf\Library\Xml;
-use ReflectionException;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -21,71 +20,65 @@ use Twig\Loader\FilesystemLoader;
 class View
 {
     /**
-     * @var App
-     */
-    private $app;
-
-    /**
      * @var string
      */
-    private $type = '';
+    private string $type = '';
 
     /**
      * @var mixed
      */
-    private $data = false;
+    private mixed $data = false;
 
     /**
      * @var array
      */
-    private $twigExtension = [];
+    private array $twigExtension;
 
     /**
      * @var array
      */
-    private $twigPath = [];
+    private array $twigPath;
 
     /**
      * @var bool
      */
-    private $output;
+    private bool $output;
 
     /**
      * @var Container
      */
-    private $generalConfig;
+    private Container $generalConfig;
 
     /**
      * @var bool Cache Control
      */
-    private $cache = true;
+    private bool $cache = true;
 
     /**
      * @var bool Lock Current View
      */
-    private $lockView = false;
+    private bool $lockView;
 
     /**
-     * @var bool Lock Current View
+     * @var int Expiry Ttl
      */
-    private $expiryTtl = 0;
+    private int $expiryTtl;
 
     /**
      * View constructor.
      * @param App $app
      */
-    final public function __construct(App &$app)
+    final public function __construct(private App $app)
     {
-        $this->app = &$app;
-        if (in_array($this->app->getRoles(), ['daemon', 'cronjob'], true)) {
+        if (in_array($app->getRoles(), ['daemon', 'cronjob'], true)) {
             $opts = getopt('o', ['output']);
             if (is_array($opts) && !empty($opts))
                 $this->output = true;
         } else
-            $this->output = (boolean)$this->app->response->get('output', false);
+            $this->output = (boolean)$app->response->get('output', false);
         try {
-            $this->generalConfig = $this->app->config('General', true);
-        } catch (\Exception $ex) {
+            $this->generalConfig = $app->config('General', true);
+        } catch (\Exception) {
             $this->generalConfig = new Container();
         }
         $this->type = $this->generalConfig->get('defaultOutput', 'json');
@@ -94,68 +87,77 @@ class View
     /**
      * @return string
      */
-    final public function getType()
+    final public function getType(): string
     {
         return $this->type;
     }
 
     /**
-     * @return void
+     * @return self
      */
-    final public function cached()
+    final public function cached(): self
     {
         $this->cache = true;
+        return $this;
     }
 
     /**
-     * @return void
+     * @return self
      */
-    final public function noCache()
+    final public function noCache(): self
     {
         $this->cache = false;
+        return $this;
     }
 
     /**
-     * @return void
+     * @return self
      */
-    final public function lock()
+    final public function lock(): self
     {
         $this->lockView = true;
+        return $this;
     }
 
     /**
-     * @return void
+     * @return self
      */
-    final public function unlock()
+    final public function unlock(): self
     {
         $this->lockView = false;
+        return $this;
     }
 
     /**
      * @param $expireTtl
-     * @return void
+     * @return self
      */
-    final public function setViewExpiry($expireTtl)
+    final public function setViewExpiry($expireTtl): self
     {
         $this->expiryTtl = (int)$expireTtl;
         if ($this->expiryTtl < 0)
             $this->expiryTtl = 0;
+        return $this;
     }
 
     /**
      * @param $twigExtension
+     * @return self
      */
-    final public function addTwigExtension($twigExtension)
+    final public function addTwigExtension(string|object|array $twigExtension): self
     {
         if (!empty($twigExtension) && (is_string($twigExtension) || is_object($twigExtension)))
             $this->twigExtension[] = $twigExtension;
+        if (is_array($twigExtension))
+            $this->twigExtension = array_merge($this->twigExtension, $twigExtension);
+        return $this;
     }
 
     /**
-     * @param $path
-     * @param null $name
+     * @param string $path
+     * @param ?string $name
      */
-    final public function addTwigPath($path, $name = null)
+    final public function addTwigPath(string $path, ?string $name = null)
     {
         if (!empty($path) && file_exists($path) && is_dir($path)) {
             if (!empty($name) && is_string($name))
@@ -167,62 +169,71 @@ class View
 
     /**
      * Set View as none type
+     * @return self
      */
-    final public function setNone()
+    final public function setNone(): self
     {
         if ($this->lockView)
-            return;
+            return $this;
         $this->type = 'none';
         $this->data = null;
+        return $this;
     }
 
     /**
      * Set View as none type
      * @param $content
+     * @return self
      */
-    final public function setPlain($content)
+    final public function setPlain($content): self
     {
         if ($this->lockView)
-            return;
+            return $this;
         if (!empty($content)) {
             $this->type = 'plain';
             $this->data = $content;
         }
+        return $this;
     }
 
     /**
      * Set View as json type
+     * @return self
      */
-    final public function setJson()
+    final public function setJson(): self
     {
         if ($this->lockView)
-            return;
+            return $this;
         $this->type = 'json';
         $this->data = null;
+        return $this;
     }
 
     /**
      * @param null $rooTag
+     * @return self
      */
-    final public function setXml($rooTag = null)
+    final public function setXml($rooTag = null): self
     {
         if ($this->lockView)
-            return;
+            return $this;
         $this->type = 'xml';
         if (empty($rooTag) || !is_string($rooTag))
             $rooTag = $this->generalConfig->get('xmlRoot', 'root');
         $this->data = $rooTag;
+        return $this;
     }
 
     /**
-     * @param $file
-     * @param $paths
+     * @param string $file
+     * @param string|array|null $paths
      * @param int $viewLevel
+     * @return self
      */
-    final public function setTwig($file, $paths = null, $viewLevel = 1)
+    final public function setTwig(string $file, string|array $paths = null, int $viewLevel = 1): self
     {
         if ($this->lockView)
-            return;
+            return $this;
         $this->type = 'twig';
         if (!empty($paths) && is_string($paths))
             $paths = [$paths];
@@ -240,31 +251,37 @@ class View
             'file' => $file,
             'path' => $twigPaths,
         ];
+        return $this;
     }
 
     /**
-     * @param null $file
+     * @param string|null $file
+     * @return self
      * @throws InternalError
      */
-    final public function setStatic($file = null)
+    final public function setStatic(?string $file = null): self
     {
         if ($this->lockView)
-            return;
+            return $this;
         if (file_exists($file) && !is_dir($file)) {
             $this->type = 'static';
             $this->data = $file;
         } else
             throw new InternalError('Static File Not found on app.view.setView');
+        return $this;
     }
 
     /**
      * Setup View File
      * @param string $type
-     * @param null $data
+     * @param mixed $data
      * @param int $viewLevel
+     * @return self
      * @throws InternalError
      */
-    final public function setView($type, $data = null, $viewLevel = 1)
+    final public function setView(string $type,
+                                  string|array|null $data = null,
+                                  int $viewLevel = 1): self
     {
         switch ($type) {
             case 'html':
@@ -288,12 +305,14 @@ class View
                 $this->setJson();
                 break;
         }
+        return $this;
     }
 
     /**
+     * @return self
      * @throws InternalError
      */
-    final public function error()
+    final public function error(): self
     {
         $this->app->ignoreError();
         $errorDisplay = $this->app->config('Profiler')->get('errorOutput');
@@ -333,16 +352,17 @@ class View
                 break;
         }
         $this->app->noticeError();
+        return $this;
     }
 
     /**
+     * @return self
      * @throws InternalError
      * @throws LoaderError
-     * @throws ReflectionException
      * @throws RuntimeError
      * @throws SyntaxError
      */
-    final public function render()
+    final public function render(): self
     {
         $response = $this->app->response->fetch();
         if ($this->type === '')
@@ -392,52 +412,65 @@ class View
                 $this->renderJson($data, false, $response['statusCode']);
                 break;
         }
+        return $this;
     }
 
     /**
      * Render None Response
-     * @param bool $statusCode
+     * @param bool|int $statusCode
+     * @return self
      */
-    private function renderNone($statusCode = false)
+    private function renderNone(bool|int $statusCode = false): self
     {
         $this->output(false, $statusCode);
+        return $this;
     }
 
     /**
      * Render Plan Text
      * @param bool $statusCode
      * @param bool $headerOverWrite
+     * @return self
      */
-    private function renderPlan($headerOverWrite = false, $statusCode = false)
+    private function renderPlan($headerOverWrite = false, $statusCode = false): self
     {
         $this->app->response->header('Content-Type', 'text/plain; charset=utf-8', $headerOverWrite);
         $this->output($this->data, $statusCode);
+        return $this;
     }
 
     /**
      * @param $data
      * @param bool $headerOverWrite
      * @param bool $statusCode
+     * @return self
      */
-    private function renderJson($data, $headerOverWrite = false, $statusCode = false)
+    private function renderJson($data, $headerOverWrite = false, $statusCode = false): self
     {
         $jsonFlag = JSON_UNESCAPED_UNICODE;
         if ($this->generalConfig->get('printPretty', false))
             $jsonFlag |= JSON_PRETTY_PRINT;
         $this->app->response->header('Content-Type', 'text/json; charset=utf-8', $headerOverWrite);
         $this->output(json_encode($data, $jsonFlag), $statusCode);
+        return $this;
     }
 
     /**
      * @param $data
      * @param bool $headerOverWrite
      * @param bool $statusCode
+     * @return self
+     * @throws InternalError
      */
-    private function renderXml($data, $headerOverWrite = false, $statusCode = false)
+    private function renderXml($data, $headerOverWrite = false, $statusCode = false): self
     {
         if (empty($this->data) || !is_string($this->data))
             $this->data = $this->generalConfig->get('xmlRoot', 'root');
-        $xml = Xml::createXML($this->data, $data);
+        try {
+            $xml = Xml::createXML($this->data, $data);
+        } catch (\Exception $ex) {
+            throw new InternalError($ex->getMessage());
+        }
         if ($this->generalConfig->get('printPretty', false)) {
             $xml->preserveWhiteSpace = false;
             $xml->formatOutput = true;
@@ -447,19 +480,19 @@ class View
         }
         $this->app->response->header('Content-Type', 'text/xml; charset=utf-8', $headerOverWrite);
         $this->output($xml->saveXML($xml->documentElement, LIBXML_NOEMPTYTAG), $statusCode);
+        return $this;
     }
 
     /**
      * @param $data
      * @param bool $headerOverWrite
-     * @param bool $statusCode
+     * @param bool|int $statusCode
      * @throws InternalError
      * @throws LoaderError
-     * @throws ReflectionException
      * @throws RuntimeError
      * @throws SyntaxError
      */
-    private function renderTwig($data, $headerOverWrite = false, $statusCode = false)
+    private function renderTwig(mixed $data, bool $headerOverWrite = false, bool|int $statusCode = false)
     {
         $loader = new FilesystemLoader();
         $this->addTwigPath($this->app->getRootPath() . 'Template');
@@ -502,10 +535,11 @@ class View
     }
 
     /**
-     * @param bool $statusCode
+     * @param bool|int $statusCode
+     * @return View
      * @throws InternalError
      */
-    private function renderStaticFile($statusCode = false)
+    private function renderStaticFile(bool|int $statusCode = false): self
     {
         if (!empty($statusCode) && (int)$statusCode > 0)
             http_response_code($statusCode);
@@ -558,17 +592,18 @@ class View
             }
         } elseif ($statusCode === false)
             http_response_code(404);
+        return $this;
     }
 
     /**
-     * @param string $content
+     * @param mixed $content
      * @param bool $statusCode
-     * @return bool
+     * @return self
      */
-    final public function output($content = '', $statusCode = false)
+    final public function output(mixed $content = '', bool|int $statusCode = false): self
     {
         if (headers_sent())
-            return false;
+            return $this;
 
         switch (gettype($content)) {
             case 'integer':
@@ -643,6 +678,6 @@ class View
         ignore_user_abort(true);
         flush();
         clearstatcache();
-        return true;
+        return $this;
     }
 }

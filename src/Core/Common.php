@@ -1,9 +1,13 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
+    use DateInterval;
+    use DatePeriod;
     use DateTime;
     use DateTimeZone;
+    use JetBrains\PhpStorm\Pure;
 
     /**
      * Class Common
@@ -11,20 +15,20 @@ namespace Npf\Core {
      */
     class Common
     {
-        private static $timestamp;
-        private static $datetime;
-        private static $date;
-        private static $time;
-        private static $timezone = '';
+        private static float $timestamp;
+        private static string $datetime;
+        private static string $date;
+        private static string $time;
+        private static string $timezone = '';
 
         /**
          * Check is Utf8
-         * @param $string
-         * @return false|int
+         * @param $content
+         * @return bool
          */
-        public static function isUtf8($string)
+        public static function isUtf8(string $content): bool
         {
-            return preg_match('%(?:'
+            return boolval(preg_match('%(?:'
                 . '[\xC2-\xDF][\x80-\xBF]'                // non-overlong 2-byte
                 . '|\xE0[\xA0-\xBF][\x80-\xBF]'           // excluding overlongs
                 . '|[\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}'    // straight 3-byte
@@ -32,7 +36,7 @@ namespace Npf\Core {
                 . '|\xF0[\x90-\xBF][\x80-\xBF]{2}'        // planes 1-3
                 . '|[\xF1-\xF3][\x80-\xBF]{3}'            // planes 4-15
                 . '|\xF4[\x80-\x8F][\x80-\xBF]{2}'        // plane 16
-                . ')+%xs', $string);
+                . ')+%xs', $content));
         }
 
         /**
@@ -40,7 +44,7 @@ namespace Npf\Core {
          * @param int $minSize
          * @return string
          */
-        public static function compressContent($content, $minSize = 13000)
+        public static function compressContent(string $content, int $minSize = 13000): string
         {
             if (strlen($content) >= $minSize)
                 return 'base64://' . base64_encode(@gzdeflate($content, 9));
@@ -52,7 +56,7 @@ namespace Npf\Core {
          * @param $compressed
          * @return string
          */
-        public static function unCompressContent($compressed)
+        public static function unCompressContent(string $compressed): string
         {
             if (substr($compressed, 0, 9) === 'base64://') {
                 $compressed = base64_decode(substr($compressed, 9));
@@ -67,11 +71,11 @@ namespace Npf\Core {
 
         /**
          * Weighted Randomizer, using probability array pick a item from item array
-         * @param $items
-         * @param $weightedArray
-         * @return bool|mixed
+         * @param array $items
+         * @param array $weightedArray
+         * @return mixed
          */
-        public static function weightRndItem($items, $weightedArray)
+        public static function weightRndItem(array $items, array $weightedArray): mixed
         {
             if (!is_array($items) || !is_array($weightedArray) && count($items) !== count($weightedArray))
                 return false;
@@ -89,10 +93,10 @@ namespace Npf\Core {
 
         /**
          * Shuffle for associative arrays, preserves key=>value pairs
-         * @param $array
-         * @return int
+         * @param array $array
+         * @return void
          */
-        public static function shuffleAssoc(&$array)
+        public static function shuffleAssoc(array &$array): void
         {
             $keys = array_keys($array);
             shuffle($keys);
@@ -100,7 +104,6 @@ namespace Npf\Core {
             foreach ($keys as $key)
                 $new[$key] = $array[$key];
             $array = $new;
-            return true;
         }
 
         /**
@@ -108,14 +111,14 @@ namespace Npf\Core {
          * @param $max
          * @return int
          */
-        public static function randomInt($min, $max)
+        public static function randomInt(int $min, int $max): int
         {
             try {
                 if (function_exists('random_int'))
                     return random_int($min, $max);
                 else
                     return mt_rand($min, $max);
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 return mt_rand($min, $max);
             }
         }
@@ -127,8 +130,9 @@ namespace Npf\Core {
          * @param bool $unique Return unique the items value.
          * @return array|bool
          */
-        public static function weightRndArray(array $items, array $weightedArray =
-        [], $unique = true)
+        public static function weightRndArray(array $items,
+                                              array $weightedArray = [],
+                                              bool $unique = true): array|bool
         {
             $rndAry = [];
             if ($unique === true) {
@@ -158,10 +162,10 @@ namespace Npf\Core {
 
         /**
          * Weighted Randomizer, using the assoc probability to pick a key
-         * @param $weightedArray
-         * @return bool|int|mixed|string
+         * @param array $weightedArray
+         * @return int|bool|array|string
          */
-        public static function weightRndKey($weightedArray)
+        public static function weightRndKey(array $weightedArray): int|bool|array|string
         {
             if (!is_array($weightedArray))
                 return false;
@@ -178,10 +182,10 @@ namespace Npf\Core {
         }
 
         /**
-         * @param double $rate
+         * @param float $rate
          * @return boolean
          */
-        public static function getRateWeight($rate)
+        public static function getRateWeight(float $rate): bool
         {
             $rate = round($rate, 7);
             if ((double)$rate > 1)
@@ -193,26 +197,31 @@ namespace Npf\Core {
         }
 
         /**
-         * @param int|double $odd
-         * @param int $commission
-         * @param int $fator
+         * @param int|float $odd
+         * @param float $commission
+         * @param float $factor
          * @return boolean
          */
-        public static function getOddWeight($odd, $commission = 0, $fator = 1)
+        public static function getOddWeight(int|float $odd,
+                                            float $commission = 0,
+                                            float $factor = 1): bool
         {
             $commission = !empty($commission) ? $commission / 100 : 0;
-            $rate = empty($odd) ? 0 : round((1 / $odd) * (1 - $commission) * $fator, 7);
+            $rate = empty($odd) ? 0 : round((1 / $odd) * (1 - $commission) * $factor, 7);
             return self::getRateWeight($rate);
         }
 
         /**
          * @param array $oddItems
-         * @param int $defaultCommission
-         * @param int $defaultFactor
-         * @param $probabilityOnly
+         * @param float $defaultCommission
+         * @param float $defaultFactor
+         * @param bool $probabilityOnly
          * @return int|string|array
          */
-        public static function getOddsWeightedKey(array $oddItems, $defaultCommission = 0, $defaultFactor = 1, $probabilityOnly = false)
+        public static function getOddsWeightedKey(array $oddItems,
+                                                  float $defaultCommission = 0,
+                                                  float $defaultFactor = 1,
+                                                  bool $probabilityOnly = false): int|string|array
         {
             $decimalLengths = [];
             $rates = [];
@@ -235,9 +244,9 @@ namespace Npf\Core {
         /**
          * Check array is Assoc
          * @param string $prefix
-         * @return bool
+         * @return string
          */
-        public static function getTempFile($prefix = '')
+        public static function getTempFile(string $prefix = ''): string
         {
             return tempnam(sys_get_temp_dir(), $prefix);
         }
@@ -247,7 +256,7 @@ namespace Npf\Core {
          * @param array $arr
          * @return bool
          */
-        public static function isAssocArray(array $arr)
+        #[Pure] public static function isAssocArray(array $arr): bool
         {
             if ([] === $arr) return false;
             return array_keys($arr) !== range(0, count($arr) - 1);
@@ -255,13 +264,13 @@ namespace Npf\Core {
 
         /**
          * Convert from string csv to array, all array value will only number.
-         * @param string $string String to convert
+         * @param string $content String to convert
          * @param string $dataType Number Data Type (int | double)
          * @return array
          */
-        public static function strListNumeric($string, $dataType = 'double')
+        public static function strListNumeric(string $content, string $dataType = 'double'): array
         {
-            $list = explode(",", str_replace(" ", "", $string));
+            $list = explode(",", str_replace(" ", "", $content));
             foreach ($list as $key => $val)
                 if ($dataType === 'int')
                     $list[$key] = (int)trim($val);
@@ -272,17 +281,17 @@ namespace Npf\Core {
 
         /**
          * Convert from string to array, all array value is string, and also decoration is upper string
-         * @param $string
+         * @param $content
          * @param string $decoration
          * @param string $delimiter
          * @return array
          */
-        public static function strListString($string, $decoration = 'upper', $delimiter = ',')
+        #[Pure] public static function strListString(string $content, string $decoration = 'upper', string $delimiter = ','): array
         {
-            if (is_array($string))
-                $list = $string;
+            if (is_array($content))
+                $list = $content;
             else
-                $list = explode($delimiter, $string);
+                $list = explode($delimiter, $content);
             switch ($decoration) {
                 case 'upper':
                     foreach ($list as &$val)
@@ -305,28 +314,27 @@ namespace Npf\Core {
         /**
          * Convert from string to array, all array value is string, and also decoration is upper string
          * @param $glue
-         * @param $string
+         * @param $content
          * @return string
          */
-        public static function strPop($glue, $string)
+        public static function strPop(string $glue, string $content): string
         {
-            if (!empty($glue) && !empty($string)) {
-                $array = explode($glue, $string);
+            if (!empty($glue) && !empty($content)) {
+                $array = explode($glue, $content);
                 array_pop($array);
-                $string = implode($glue, $array);
+                $content = implode($glue, $array);
             }
-            return $string;
+            return $content;
         }
 
         /**
          * Validate Array Data with the given validate pattern
          * @param $patterns
          * @param $data
-         * @return bool|array
+         * @return array
          */
-        public static function validator($patterns, $data)
+        public static function validator(string|array $patterns, array $data): array
         {
-            $data = (array)$data;
             if (!is_array($patterns))
                 $patterns = [$patterns];
             $needed = [];
@@ -349,7 +357,7 @@ namespace Npf\Core {
          * @param array|string $validates
          * @return bool
          */
-        final public static function validateValue($value, $validates)
+        final public static function validateValue(mixed $value, array|string $validates): bool
         {
             $pass = true;
             $optional = false;
@@ -361,7 +369,7 @@ namespace Npf\Core {
                     $type = $key;
                     $extend = $validate;
                 } else {
-                    if (strpos($validate, ":") === false)
+                    if (str_contains($validate, ":"))
                         $type = $validate;
                     else
                         list($type, $extend) = explode(":", $validate, 2);
@@ -469,9 +477,9 @@ namespace Npf\Core {
                         $extend = (int)$extend;
                         if (!empty($extend)) {
                             if (is_array($value) || is_object($value))
-                                $pass = count($value) >= $extend ? true : false;
+                                $pass = count($value) >= $extend;
                             else
-                                $pass = strlen($value) >= $extend ? true : false;
+                                $pass = strlen($value) >= $extend;
                         }
                         break;
 
@@ -479,9 +487,9 @@ namespace Npf\Core {
                         $extend = (int)$extend;
                         if (!empty($extend)) {
                             if (is_array($value) || is_object($value))
-                                $pass = count($value) >= $extend ? true : false;
+                                $pass = count($value) >= $extend;
                             else
-                                $pass = mb_strlen($value) >= $extend ? true : false;
+                                $pass = mb_strlen($value) >= $extend;
                         }
                         break;
 
@@ -489,9 +497,9 @@ namespace Npf\Core {
                         $extend = (int)$extend;
                         if (!empty($extend)) {
                             if (is_array($value) || is_object($value))
-                                $pass = count($value) <= $extend ? true : false;
+                                $pass = count($value) <= $extend;
                             else
-                                $pass = strlen($value) <= $extend ? true : false;
+                                $pass = strlen($value) <= $extend;
                         }
                         break;
 
@@ -499,9 +507,9 @@ namespace Npf\Core {
                         $extend = (int)$extend;
                         if (!empty($extend)) {
                             if (is_array($value) || is_object($value))
-                                $pass = count($value) <= $extend ? true : false;
+                                $pass = count($value) <= $extend;
                             else
-                                $pass = mb_strlen($value) <= $extend ? true : false;
+                                $pass = mb_strlen($value) <= $extend;
                         }
                         break;
 
@@ -509,9 +517,9 @@ namespace Npf\Core {
                         $extend = (int)$extend;
                         if (!empty($extend)) {
                             if (is_array($value) || is_object($value))
-                                $pass = count($value) === $extend ? true : false;
+                                $pass = count($value) === $extend;
                             else
-                                $pass = strlen($value) === $extend ? true : false;
+                                $pass = strlen($value) === $extend;
                         }
                         break;
 
@@ -519,9 +527,9 @@ namespace Npf\Core {
                         $extend = (int)$extend;
                         if (!empty($extend)) {
                             if (is_array($value) || is_object($value))
-                                $pass = count($value) === $extend ? true : false;
+                                $pass = count($value) === $extend;
                             else
-                                $pass = mb_strlen($value) === $extend ? true : false;
+                                $pass = mb_strlen($value) === $extend;
                         }
                         break;
 
@@ -560,40 +568,39 @@ namespace Npf\Core {
                             $pass = (boolean)preg_match($extend, $value);
                 }
                 if (!$pass)
-                    return $pass || $optional;
+                    return false || $optional;
             }
             return true;
         }
 
         /**
          * Convert File size to File Size Unit.
-         * @param $needle
-         * @param $haystack
+         * @param mixed $needle
+         * @param array $haystack
          * @param bool $strict
-         * @return string File Size with Unit
+         * @return bool is in_array
          */
-        public static function inArray($needle, array $haystack, $strict = false)
+        #[Pure] public static function inArray(mixed $needle, array $haystack, $strict = false): bool
         {
             if ($strict)
                 return in_array($needle, $haystack, $strict);
             else {
-                foreach ($haystack as $item) {
+                foreach ($haystack as $item)
                     if ($needle == $item)
                         return true;
-                }
                 return false;
             }
         }
 
         /**
          * Check is Utf8
-         * @param $string
-         * @param $space
-         * @return false|int
+         * @param string $content
+         * @param string $space
+         * @return bool
          */
-        public static function safeUtf8($string, $space = '\x20')
+        public static function safeUtf8(string $content, string $space = '\x20'): bool
         {
-            return preg_match('/^(?:'
+            return boolval(preg_match('/^(?:'
                 . '[\x21-\x7E' . $space . ']'
                 . '|[\xC2-\xDF][\x80-\xBF]'                // non-overlong 2-byte
                 . '|\xE0[\xA0-\xBF][\x80-\xBF]'           // excluding overlongs
@@ -602,7 +609,7 @@ namespace Npf\Core {
                 . '|\xF0[\x90-\xBF][\x80-\xBF]{2}'        // planes 1-3
                 . '|[\xF1-\xF3][\x80-\xBF]{3}'            // planes 4-15
                 . '|\xF4[\x80-\x8F][\x80-\xBF]{2}'        // plane 16
-                . ')+$/xs', $string);
+                . ')+$/xs', $content));
         }
 
         /**
@@ -610,7 +617,7 @@ namespace Npf\Core {
          * @param int $bytes Number of Bytes
          * @return string File Size with Unit
          */
-        public static function fileSize2Unit($bytes)
+        public static function fileSize2Unit(int $bytes): string
         {
             if ($bytes >= 1099511627776)
                 return number_format($bytes / 1073741824, 2) . ' TB';
@@ -634,13 +641,13 @@ namespace Npf\Core {
          * @param $arrayHaystack
          * @return array
          */
-        public static function arraySearchAll($needle, $arrayHaystack)
+        public static function arraySearchAll(mixed $needle, array $arrayHaystack): mixed
         {
-            $Array = [];
+            $result = [];
             foreach ($arrayHaystack as $key => $value)
                 if ($arrayHaystack[$key] === $needle)
-                    $Array[] = $key;
-            return (count($Array) > 1 ? $Array : $Array[0]);
+                    $result[] = $key;
+            return (count($result) > 1 ? $result : $result[0]);
         }
 
         /**
@@ -649,7 +656,7 @@ namespace Npf\Core {
          * @param string $replaceCodeBase
          * @return string
          */
-        public static function genCode($length = 8, $replaceCodeBase = '')
+        public static function genCode(int $length = 8, string $replaceCodeBase = ''): string
         {
             $result = '';
             $codeBase = is_string($replaceCodeBase) && !empty($replaceCodeBase) ? $replaceCodeBase :
@@ -666,7 +673,7 @@ namespace Npf\Core {
          * Generate UUID of version 4
          * @return string
          */
-        public static function genUuidV4()
+        #[Pure] public static function genUuidV4(): string
         {
             return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
                 mt_rand(0, 0xffff), mt_rand(0, 0xffff),
@@ -678,13 +685,13 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $content
+         * @param string $content
          * @param array $data
          * @param null $default
          * @param string $pattern
          * @return string
          */
-        public static function strTemplateApply($content, array $data, $default = null, $pattern = '%([\w]+)[^%]*%')
+        public static function strTemplateApply(string $content, array $data, $default = null, $pattern = '%([\w]+)[^%]*%'): string
         {
             $matches = [];
             if (!is_array($data))
@@ -713,11 +720,11 @@ namespace Npf\Core {
 
         /**
          * Read from file and decompress and deserialize
-         * @param $fileName
+         * @param string $fileName
          * @param bool $compress
          * @return mixed
          */
-        public static function fileToData($fileName, $compress = true)
+        public static function fileToData(string $fileName, bool $compress = true): mixed
         {
             $Content = self::fileContents($fileName);
             if (!empty($Content)) {
@@ -731,11 +738,11 @@ namespace Npf\Core {
 
         /**
          * Read file to data or write data to file
-         * @param $fileName
+         * @param string $fileName
          * @param null $data
          * @return int|string|null
          */
-        public static function fileContents($fileName, $data = null)
+        public static function fileContents(string $fileName, $data = null): int|string|null
         {
             if (!$data && file_exists($fileName))
                 return file_get_contents($fileName);
@@ -747,15 +754,15 @@ namespace Npf\Core {
 
         /**
          * Serialize and compress data and write to file
-         * @param $fileName
-         * @param bool $data
+         * @param string $fileName
+         * @param mixed $data
          * @param bool $compress
-         * @return mixed
+         * @return int|string|null
          */
-        public static function dataToFile($fileName, $data, $compress = true)
+        public static function dataToFile(string $fileName, mixed $data, $compress = true): int|string|null
         {
             if ($compress)
-                $data = @gzcompress(@json_encode($data), 9);
+                $data = @gzcompress(json_encode($data), 9);
             else
                 $data = json_encode($data);
             return self::fileContents($fileName, $data);
@@ -765,7 +772,7 @@ namespace Npf\Core {
          * Get Server IP from $_SERVER global values.
          * @return string
          */
-        public static function getServerIp()
+        public static function getServerIp(): string
         {
             if (isset($_SERVER["SERVER_ADDR"]))
                 return $_SERVER["SERVER_ADDR"];
@@ -781,9 +788,8 @@ namespace Npf\Core {
                         }
                     }
                     return '';
-                } else {
+                } else
                     return exec("ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'");
-                }
             }
         }
 
@@ -791,7 +797,7 @@ namespace Npf\Core {
          * Get Client IP from $_SERVER global value, will resolve proxy or direct.
          * @return string
          */
-        public static function getClientIp()
+        public static function getClientIp(): string
         {
             if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
                 $xForward = explode(",", $_SERVER['HTTP_X_FORWARDED_FOR']);
@@ -802,9 +808,9 @@ namespace Npf\Core {
 
         /**
          * Get Origin Domain
-         * @return mixed
+         * @return string
          */
-        public static function getOriginDomain()
+        #[Pure] public static function getOriginDomain(): string
         {
             if (array_key_exists('HTTP_ORIGIN', $_SERVER))
                 $origin = $_SERVER['HTTP_ORIGIN'];
@@ -820,11 +826,11 @@ namespace Npf\Core {
 
         /**
          * Same as array_rand but is return value or array if more then 1.
-         * @param $array
-         * @param $picked
-         * @return array
+         * @param array $array
+         * @param int $picked
+         * @return mixed
          */
-        public static function arrayRandom($array, $picked = 1)
+        public static function arrayRandom(array $array, int $picked = 1): mixed
         {
             shuffle($array);
             $picked = (int)$picked;
@@ -837,11 +843,11 @@ namespace Npf\Core {
 
         /**
          * Same as arrayRandom but is return value or assoc array if more then 1.
-         * @param $array
-         * @param $picked
-         * @return array
+         * @param array $array
+         * @param int $picked
+         * @return mixed
          */
-        public static function arrayRandomAssoc($array, $picked = 1)
+        public static function arrayRandomAssoc(array $array, int $picked = 1): mixed
         {
             $total = count($array);
             if ($picked > $total)
@@ -856,17 +862,17 @@ namespace Npf\Core {
 
         /**
          * Array walk calculation, require
-         * @param $array
-         * @param $number
+         * @param array $array
+         * @param float $number
          * @param string $operate
          * @return array
          */
-        public static function arrayCalcUp($array, $number, $operate = '*')
+        public static function arrayCalcUp(array $array, float $number, string $operate = '*'): array
         {
             if (!is_array($array) || empty($array))
                 return $array;
 
-            $number = (double)$number;
+            $number = (float)$number;
 
             foreach ($array as $key => $value) {
                 switch (gettype($value)) {
@@ -918,12 +924,14 @@ namespace Npf\Core {
 
         /**
          * Array Number Add Up
-         * @param array $data
-         * @param array $append
+         * @param array|float $data
+         * @param array|float $append
          * @param array $expectedKey
          * @return array|float
          */
-        final static public function arrayNumAddUp($data, $append, $expectedKey = [])
+        final static public function arrayNumAddUp(array|float $data,
+                                                   array|float $append,
+                                                   array $expectedKey = []): array|float
         {
             if (!is_array($expectedKey))
                 $expectedKey = !empty($expectedKey) ? [$expectedKey] : [];
@@ -947,7 +955,7 @@ namespace Npf\Core {
                     }
                 }
             } else {
-                $data = (double)$data;
+                $data = (float)$data;
                 $data += $append;
             }
             return $data;
@@ -955,14 +963,18 @@ namespace Npf\Core {
 
         /**
          * Array Number SubDown
-         * @param $data
-         * @param $subtrahend
+         * @param array|float $data
+         * @param array|float $subtrahend
          * @param bool $negative
          * @param bool $removeEmpty
          * @param array $expectedKey
-         * @return array
+         * @return array|float
          */
-        final static public function arrayNumCutDown($data, $subtrahend, $negative = false, $removeEmpty = true, $expectedKey = [])
+        final static public function arrayNumCutDown(array|float $data,
+                                                     array|float $subtrahend,
+                                                     bool $negative = false,
+                                                     bool $removeEmpty = true,
+                                                     array $expectedKey = []): array|float
         {
             if (!is_array($expectedKey))
                 $expectedKey = !empty($expectedKey) ? [$expectedKey] : [];
@@ -1003,28 +1015,32 @@ namespace Npf\Core {
 
         /**
          * Mosaic to string
-         * @param $string
+         * @param string $content
          * @param int $start
          * @param int $end
          * @param int $length
          * @param string $toReplace
-         * @return mixed|string
+         * @return string
          */
-        public static function strMosaic($string, $start = 0, $end = 6, $length = 0, $toReplace = 'x')
+        #[Pure] public static function strMosaic(string $content,
+                                                 int $start = 0,
+                                                 int $end = 6,
+                                                 int $length = 0,
+                                                 string $toReplace = 'x'): string
         {
-            $string = (string)$string;
-            $subLength = strlen(substr($string, $start, $end));
-            $strLength = $length !== 0 ? $length - (strlen($string) - $subLength) : $subLength;
+            $content = (string)$content;
+            $subLength = strlen(substr($content, $start, $end));
+            $strLength = $length !== 0 ? $length - (strlen($content) - $subLength) : $subLength;
             $strLength = $strLength <= 0 ? 1 : $strLength;
-            $string = substr_replace($string, str_repeat($toReplace, $strLength), $start, $end);
-            return $string;
+            $content = substr_replace($content, str_repeat($toReplace, $strLength), $start, $end);
+            return $content;
         }
 
         /**
-         * @param $processId
+         * @param int $processId
          * @return array|bool
          */
-        public static function processCPUTime($processId)
+        public static function processCPUTime(int $processId): array|bool
         {
             $processId = (int)$processId;
             if (!$processId)
@@ -1041,61 +1057,69 @@ namespace Npf\Core {
             return [
                 'utime' => (int)$data[13],
                 'stime' => (int)$data[14],
-                #'cutime' => (int) $data[15],
-                #'cstime' => (int) $data[16]
             ];
         }
 
         /**
          * @param $array
          */
-        public static function arrayValNum(&$array)
+        public static function arrayValNum(array &$array): void
         {
             array_walk($array, function (&$value) {
                 if (is_numeric($value)) $value = (double)$value;
+            });
+        }
+
+        /**
+         * Get Specify datetime by timezone
+         * @param string $timeZone
+         * @param string $format
+         * @param int|float|null $time
+         * @return string|bool
+         */
+        public static function specifyTimeZone(string $timeZone,
+                                               string $format = 'Y-m-d H:i:s',
+                                               int|float|null $time = null): string|bool
+        {
+            try {
+                $dateTime = new DateTime(is_string($time) ? $time : 'now', new DateTimeZone($timeZone));
+                if (is_integer($time))
+                    $dateTime->setTimestamp($time);
+                return $dateTime->format($format);
+            } catch (\Exception) {
+                return false;
             }
-            );
         }
 
         /**
          * Get Specify datetime by timezone
-         * @param $timeZone
+         * @param string $fromTimeZone
+         * @param string $targetTimeZone
          * @param string $format
-         * @param null $time
-         * @return string
-         * @throws \Exception
+         * @param int|float|null $time
+         * @return string|bool
          */
-        public static function specifyTimeZone($timeZone, $format = 'Y-m-d H:i:s', $time = null)
+        public static function convertTimeZone(string $fromTimeZone,
+                                               string $targetTimeZone,
+                                               string $format = 'Y-m-d H:i:s',
+                                               float|int|null $time = null): bool|string
         {
-            $dateTime = new DateTime(is_string($time) ? $time : 'now', new DateTimeZone($timeZone));
-            if (is_integer($time))
-                $dateTime->setTimestamp($time);
-            return $dateTime->format($format);
-        }
-
-        /**
-         * Get Specify datetime by timezone
-         * @param $fromTimeZone
-         * @param $targetTimeZone
-         * @param string $format
-         * @param null $time
-         * @return string
-         * @throws \Exception
-         */
-        public static function convertTimeZone($fromTimeZone, $targetTimeZone, $format = 'Y-m-d H:i:s', $time = null)
-        {
-            $dateTime = new DateTime(is_string($time) ? $time : 'now', new DateTimeZone($fromTimeZone));
-            if (is_integer($time))
-                $dateTime->setTimestamp($time);
-            $dateTime->setTimezone(new DateTimeZone($targetTimeZone));
-            return $dateTime->format($format);
+            try {
+                $dateTime = new DateTime(is_string($time) ? $time : 'now', new DateTimeZone($fromTimeZone));
+                if (is_integer($time))
+                    $dateTime->setTimestamp($time);
+                $dateTime->setTimezone(new DateTimeZone($targetTimeZone));
+                return $dateTime->format($format);
+            } catch (\Exception) {
+                return false;
+            }
         }
 
         /**
          * Get current Timezone
          * @return string
          */
-        public static function timezone()
+        #[Pure] public static function timezone(): string
         {
             return self::$timezone;
         }
@@ -1105,7 +1129,7 @@ namespace Npf\Core {
          * @param bool $current
          * @return string
          */
-        public static function date($current = false)
+        #[Pure] public static function date(bool $current = false): string
         {
             return $current === true ? date("Y-m-d") : self::$date;
         }
@@ -1115,7 +1139,7 @@ namespace Npf\Core {
          * @param bool $current
          * @return string
          */
-        public static function time($current = false)
+        #[Pure] public static function time(bool $current = false): string
         {
             return $current === true ? date("H:i:s") : self::$time;
         }
@@ -1123,9 +1147,9 @@ namespace Npf\Core {
         /**
          * Get Initial Timestamp or current Timestamp
          * @param bool $current
-         * @return double
+         * @return float
          */
-        public static function timestamp($current = false)
+        #[Pure] public static function timestamp($current = false): float
         {
             return $current === true ? microtime(true) : self::$timestamp;
         }
@@ -1134,7 +1158,7 @@ namespace Npf\Core {
          * Delay the timestamp
          * @param int $second
          */
-        public static function delay($second = 0)
+        public static function delay(int $second = 0): void
         {
             sleep($second);
             self::initial(self::$timezone);
@@ -1144,7 +1168,7 @@ namespace Npf\Core {
          * Initialize Date Time
          * @param $timezone
          */
-        public static function initial($timezone)
+        public static function initial(string $timezone): void
         {
             if (empty(self::$timestamp))
                 self::$timestamp = microtime(true);
@@ -1160,10 +1184,10 @@ namespace Npf\Core {
         /**
          * Convert Second to Time
          * @param int $seconds
-         * @param int $size
-         * @return float
+         * @param int|null $size
+         * @return string
          */
-        public static function secondToTime($seconds = 0, $size = null)
+        #[Pure] public static function secondToTime(int $seconds = 0, ?int $size = null): string
         {
             switch ($size) {
                 case 1:
@@ -1184,9 +1208,9 @@ namespace Npf\Core {
         /**
          * Convert Time to Second
          * @param string $time H:i:s format
-         * @return float|int
+         * @return int
          */
-        public static function timeToSecond($time)
+        public static function timeToSecond(string $time): int
         {
             $hours = 0;
             $minutes = 0;
@@ -1203,7 +1227,10 @@ namespace Npf\Core {
          * @param bool $maintainKey maintain index association
          * @param int|array $defaultSortFlag
          */
-        final static public function multiArraySort(&$array, $orderColumns, $maintainKey = false, $defaultSortFlag = SORT_ASC)
+        final static public function multiArraySort(array &$array,
+                                                    mixed $orderColumns,
+                                                    bool $maintainKey = false,
+                                                    int|array $defaultSortFlag = SORT_ASC): void
         {
             $args = [];
             if (is_string($orderColumns))
@@ -1249,11 +1276,11 @@ namespace Npf\Core {
 
         /**
          * Get numbers of decimal without round up or down.
-         * @param $number
+         * @param float $number
          * @param int $decimal
          * @return float
          */
-        public static function leaveDecimal($number, $decimal = 2)
+        #[Pure] public static function leaveDecimal(float $number, int $decimal = 2): float
         {
             $decimal = (int)$decimal + 1;
             $string = strval($number);
@@ -1263,108 +1290,98 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $credit
-         * @param $divNum
+         * @param float|int $amount
+         * @param float|int $divNum
          * @param int $decimal
-         * @return mixed
+         * @return float|int
          */
-        public static function calDiv($credit, $divNum, $decimal = 2)
+        #[Pure] public static function calDiv(float|int $amount, float|int $divNum, int $decimal = 2): float|int
         {
             $decimal = (int)$decimal;
             $base = pow(10, $decimal);
-            $module = (($credit * $base) % $divNum) / $base;
-            return $credit - $module;
+            $module = (($amount * $base) % $divNum) / $base;
+            return $amount - $module;
         }
 
         /**
          * sorting
-         * @param $array
+         * @param array $array
          * @param int $sort_flags
-         * @return bool
+         * @return void
          */
-        public static function kSortRecursive(&$array, $sort_flags = SORT_REGULAR)
+        public static function kSortRecursive(array &$array,
+                                              int $sort_flags = SORT_REGULAR): void
         {
-            if (!is_array($array)) return false;
             ksort($array, $sort_flags);
-            foreach ($array as &$arr) {
-                self::kSortRecursive($arr, $sort_flags);
-            }
-            return true;
-        }
-
-        /**
-         * @param $Cards
-         * @param $Number
-         * @return array
-         */
-        public static function arrayUnique($Cards, $Number)
-        {
-            $array1 = self::arrayCombination($Cards, $Number);
-            $result = [];
-            foreach ($array1 as $key => $arrayA)
-                foreach ($arrayA as $key2 => $arrayB)
-                    if ($key !== $key2 && count(array_intersect($arrayA, $arrayB)) == 0)
-                        $result[] = [$arrayA, $arrayB];
-            return $result;
+            foreach ($array as &$item)
+                self::kSortRecursive($item, $sort_flags);
         }
 
         /**
          * Split the array to any available combination array, e.g. $Array = (1,2,3), $Choose = 2  return = (1,2),(1,3),(2,3)
          * @param array $array Array to split
-         * @param int $choose Number to split
+         * @param int $number Number to split
          * @return array Split Result
          */
-        public static function arrayCombination(array $array, $choose)
+        public static function arrayCombination(array $array, int $number): array
         {
-            $composer = function (&$combination, &$composed, $start, $_choose, $arr, $n) use (&$composer) {
-                if ($_choose == 0)
-                    array_push($combination, $composed);
+            /**
+             * @param array $result
+             * @param array $composed
+             * @param int $start
+             * @param int $number
+             * @param array $array
+             * @param int $size
+             */
+            $composer = function (array &$result,
+                                  array &$composed,
+                                  int $start,
+                                  int $number,
+                                  array $array,
+                                  int $size) use (&$composer) {
+                if ($number == 0)
+                    array_push($result, $composed);
                 else
-                    for ($i = $start; $i <= $n - $_choose; ++$i) {
-                        array_push($composed, $arr[$i]);
-                        if ($_choose - 1 == 0)
-                            array_push($combination, $composed);
+                    for ($i = $start; $i <= $size - $number; ++$i) {
+                        array_push($composed, $array[$i]);
+                        if ($number - 1 == 0)
+                            array_push($result, $composed);
                         else
-                            $composer($combination, $composed, $i + 1, $_choose - 1, $arr, $n);
+                            $composer($result, $composed, $i + 1, $number - 1, $array, $size);
                         array_pop($composed);
                     }
             };
 
-            $n = count($array);
+            $size = count($array);
             $combination = [];
             $composed = [];
-            $composer($combination, $composed, 0, $choose, $array, $n);
+            $composer($combination, $composed, 0, $number, $array, $size);
             return $combination;
         }
 
         /**
          * Get Current Date -1 Days if current time < $offset.
-         * @param $offset
+         * @param string $offset
          * @param string $dateTime
          * @return bool|string
          */
-        public static function offsetDate($offset, $dateTime = '')
+        public static function offsetDate(string $offset, string $dateTime = ''): bool|string
         {
-            if (empty($dateTime))
-                $dateTime = self::datetime();
-
-            $timeStamp = strtotime($dateTime);
-            $date = date("Y-m-d", $timeStamp);
-            $offset = $date . $offset;
-            $offsetTimeStamp = strtotime($offset);
-
-            if ($timeStamp >= $offsetTimeStamp)
-                return date("Y-m-d", time());
-            else
-                return date("Y-m-d", strtotime($dateTime . " -1 Days"));
+            try {
+                $date = new DateTime($dateTime);
+                $date->modify('+1 day');
+                return $date->format('Y-m-d');
+            } catch (\Exception) {
+                return false;
+            }
         }
 
         /**
-         * @param $fromDate
-         * @param $toDate
-         * @return mixed
+         * @param string $fromDate
+         * @param string $toDate
+         * @return int
          */
-        public static function dateDiff($fromDate, $toDate)
+        #[Pure] public static function dateDiff(string $fromDate, string $toDate): int
         {
             $fromDate = date_create($fromDate);
             $toDate = date_create($toDate);
@@ -1373,11 +1390,11 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $start
-         * @param $end
+         * @param string $start
+         * @param string $end
          * @return array
          */
-        public static function dateRange($start, $end)
+        public static function dateRange(string $start, string $end): array
         {
             $result = [];
             try {
@@ -1385,15 +1402,15 @@ namespace Npf\Core {
                 $end = new DateTime($end);
                 $end = $end->modify('+1 day');
 
-                $interval = \DateInterval::createFromDateString('1 day');
-                $period = new \DatePeriod($begin, $interval, $end);
+                $interval = DateInterval::createFromDateString('1 day');
+                $period = new DatePeriod($begin, $interval, $end);
 
                 foreach ($period as $dt)
                     /**
                      * @var $dt DateTime
                      */
                     $result[] = $dt->format("Y-m-d");
-            } catch (\Exception $ex) {
+            } catch (\Exception) {
                 $result = [];
             }
             return $result;
@@ -1405,7 +1422,7 @@ namespace Npf\Core {
          * @param bool $current
          * @return string
          */
-        public static function datetime($current = false)
+        #[Pure] public static function datetime(bool $current = false): string
         {
             return $current === true ? date("Y-m-d H:i:s") : self::$datetime;
         }
@@ -1414,13 +1431,13 @@ namespace Npf\Core {
          * Array Add Up
          * @param array $data
          * @param array $append
-         * @return array|float
+         * @return mixed
          */
-        final static public function addAppend($data, $append)
+        #[Pure] final static public function addAppend(mixed $data, mixed $append): mixed
         {
             switch (gettype($append)) {
                 case 'integer':
-                case 'double':
+                case 'float':
                     $data = (double)$data;
                     $data += (double)$append;
                     break;
@@ -1434,7 +1451,15 @@ namespace Npf\Core {
             return $data;
         }
 
-        final static public function convertUtfAngle($content, $toFullAngle = false, $includeSymbol = false)
+        /**
+         * @param string $content
+         * @param bool $toFullAngle
+         * @param bool $includeSymbol
+         * @return string
+         */
+        final static public function convertUtfAngle(string $content,
+                                                     bool $toFullAngle = false,
+                                                     bool $includeSymbol = false):string
         {
             $fullAngle = [
                 'alphanumeric' => [

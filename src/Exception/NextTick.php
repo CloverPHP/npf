@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Exception {
 
@@ -10,6 +11,6 @@ namespace Npf\Exception {
      */
     class NextTick extends Exception
     {
-        protected $error = 'daemon_next_tick';
+        protected string $error = 'daemon_next_tick';
     }
 }

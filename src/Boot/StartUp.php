@@ -15,17 +15,17 @@ final class StartUp
     /**
      * @var Kernel
      */
-    private $instance;
+    private Kernel $instance;
 
     /**
      * @var App
      */
-    private $app;
+    private App $app;
 
     /**
      * @var array App Info
      */
-    private $appInfo = [];
+    private array $appInfo;
 
     /**
      * StartUp constructor.
@@ -33,7 +33,10 @@ final class StartUp
      * @param string $env
      * @param string $name
      */
-    final public function __construct($role = 'web', $env = 'local', $name = 'default')
+    final public function __construct(string $role = 'web',
+                                      string $env = 'local',
+                                      string $name = 'default'
+    )
     {
         define('INIT_MEMORY', memory_get_usage());
         define('INIT_TIMESTAMP', microtime(true));
@@ -50,7 +53,7 @@ final class StartUp
      * Start Up
      * @throws Exception
      */
-    final public function getApp()
+    final public function getApp(): App
     {
         return $this->app;
     }
@@ -59,7 +62,7 @@ final class StartUp
      * Start Up
      * @throws Exception
      */
-    final public function start()
+    final public function start(): void
     {
         $this->instance->__invoke($this->appInfo);
     }

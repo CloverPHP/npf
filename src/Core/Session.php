@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
@@ -12,71 +13,85 @@ namespace Npf\Core {
     class Session
     {
         /**
-         * @var App
-         */
-        private $app;
-
-        /**
          * @var Container
          */
-        private $config;
+        private Container $config;
 
         /**
          * @var bool
          */
-        private $status = false;
+        private bool $status;
         /**
          * @var array
          */
-        private $cookieParams = [];
+        private array $cookieParams;
 
         /**
          * Session constructor.
          * @param App $app
          * @throws InternalError
          */
-        public function __construct(App $app)
+        public function __construct(private App $app)
         {
-            $this->app = &$app;
             $this->config = $app->config('Session');
             $this->cookieParams = [
                 'lifeTime' => $this->config->get('cookieLifetime', 0),
-                'urlPath' => $this->config->get('cookiePath', null),
-                'domain' => $this->config->get('cookieDomain', null),
+                'urlPath' => $this->config->get('cookiePath'),
+                'domain' => $this->config->get('cookieDomain'),
                 'security' => $this->config->get('cookieSecurity', false),
                 'httpOnly' => $this->config->get('cookieHttpOnly', true)
             ];
         }
 
-        public function lifeTime($lifeTime = null)
+        /**
+         * @param int|null $lifeTime
+         * @return int
+         */
+        public function lifeTime(?int $lifeTime = null): int
         {
             if (!$this->status)
                 $this->cookieParams['lifeTime'] = (int)$lifeTime;
             return $this->cookieParams['lifeTime'];
         }
 
-        public function urlPath($urlPath = null)
+        /**
+         * @param string|null $urlPath
+         * @return mixed
+         */
+        public function urlPath(?string $urlPath = null): string
         {
             if (!empty($urlPath) && !$this->status)
                 $this->cookieParams['urlPath'] = $urlPath;
             return $this->cookieParams['urlPath'];
         }
 
-        public function cookieDomain($domain = null)
+        /**
+         * @param string|null $domain
+         * @return string
+         */
+        public function cookieDomain(?string $domain = null): string
         {
             if (!empty($domain) && !$this->status)
                 $this->cookieParams['domain'] = (string)$domain;
             return $this->cookieParams['domain'];
         }
 
-        public function cookieSecurity($security = null)
+        /**
+         * @param bool|null $security
+         * @return bool
+         */
+        public function cookieSecurity(?bool $security = null): bool
         {
             if (!empty($security) && !$this->status)
                 $this->cookieParams['security'] = (boolean)$security;
             return $this->cookieParams['security'];
         }
 
-        public function cookieHttpOnly($httpOnly = null)
+        /**
+         * @param bool|null $httpOnly
+         * @return bool
+         */
+        public function cookieHttpOnly(?bool $httpOnly = null): bool
         {
             if (!empty($httpOnly) && !$this->status)
                 $this->cookieParams['httpOnly'] = (boolean)$httpOnly;
@@ -85,13 +100,13 @@ namespace Npf\Core {
 
         /**
          * Session Get Data
-         * @param string $name
+         * @param string|null $name
          * @param null $default
          * @param string $separator
-         * @return mixed|null
+         * @return mixed
          * @throws InternalError
          */
-        public function get($name = null, $default = null, $separator = '.')
+        public function get(?string $name = null, mixed $default = null, string $separator = '.'): mixed
         {
             if (!$this->status)
                 $this->start();
@@ -117,7 +132,7 @@ namespace Npf\Core {
         /**
          * @return string
          */
-        public function id()
+        public function id(): string
         {
             return session_id();
         }
@@ -126,7 +141,7 @@ namespace Npf\Core {
          * Start PHP Session
          * @throws InternalError
          */
-        public function start()
+        public function start(): bool
         {
             if (!$this->status) {
                 if (!$this->config->get('enable', false))
@@ -165,13 +180,13 @@ namespace Npf\Core {
 
         /**
          * Session Set Data
-         * @param $name
+         * @param string $name
          * @param $value
          * @param string $separator
-         * @return  bool
+         * @return self
          * @throws InternalError
          */
-        public function set($name, $value, $separator = '.')
+        public function set(string $name, mixed $value, string $separator = '.'): self
         {
             if (!$this->status)
                 $this->start();
@@ -188,17 +203,17 @@ namespace Npf\Core {
                 $data[$lastKey] = $value;
             } else
                 $data[$name] = $value;
-            return true;
+            return $this;
         }
 
         /**
          * Session Delete Key
          * @param string $name
          * @param string $separator
-         * @return bool
+         * @return Session
          * @throws InternalError
          */
-        public function del($name, $separator = '.')
+        public function del(string $name, string $separator = '.'): self
         {
             if (!$this->status)
                 $this->start();
@@ -209,50 +224,51 @@ namespace Npf\Core {
                 $lastKey = array_pop($parts);
                 while ($key = array_shift($parts)) {
                     if (!isset($data[$key]))
-                        return false;
+                        return $this;
                     $data = &$data[$key];
                 }
                 unset($data[$lastKey]);
             } else
                 unset($data[$name]);
-            return true;
+            return $this;
         }
 
         /**
          * Session Clear Data
+         * @return self
          * @throws InternalError
          */
-        public function clear()
+        public function clear(): self
         {
             if (!$this->status)
                 $this->start();
             if (isset($_SESSION))
                 $_SESSION = [];
-            return true;
+            return $this;
         }
 
         /**
          * Session Clear Data
-         * @return bool
+         * @return self
          */
-        public function rollback()
+        public function rollback(): self
         {
             if (!$this->status)
                 session_reset();
-            return true;
+            return $this;
         }
 
         /**
          * Session Close
-         * @return bool
+         * @return self
          */
-        public function close()
+        public function close(): self
         {
-            if (!$this->status)
-                return false;
-            session_write_close();
-            $this->status = false;
-            return true;
+            if ($this->status) {
+                session_write_close();
+                $this->status = false;
+            }
+            return $this;
         }
     }
 }

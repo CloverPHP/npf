@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
@@ -11,10 +12,10 @@ namespace Npf\Core {
      */
     class Exception extends \Exception
     {
-        protected $response;
-        protected $status = '';
-        protected $error = '';
-        protected $sysLog = false;
+        protected Response $response;
+        protected string $status;
+        protected string $error;
+        protected bool $sysLog;
 
         /**
          * ExceptionNormal constructor.
@@ -24,9 +25,12 @@ namespace Npf\Core {
          * @param array $extra
          * @internal param string $error
          */
-        public function __construct($desc = '', $code = '', $status = 'error', array $extra = [])
+        public function __construct(?string $desc = '',
+                                    string $code = '',
+                                    string $status = 'error',
+                                    array $extra = [])
         {
-            parent::__construct($desc, 0);
+            parent::__construct($desc);
             $stack = debug_backtrace(0);
             $trace = [];
             switch (true) {
@@ -69,11 +73,11 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $name
-         * @param $arguments
-         * @return bool|mixed
+         * @param string $name
+         * @param array $arguments
+         * @return mixed
          */
-        public function __call($name, $arguments)
+        public function __call(string $name, array $arguments): mixed
         {
             if (method_exists($this->response, $name)) {
                 return call_user_func_array([$this->response, $name], $arguments);
@@ -84,7 +88,7 @@ namespace Npf\Core {
         /**
          * @return Response
          */
-        public function response()
+        public function response(): Response
         {
             return $this->response;
         }
@@ -92,7 +96,7 @@ namespace Npf\Core {
         /**
          * @return bool
          */
-        public function sysLog()
+        public function sysLog(): bool
         {
             return $this->sysLog;
         }
@@ -100,7 +104,7 @@ namespace Npf\Core {
         /**
          * @return string
          */
-        public function getErrorCode()
+        public function getErrorCode(): string
         {
             return $this->error;
         }

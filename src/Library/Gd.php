@@ -2,6 +2,10 @@
 
 namespace Npf\Library;
 
+use GdImage;
+use JetBrains\PhpStorm\ArrayShape;
+use JetBrains\PhpStorm\Pure;
+
 class Gd
 {
 
@@ -9,23 +13,22 @@ class Gd
 
     /**
      * Is GD Resource
-     * @param null $img
+     * @param GdImage|null $img
      * @return bool
      */
-    private function isGDResource($img = null)
+    private function isGDResource(mixed $img = null): bool
     {
         if (null === $img) $img = $this->imgResource;
-        if (!is_resource($img)) return false;
-        if (get_resource_type($img) === 'gd') return true;
+        if ($img instanceof GdImage) return false;
         return false;
     }
 
     /**
      * Initial Load and Initial Save and Check Resource
-     * @param null $img
+     * @param GdImage|null $img
      * @return Gd
      */
-    private function initImage($img = null)
+    private function initImage(?GdImage $img = null)
     {
         if ($this->isGDResource($img)) {
             imagepalettetotruecolor($img);
@@ -51,7 +54,7 @@ class Gd
      * @param int $alpha
      * @return bool|int
      */
-    public function getColor($red = 0, $green = 0, $blue = 0, $alpha = 0)
+    public function getColor($red = 0, $green = 0, $blue = 0, $alpha = 0): bool|int
     {
         if (!$this->isGDResource($this->imgResource)) return false;
         $red = (int)$red;
@@ -72,7 +75,7 @@ class Gd
      * @param bool $assoc
      * @return array|bool|int
      */
-    public function getPixelColor($x = 0, $y = 0, $assoc = false)
+    #[Pure] public function getPixelColor(int $x = 0, int $y = 0, bool $assoc = false): array|bool|int
     {
         $x = (int)$x;
         $y = (int)$y;
@@ -88,7 +91,7 @@ class Gd
      * Get Loaded Image Orientation
      * @return bool|string
      */
-    public function getOrientation()
+    #[Pure] public function getOrientation(): bool|string
     {
         if (imagesx($this->imgResource) > imagesy($this->imgResource))
             return 'LANDSCAPE';
@@ -98,9 +101,9 @@ class Gd
 
     /**
      * @param $file
-     * @return Gd
+     * @return self
      */
-    final public function loadImage($file)
+    final public function loadImage(string|GdImage $file): self
     {
         $this->initImage($this->getImgResFromFile($file));
         return $this;
@@ -108,10 +111,10 @@ class Gd
 
     /**
      * Load File Image To Memory
-     * @param string|resource $file
-     * @return bool|resource|string
+     * @param string|GdImage $file
+     * @return bool|string
      */
-    public function getImgResFromFile($file = '')
+    public function getImgResFromFile(string|GdImage $file = ''): bool|GdImage
     {
         $img = false;
         if ($this->isGDResource($file)) {
@@ -166,11 +169,11 @@ class Gd
     /**
      * Get loaded image calculate new maintain ratio height with given width
      * @param int $width
-     * @param null $oriHeight
-     * @param null $oriWidth
-     * @return float
+     * @param int|null $oriWidth
+     * @param int|null $oriHeight
+     * @return float|int
      */
-    public function getNewHeight($width = 0, $oriWidth = null, $oriHeight = null)
+    public function getNewHeight(int $width = 0, ?int $oriWidth = null, ?int $oriHeight = null): float|int
     {
         if ($oriWidth === null)
             $oriWidth = $this->imgWidth;
@@ -182,11 +185,11 @@ class Gd
     /**
      * Get Loaded Image Calculate new maintain ratio width with given height
      * @param int $height
-     * @param null $oriWidth
-     * @param null $oriHeight
-     * @return float
+     * @param int|null $oriWidth
+     * @param int|null $oriHeight
+     * @return float|int
      */
-    public function getNewWidth($height = 0, $oriWidth = null, $oriHeight = null)
+    public function getNewWidth(int $height = 0, ?int $oriWidth = null, ?int $oriHeight = null): float|int
     {
         if ($oriWidth === null)
             $oriWidth = $this->imgWidth;
@@ -201,9 +204,9 @@ class Gd
      * @param int $height
      * @param bool $crop
      * @param string $align
-     * @return Gd
+     * @return self
      */
-    public function resizeCaves($width = 0, $height = 0, $crop = false, $align = 'cc')
+    public function resizeCaves(int $width = 0, int $height = 0, bool $crop = false, string $align = 'cc'): self
     {
         $width = (int)$width;
         $height = (int)$height;
@@ -266,7 +269,7 @@ class Gd
      * @param $height
      * @return Gd
      */
-    public function createImage($width, $height)
+    public function createImage(int $width, int $height): self
     {
         $width = (int)$width;
         $height = (int)$height;
@@ -281,10 +284,10 @@ class Gd
     /**
      * Image Process - Resize Image
      * @param array $affine
-     * @param array|null $rect
-     * @return Gd
+     * @param array $rect
+     * @return self
      */
-    public function affine(array $affine, array $rect = [])
+    public function affine(array $affine, array $rect = []): self
     {
         try {
             $img = @imageaffine($this->imgResource, $affine, $rect);
@@ -567,19 +570,19 @@ class Gd
 
     /**
      * Smooth Arc Draw Segment
-     * @param $cx
-     * @param $cy
-     * @param $a
-     * @param $b
-     * @param $aaAngleX
-     * @param $aaAngleY
-     * @param $fillColor
-     * @param $start
-     * @param $stop
-     * @param $seg
+     * @param int $cx
+     * @param int $cy
+     * @param int $a
+     * @param int $b
+     * @param int $aaAngleX
+     * @param int $aaAngleY
+     * @param int $fillColor
+     * @param int $start
+     * @param int $stop
+     * @param int $seg
      */
-    private function smoothArcDrawSegment($cx, $cy, $a, $b, $aaAngleX, $aaAngleY, $fillColor, $start,
-                                          $stop, $seg)
+    private function smoothArcDrawSegment(int $cx, int $cy, int $a, int $b, int $aaAngleX, int $aaAngleY, int $fillColor, int $start,
+                                          int $stop, int $seg)
     {
         $color = array_values(imagecolorsforindex($this->imgResource, $fillColor));
         $xStart = abs($a * cos($start));
@@ -779,30 +782,11 @@ class Gd
     }
 
     /**
-     * Image Process - Rounded Each Side Corner
-     * @param $imgCorner
-     * @param $img
-     * @param $radius
-     * @param $startX
-     * @param $startY
-     * @param $background
-     */
-    private function cornerFill($imgCorner, $img, $radius, $startX, $startY, $background)
-    {
-        for ($y = $startY; $y < $startY + $radius; $y++)
-            for ($x = $startX; $x < $startX + $radius; $x++) {
-                $color = imagecolorsforindex($img, imagecolorat($imgCorner, $x - $startX, $y - $startY));
-                if ($color['red'] > 230 && $color['green'] > 0 && $color['blue'] > 0) imagesetpixel($img, $x, $y,
-                    $background);
-            }
-    }
-
-    /**
      * Image Effect - Gaussian Blur
      * @param int $level
-     * @return Gd
+     * @return self
      */
-    public function fxAntiAlias($level = 1)
+    public function fxAntiAlias($level = 1): self
     {
         $level = (int)$level;
         if (!empty($level)) {
@@ -819,9 +803,9 @@ class Gd
     /**
      * Image Effect - Gamma Correction
      * @param int $gamma
-     * @return Gd
+     * @return self
      */
-    public function fxGammaCorrection($gamma)
+    public function fxGammaCorrection(int $gamma): self
     {
         $gamma = (double)$gamma;
         if (!empty($gamma))
@@ -836,9 +820,9 @@ class Gd
     /**
      * Image Effect - Blur
      * @param int $level
-     * @return Gd
+     * @return self
      */
-    public function fxBlur($level = 0)
+    public function fxBlur(int $level = 0): self
     {
         $level = (int)$level;
         if (!function_exists('imagefilter'))
@@ -849,9 +833,9 @@ class Gd
     /**
      * Image Effect - Contrast
      * @param int $level
-     * @return Gd
+     * @return self
      */
-    public function fxContrast($level = 0)
+    public function fxContrast(int $level = 0): self
     {
         if (function_exists('imagefilter'))
             imagefilter($this->imgResource, IMG_FILTER_CONTRAST, $level);
@@ -861,9 +845,9 @@ class Gd
     /**
      * Image Effect - Brightness
      * @param int $level
-     * @return Gd
+     * @return self
      */
-    public function fxBrightness($level = 0)
+    public function fxBrightness(int $level = 0): self
     {
         if (!function_exists('imagefilter'))
             imagefilter($this->imgResource, IMG_FILTER_BRIGHTNESS, $level);
@@ -873,9 +857,9 @@ class Gd
     /**
      * Image Effect - Smooth
      * @param int $level
-     * @return Gd
+     * @return self
      */
-    public function fxSmooth($level = 0)
+    public function fxSmooth(int $level = 0): self
     {
         if (!function_exists('imagefilter'))
             imagefilter($this->imgResource, IMG_FILTER_SMOOTH, $level);
@@ -884,9 +868,9 @@ class Gd
 
     /**
      * Image Effect - Sketchy
-     * @return Gd
+     * @return self
      */
-    public function fxSketchy()
+    public function fxSketchy(): self
     {
         if (!function_exists('imagefilter'))
             imagefilter($this->imgResource, IMG_FILTER_MEAN_REMOVAL);
@@ -895,9 +879,9 @@ class Gd
 
     /**
      * Image Effect - Emboss
-     * @return Gd
+     * @return self
      */
-    public function fxEmboss()
+    public function fxEmboss(): self
     {
         if (!function_exists('imagefilter'))
             imagefilter($this->imgResource, IMG_FILTER_EMBOSS);
@@ -906,9 +890,9 @@ class Gd
 
     /**
      * Image Effect - Edge
-     * @return Gd
+     * @return self
      */
-    public function fxEdge()
+    public function fxEdge(): self
     {
         if (!function_exists('imagefilter'))
             imagefilter($this->imgResource, IMG_FILTER_EDGEDETECT);
@@ -917,9 +901,9 @@ class Gd
 
     /**
      * Image Effect - Invert
-     * @return Gd
+     * @return self
      */
-    public function fxInvert()
+    public function fxInvert(): self
     {
         if (!function_exists('imagefilter'))
             imagefilter($this->imgResource, IMG_FILTER_NEGATE);
@@ -929,9 +913,9 @@ class Gd
     /**
      * Image Effect - Interlace
      * @param int $color
-     * @return Gd
+     * @return self
      */
-    public function fxInterlace($color = 0)
+    public function fxInterlace(int $color = 0): self
     {
         $color = (int)$color;
         $imageX = $this->imgWidth;
@@ -943,9 +927,9 @@ class Gd
 
     /**
      * Image Effect - Greyscale
-     * @return Gd
+     * @return self
      */
-    public function fxGreyscale()
+    public function fxGreyscale(): self
     {
         if (!function_exists('imagefilter') || !imagefilter($this->imgResource, IMG_FILTER_GRAYSCALE)) {
             for ($y = 0; $y < $this->imgHeight; ++$y)
@@ -964,9 +948,12 @@ class Gd
      * @param bool $green
      * @param bool $blue
      * @param int $compare
-     * @return Gd
+     * @return self
      */
-    public function fxColorFilter($red = false, $green = false, $blue = false, $compare = 0)
+    public function fxColorFilter(bool $red = false,
+                                  bool $green = false,
+                                  bool $blue = false,
+                                  int $compare = 0): self
     {
         $imageX = $this->imgWidth;
         $imageY = $this->imgHeight;
@@ -1024,9 +1011,9 @@ class Gd
      * @param int $green
      * @param int $blue
      * @param int $alpha
-     * @return Gd
+     * @return self
      */
-    public function fxColorize($red = 0, $green = 0, $blue = 0, $alpha = 0)
+    public function fxColorize(int $red = 0, int $green = 0, int $blue = 0, int $alpha = 0): self
     {
         $red = (int)$red;
         $green = (int)$green;
@@ -1060,9 +1047,9 @@ class Gd
      * Image Effect - Noise
      * @param int $noise
      * @param int $level
-     * @return Gd
+     * @return self
      */
-    public function fxNoise($noise = 50, $level = 20)
+    public function fxNoise(int $noise = 50, int $level = 20): self
     {
         $level = (int)$level;
         $noise = (int)$noise;
@@ -1089,9 +1076,9 @@ class Gd
     /**
      * Image Effect - Scatter
      * @param int $level
-     * @return Gd
+     * @return self
      */
-    public function fxScatter($level = 4)
+    public function fxScatter(int $level = 4): self
     {
         $level = (int)$level;
         if (!empty($level)) {
@@ -1117,9 +1104,9 @@ class Gd
     /**
      * Image Effect - Pixelate
      * @param int $level
-     * @return Gd
+     * @return self
      */
-    public function fxPixelate($level = 8)
+    public function fxPixelate(int $level = 8): self
     {
         $level = (int)$level;
         if (!empty($level)) {
@@ -1173,9 +1160,9 @@ class Gd
     /**
      * Image Effect - Box Blur
      * @param int $level
-     * @return Gd
+     * @return self
      */
-    public function fxBoxBlur($level = 1)
+    public function fxBoxBlur(int $level = 1): self
     {
         $level = (int)$level;
         if (!empty($level)) {
@@ -1192,9 +1179,9 @@ class Gd
     /**
      * Image Effect - Gaussian Blur
      * @param int $level
-     * @return Gd
+     * @return self
      */
-    public function fxGaussianBlur($level = 1)
+    public function fxGaussianBlur(int $level = 1): self
     {
         $level = (int)$level;
         if (!empty($level)) {
@@ -1211,9 +1198,9 @@ class Gd
     /**
      * Image Effect - Gaussian Blur
      * @param int $level
-     * @return Gd
+     * @return self
      */
-    public function fxSharpen($level = 1)
+    public function fxSharpen(int $level = 1): self
     {
         $level = (int)$level;
         if (!empty($level)) {
@@ -1232,9 +1219,9 @@ class Gd
      * @param array $matrix
      * @param int $offset
      * @param int $level
-     * @return Gd
+     * @return self
      */
-    public function fxCustom(array $matrix, $offset = 0, $level = 1)
+    public function fxCustom(array $matrix, int $offset = 0, int $level = 1): self
     {
         $level = (int)$level;
         $div = array_sum(array_map('array_sum', $matrix));
@@ -1245,9 +1232,9 @@ class Gd
 
     /**
      * Image Effect - Fish Eye
-     * @return Gd
+     * @return self
      */
-    public function fxFishEye()
+    public function fxFishEye(): self
     {
         $CImageX = $this->imgWidth / 2; //Source middle
         $CImageY = $this->imgHeight / 2;
@@ -1274,9 +1261,9 @@ class Gd
      * Image Effect - Dream
      * @param int $percent
      * @param int $type
-     * @return Gd
+     * @return self
      */
-    public function fxDream($percent = 30, $type = 0)
+    public function fxDream(int $percent = 30, int $type = 0): self
     {
         $imageX = $this->imgWidth;
         $imageY = $this->imgHeight;
@@ -1311,7 +1298,7 @@ class Gd
                 }
                 imagesetpixel($this->imgResource, $x, $y, $col);
             }
-        $this->resize( $imageX, $imageY);
+        $this->resize($imageX, $imageY);
         imagecopymerge($imageOri, $this->imgResource, 0, 0, 0, 0, $imageX, $imageY, $percent);
         imagedestroy($this->imgResource);
         $this->initImage($imageOri);
@@ -1320,8 +1307,8 @@ class Gd
 
     /**
      * Build and return true tye font box information
-     * @param $content
-     * @param $font
+     * @param string $content
+     * @param string $font
      * @param int $size
      * @param int $x
      * @param int $y
@@ -1329,7 +1316,14 @@ class Gd
      * @param int $angle
      * @return array
      */
-    public function ttfBox($content, $font, $size = 10, $x = 0, $y = 0, $color = 0, $angle = 0)
+    #[ArrayShape(['X' => "int", 'Y' => "float|int", 'Width' => "float|int", 'Height' => "float|int", 'Font' => "", 'Size' => "int", 'Color' => "int", 'Angle' => "float", 'Content' => ""])]
+    public function ttfBox(string $content,
+                           string $font,
+                           int $size = 10,
+                           int $x = 0,
+                           int $y = 0,
+                           int $color = 0,
+                           $angle = 0): array
     {
         $size = (int)$size;
         $x = (int)$x;
@@ -1337,7 +1331,7 @@ class Gd
         $angle = (double)$angle;
         $color = (int)$color;
         $tBox = imagettfbbox($size, $angle, $font, $content);
-        $ttfBox = [
+        return [
             'X' => $x,
             'Y' => $y + abs($tBox[5]) - (abs($tBox[1]) / 2),
             'Width' => abs($tBox[4] - $tBox[0]),
@@ -1348,17 +1342,16 @@ class Gd
             'Angle' => $angle,
             'Content' => $content
         ];
-        return $ttfBox;
     }
 
     /**
      * Draw true type font text
-     * @param $ttfBox
-     * @return bool|Gd
+     * @param array $ttfBox
+     * @return self
      */
-    public function ttfText($ttfBox)
+    public function ttfText(array $ttfBox): self
     {
-        if (!$this->isTTFBox($ttfBox)) return false;
+        if (!$this->isTTFBox($ttfBox)) return $this;
         $this->drawTtfText($ttfBox['Size'], $ttfBox['Angle'], $ttfBox['X'], $ttfBox['Y'], $ttfBox['Color'], $ttfBox['Font'],
             $ttfBox['Content']);
         return $this;
@@ -1373,7 +1366,7 @@ class Gd
      * @param $ttfBox
      * @return bool
      */
-    private function isTTFBox($ttfBox)
+    #[Pure] private function isTTFBox($ttfBox): bool
     {
         if (array_key_exists('X', $ttfBox) && array_key_exists('Y', $ttfBox) && array_key_exists('Width', $ttfBox) &&
             array_key_exists('Height', $ttfBox) && array_key_exists('Font', $ttfBox) && array_key_exists('Size',
@@ -1386,17 +1379,24 @@ class Gd
 
     /**
      * Draw a true type font box text, process part
-     * @param $size
-     * @param $angle
-     * @param $x
-     * @param $y
-     * @param $color
-     * @param $font
-     * @param $text
+     * @param int $size
+     * @param int $angle
+     * @param int $x
+     * @param int $y
+     * @param int $color
+     * @param string $font
+     * @param string $text
      * @param int $blur
-     * @return Gd
+     * @return self
      */
-    private function drawTtfText($size, $angle, $x, $y, $color, $font, $text, $blur = 0)
+    private function drawTtfText(int $size,
+                                 int $angle,
+                                 int $x,
+                                 int $y,
+                                 int $color,
+                                 string $font,
+                                 string $text,
+                                 int $blur = 0): self
     {
         $angle = (double)$angle;
         $x = (int)$x;
@@ -1422,12 +1422,12 @@ class Gd
 
     /**
      * Draw true type font text with grow
-     * @param $ttfBox
+     * @param array $ttfBox
      * @param int $grow
      * @param int $color
-     * @return Gd
+     * @return self
      */
-    public function ttfTextGrow($ttfBox, $grow = 10, $color = 0)
+    public function ttfTextGrow(array $ttfBox, int $grow = 10, int $color = 0): self
     {
         if (!$this->isTTFBox($ttfBox)) return $this;
         $grow = (int)$grow;
@@ -1442,13 +1442,16 @@ class Gd
 
     /**
      * Draw true type font text with shadow
-     * @param $ttfBox
+     * @param array $ttfBox
      * @param int $shadow
      * @param int $color
      * @param string $direction
-     * @return Gd
+     * @return self
      */
-    public function ttfTextShadow($ttfBox, $shadow = 10, $color = 0, $direction = 'rb')
+    public function ttfTextShadow(array $ttfBox,
+                                  int $shadow = 10,
+                                  int $color = 0,
+                                  string $direction = 'rb'): self
     {
         if (!$this->isTTFBox($ttfBox)) return $this;
         $color = (int)$color;
@@ -1500,17 +1503,17 @@ class Gd
 
     /**
      * Get image resource
-     * @return mixed
+     * @return GdImage
      */
-    public function getResource()
+    public function getResource(): GdImage
     {
         return $this->imgResource;
     }
 
     /**
-     * @return bool|resource
+     * @return bool|GdImage
      */
-    public function duplicateNewImage()
+    public function duplicateNewImage(): GdImage|bool
     {
         $width = $this->getWidth();
         $height = $this->getHeight();
@@ -1527,7 +1530,7 @@ class Gd
      * * Get Loaded Image Width
      * @return bool|int
      */
-    public function getWidth()
+    public function getWidth(): bool|int
     {
         return $this->imgWidth;
     }
@@ -1536,7 +1539,7 @@ class Gd
      * Get Loaded Image Height
      * @return bool|int
      */
-    public function getHeight()
+    public function getHeight(): bool|int
     {
         return $this->imgHeight;
     }
@@ -1546,9 +1549,12 @@ class Gd
      * @param string $imageType
      * @param string $file
      * @param array $params
-     * @return Gd|string|resource
+     * @return string|Gd|GdImage
      */
-    public function output($outputType = 'o', $imageType = 'png', $file = '', $params = [])
+    public function output(string $outputType = 'o',
+                           string $imageType = 'png',
+                           string $file = '',
+                           array $params = []): string|self|GdImage
     {
         switch (strtolower($imageType)) {
             case 'gif':

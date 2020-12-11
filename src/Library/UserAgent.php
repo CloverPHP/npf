@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Library;
 
@@ -11,9 +12,18 @@ use InvalidArgumentException;
  */
 final class UserAgent extends MobileDetect
 {
-    private $userPlatform = null;
-    private $userBrowser = null;
-    private $userVersion = null;
+    /**
+     * @var string
+     */
+    private string $userPlatform;
+    /**
+     * @var string
+     */
+    private string $userBrowser;
+    /**
+     * @var string
+     */
+    private string $userVersion;
 
     /**
      * UserAgent constructor.
@@ -26,18 +36,18 @@ final class UserAgent extends MobileDetect
 
     /**
      * @param string $userAgent
-     * @return bool
+     * @return self
      */
-    final public function setUserAgent($userAgent = '')
+    final public function setUserAgent($userAgent = ''): self
     {
         if (empty($userAgent))
-            return false;
+            return $this;
         $data = $this->analyse($userAgent);
-        $this->userPlatform = $data['platform'];
-        $this->userBrowser = $data['browser'];
-        $this->userVersion = $data['version'];
+        $this->userPlatform = $data['platform'] ?? '';
+        $this->userBrowser = $data['browser'] ?? '';
+        $this->userVersion = $data['version'] ?? '';
         parent::setUserAgent($userAgent);
-        return true;
+        return $this;
     }
 
     /**
@@ -50,7 +60,7 @@ final class UserAgent extends MobileDetect
      * @link https://github.com/donatj/PhpUserAgent
      * @link http://donatstudios.com/PHP-Parser-HTTP_USER_AGENT
      */
-    private function analyse($userAgent = null)
+    private function analyse(?string $userAgent): array
     {
         $platform = null;
         $browser = null;
@@ -184,7 +194,7 @@ final class UserAgent extends MobileDetect
     /**
      * Get User Browser
      */
-    final public function getBrowserName()
+    final public function getBrowserName(): string
     {
         return $this->userBrowser;
     }
@@ -192,7 +202,7 @@ final class UserAgent extends MobileDetect
     /**
      * Get User Browser Version
      */
-    final public function getBrowserVersion()
+    final public function getBrowserVersion(): string
     {
         return $this->userVersion;
     }
@@ -200,7 +210,7 @@ final class UserAgent extends MobileDetect
     /**
      * Get User Platform
      */
-    final public function getPlatformName()
+    final public function getPlatformName(): string
     {
         return $this->userPlatform;
     }

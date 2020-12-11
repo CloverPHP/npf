@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Library;
 
@@ -15,41 +16,36 @@ use Npf\Exception\InternalError;
  */
 final class Xml
 {
-    /**
-     * @var string
-     */
-    private static $encoding = 'UTF-8';
 
     /**
-     * @var DOMDocument
-     */
-    private static $xml = null;
-
-    /**
-     * Initialize the root XML node [optional].
+     * Get the root XML node, if there isn't one, create it.
      *
      * @param string $version
      * @param string $encoding
      * @param bool $standalone
      * @param bool $format_output
+     * @return DOMDocument
      */
-    public static function init($version = '1.0', $encoding = 'utf-8', $standalone = false, $format_output = true)
+    private static function getXMLRoot(string $version = '1.0',
+                                       string $encoding = 'utf-8',
+                                       bool $standalone = false,
+                                       bool $format_output = true): DOMDocument
     {
-        self::$xml = new DomDocument($version, $encoding);
-        self::$xml->xmlStandalone = $standalone;
-        self::$xml->formatOutput = $format_output;
-        self::$encoding = $encoding;
+        $xml = new DomDocument($version, $encoding);
+        $xml->xmlStandalone = $standalone;
+        $xml->formatOutput = $format_output;
+        return $xml;
     }
 
     /**
      * Convert an Array to XML.
-     * @param string $node_name - name of the root node to be converted
-     * @param array $arr - array to be converted
+     * @param string $rootName - name of the root node to be converted
+     * @param array $content - array to be converted
      * @param array $docType - optional docType
      * @return DomDocument
      * @throws Exception
      */
-    public static function createXML($node_name, $arr = [], $docType = [])
+    public static function createXML(string $rootName, array $content = [], array $docType = []): DOMDocument
     {
         $xml = self::getXMLRoot();
         // BUG 008 - Support <!DOCTYPE>
@@ -63,8 +59,7 @@ final class Xml
                     )
             );
         }
-        $xml->appendChild(self::convert2Xml($node_name, $arr));
-        self::$xml = null;
+        $xml->appendChild(self::convert2Xml($rootName, $content));
         return $xml;
     }
 
@@ -74,7 +69,7 @@ final class Xml
      * @return array
      * @throws Exception
      */
-    public static function createArray($inputXml)
+    public static function createArray(string|DOMDocument $inputXml): array
     {
         $xml = self::getXMLRoot();
         if (is_string($inputXml)) {
@@ -86,14 +81,10 @@ final class Xml
             } catch (Exception $ex) {
                 throw new InternalError('[XML2Array] Error parsing the XML string.' . PHP_EOL . $ex->getMessage());
             }
-        } elseif (is_object($inputXml)) {
-            if (get_class($inputXml) != 'DOMDocument') {
-                throw new InternalError('[XML2Array] The input XML object should be of type: DOMDocument.');
-            }
-            $xml = self::$xml = $inputXml;
-        } else {
+        } elseif ($inputXml instanceof DOMDocument)
+            $xml = $inputXml;
+        else
             throw new InternalError('[XML2Array] Invalid input');
-        }
 
         // Bug 008 - Support <!DOCTYPE>.
         $docType = $xml->doctype;
@@ -109,8 +100,6 @@ final class Xml
         }
 
         $array[$xml->documentElement->tagName] = self::convert2Array($xml->documentElement);
-        self::$xml = null;    // clear the xml node in the class for 2nd time use.
-
         return $array;
     }
 
@@ -118,52 +107,52 @@ final class Xml
     /**
      * Convert an Array to XML.
      *
-     * @param string $node_name - name of the root node to be converted
-     * @param array $arr - array to be converted
+     * @param string $rootName - name of the root node to be converted
+     * @param array $content - array to be converted
      *
      * @return DOMNode
      *
      * @throws Exception
      */
-    private static function convert2Xml($node_name, $arr = [])
+    private static function convert2Xml(string $rootName, array $content = []): DOMNode
     {
         //print_arr($node_name);
         $xml = self::getXMLRoot();
-        $node = $xml->createElement($node_name);
+        $node = $xml->createElement($rootName);
 
-        if (is_array($arr)) {
+        if (is_array($content)) {
             // get the attributes first.;
-            if (array_key_exists('@attributes', $arr) && is_array($arr['@attributes'])) {
-                foreach ($arr['@attributes'] as $key => $value) {
+            if (array_key_exists('@attributes', $content) && is_array($content['@attributes'])) {
+                foreach ($content['@attributes'] as $key => $value) {
                     if (!self::isValidTagName($key)) {
-                        throw new InternalError('[Array2XML] Illegal character in attribute name. attribute: ' . $key . ' in node: ' . $node_name);
+                        throw new InternalError('[Array2XML] Illegal character in attribute name. attribute: ' . $key . ' in node: ' . $rootName);
                     }
                     $node->setAttribute($key, self::bool2str($value));
                 }
-                unset($arr['@attributes']); //remove the key from the array once done.
+                unset($content['@attributes']); //remove the key from the array once done.
             }
 
             // check if it has a value stored in @value, if yes store the value and return
             // else check if its directly stored as string
-            if (array_key_exists('@value', $arr)) {
-                $node->appendChild($xml->createTextNode(self::bool2str($arr['@value'])));
-                unset($arr['@value']);    //remove the key from the array once done.
+            if (array_key_exists('@value', $content)) {
+                $node->appendChild($xml->createTextNode(self::bool2str($content['@value'])));
+                unset($content['@value']);    //remove the key from the array once done.
                 //return from recursion, as a note with value cannot have child nodes.
                 return $node;
-            } elseif (array_key_exists('@cdata', $arr)) {
-                $node->appendChild($xml->createCDATASection(self::bool2str($arr['@cdata'])));
-                unset($arr['@cdata']);    //remove the key from the array once done.
+            } elseif (array_key_exists('@cdata', $content)) {
+                $node->appendChild($xml->createCDATASection(self::bool2str($content['@cdata'])));
+                unset($content['@cdata']);    //remove the key from the array once done.
                 //return from recursion, as a note with cdata cannot have child nodes.
                 return $node;
             }
         }
 
         //create subnodes using recursion
-        if (is_array($arr)) {
+        if (is_array($content)) {
             // recurse to get the node for that key
-            foreach ($arr as $key => $value) {
+            foreach ($content as $key => $value) {
                 if (!self::isValidTagName($key)) {
-                    throw new InternalError('[Array2XML] Illegal character in tag name. tag: ' . $key . ' in node: ' . $node_name);
+                    throw new InternalError('[Array2XML] Illegal character in tag name. tag: ' . $key . ' in node: ' . $rootName);
                 }
                 if (is_array($value) && is_numeric(key($value))) {
                     // MORE THAN ONE NODE OF ITS KIND;
@@ -176,15 +165,14 @@ final class Xml
                     // ONLY ONE NODE OF ITS KIND
                     $node->appendChild(self::convert2Xml($key, $value));
                 }
-                unset($arr[$key]); //remove the key from the array once done.
+                unset($content[$key]); //remove the key from the array once done.
             }
         }
 
         // after we are done with all the keys in the array (if it is one)
         // we check if it has any text value, if yes, append it.
-        if (!is_array($arr)) {
-            $node->appendChild($xml->createTextNode(self::bool2str($arr)));
-        }
+        if (!is_array($content))
+            $node->appendChild($xml->createTextNode(self::bool2str($content)));
 
         return $node;
     }
@@ -193,9 +181,9 @@ final class Xml
     /**
      * Convert an XML to an Array.
      * @param DOMNode $node - XML as a string or as an object of DOMDocument
-     * @return array
+     * @return array|string
      */
-    private static function convert2Array(DOMNode $node)
+    private static function convert2Array(DOMNode $node): array|string
     {
         $output = [];
 
@@ -262,43 +250,23 @@ final class Xml
     }
 
     /**
-     * Get the root XML node, if there isn't one, create it.
-     *
-     * @return DOMDocument
-     */
-    private static function getXMLRoot()
-    {
-        if (empty(self::$xml)) {
-            self::init();
-        }
-
-        return self::$xml;
-    }
-
-    /**
      * Get string representation of boolean value.
-     *
-     * @param mixed $v
-     *
+     * @param mixed $value
      * @return string
      */
-    private static function bool2str($v)
+    private static function bool2str(bool $value): string
     {
         //convert boolean to text value.
-        $v = $v === true ? 'true' : $v;
-        $v = $v === false ? 'false' : $v;
-
-        return $v;
+        return $value === true ? 'true' : 'false';
     }
 
     /**
      * @param DOMNamedNodeMap $namedNodeMap
-     *
-     * @return array|null
+     * @return array
      */
-    private static function getNamedNodeMapAsArray(DOMNamedNodeMap $namedNodeMap)
+    private static function getNamedNodeMapAsArray(DOMNamedNodeMap $namedNodeMap): array
     {
-        $result = null;
+        $result = [];
         if ($namedNodeMap->length) {
             foreach ($namedNodeMap as $key => $entity) {
                 $result[$key] = $entity;
@@ -314,7 +282,7 @@ final class Xml
      * @param string $tag
      * @return bool
      */
-    private static function isValidTagName($tag)
+    private static function isValidTagName(string $tag): bool
     {
         $pattern = '/^[a-z_]+[a-z0-9\:\-\.\_]*[^:]*$/i';
 

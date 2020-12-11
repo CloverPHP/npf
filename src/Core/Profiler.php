@@ -1,6 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
+
+    use JetBrains\PhpStorm\Pure;
 
     /**
      * 调试处理类
@@ -8,56 +11,51 @@ namespace Npf\Core {
     final class Profiler
     {
         /**
-         * @var App
+         * @var bool
          */
-        private $app;
-        /**
-         * @var App
-         */
-        private $enable = false;
+        private bool $enable = false;
 
         /**
          *
-         * @var int
+         * @var float|string
          */
-        private $initTime = 0;
+        private float|string $initTime;
 
         /**
          *
          * @var array
          */
-        private $timeUsage = [];
+        private array $timeUsage;
 
         /**
          *
          * @var array
          */
-        private $query = [];
+        private array $query;
 
         /**
-         *
          * @var array
          */
-        private $debug = [];
-
+        private array $debug = [];
         /**
          * @var Container
          */
-        private $config;
-
-        private $maxLog = 0;
+        private Container $config;
+        /**
+         * @var int
+         */
+        private $maxLog;
 
         /**
          * Profiler constructor.
          * @param App $app
          */
-        public function __construct(App &$app)
+        public function __construct(private App $app)
         {
-            $this->app = &$app;
             $this->initTime = INIT_TIMESTAMP;
             try {
                 $this->config = $app->config('Profiler', true);
-            } catch (\Exception $exception) {
+            } catch (\Exception) {
                 $this->config = new Container();
             }
             $this->maxLog = $this->config->get('maxLog', 100);
@@ -72,25 +70,26 @@ namespace Npf\Core {
         /**
          * Add the debug note to the profiler
          */
-        public function debug()
+        public function debug(): self
         {
             if ($this->enable)
                 foreach (func_get_args() as $msg)
                     $this->debug[] = $msg;
+            return $this;
         }
 
         /**
-         * @return mixed
+         * @return bool
          */
-        public function enable()
+        public function enable(): bool
         {
             return $this->enable;
         }
 
         /**
-         * @return array|boolean
+         * @return array|bool
          */
-        public function fetch()
+        public function fetch(): array|bool
         {
             $Uri = $this->app->request->getUri();
             $profiler = [
@@ -113,9 +112,9 @@ namespace Npf\Core {
         }
 
         /**
-         * @return mixed
+         * @return string
          */
-        public function memUsage()
+        public function memUsage(): string
         {
             return Common::fileSize2Unit(memory_get_usage());
         }
@@ -125,7 +124,7 @@ namespace Npf\Core {
          * @param bool $milliSec
          * @return float
          */
-        public function elapsed($milliSec = true)
+        #[Pure] public function elapsed(bool $milliSec = true): float
         {
             if ($milliSec) {
                 return round(((microtime(true)) - $this->initTime) * 1000, 2);
@@ -134,89 +133,84 @@ namespace Npf\Core {
             }
         }
 
-        /**
-         * Skype-Express Highlight Channel
-         * @param $type
-         * @param $content
-         * @return bool|mixed
-         */
-        public function logCritical($type, $content)
-        {
-            if ($this->config instanceof Container && $this->config->get('logCritical'))
-                return $this->_log(LOG_CRIT, $type, $content);
-            else
-                return false;
-        }
-
         /**d
-         * @param $channel
-         * @param $type
-         * @param $content
-         * @return bool
+         * @param int $priority
+         * @param string $type
+         * @param mixed $content
+         * @return void
          */
-        private function _log($channel, $type, $content)
+        private function _log(int $priority, string $type, mixed $content): void
         {
             if (!is_string($content))
                 $content = json_encode($content);
             try {
-                syslog($channel, "{$type}：{$content}");
-                return true;
-            } catch (\Exception $ex) {
-                return false;
+                syslog($priority, "{$type}：{$content}");
+            } catch (\Exception) {
             }
         }
 
         /**
          * Skype-Express Highlight Channel
-         * @param $type
-         * @param $content
-         * @return bool|mixed
+         * @param string $type
+         * @param mixed $content
+         * @return self
          */
-        public function logError($type, $content)
+        public function logCritical(string $type, mixed $content): self
+        {
+            if ($this->config instanceof Container && $this->config->get('logCritical'))
+                $this->_log(LOG_CRIT, $type, $content);
+            return $this;
+        }
+
+        /**
+         * Skype-Express Highlight Channel
+         * @param string $type
+         * @param mixed $content
+         * @return self
+         */
+        public function logError(string $type, mixed $content): self
         {
             if ($this->config instanceof Container && $this->config->get('logError'))
-                return $this->_log(LOG_ERR, $type, $content);
-            else
-                return false;
+                $this->_log(LOG_ERR, $type, $content);
+            return $this;
         }
 
         /**
          * Skype-Express Highlight Channel
          * @param $type
          * @param $content
-         * @return bool|mixed
+         * @return self
          */
-        public function logInfo($type, $content)
+        public function logInfo(string $type, mixed $content): self
         {
             if ($this->config instanceof Container && $this->config->get('logInfo'))
-                return $this->_log(LOG_INFO, $type, $content);
-            else
-                return false;
+                $this->_log(LOG_INFO, $type, $content);
+            return $this;
         }
 
         /**
          * @param $type
          * @param $content
-         * @return bool|mixed
+         * @return self
          */
-        public function logDebug($type, $content)
+        public function logDebug(string $type, mixed $content): self
         {
             if ($this->config instanceof Container && $this->config->get('logDebug'))
-                return $this->_log(LOG_DEBUG, $type, $content);
-            else
-                return false;
+                $this->_log(LOG_DEBUG, $type, $content);
+            return $this;
         }
 
         /**
          * @param $queryStr
          * @param $sTime
          * @param $category
+         * @return Profiler
          */
-        public function saveQuery($queryStr, $sTime, $category)
+        public function saveQuery(string $queryStr, int|float $sTime, string $category): self
         {
             try {
                 if (!$this->enable || !$this->app->config('Profiler')->get("queryLog" . ucfirst($category), true))
-                    return;
+                    return $this;
 
                 $nowMilliSec = $this->elapsed();
                 $milliSecond = round(($nowMilliSec + $sTime), 2);
@@ -229,9 +223,9 @@ namespace Npf\Core {
                         5, " ", STR_PAD_LEFT) . ": $queryStr";
                 if ($this->maxLog > 0 && count($this->query) > $this->maxLog)
                     $this->query = array_slice($this->query, -1 * $this->maxLog);
-                return;
-            } catch (Exception $e) {
-                return;
+                return $this;
+            } catch (Exception) {
+                return $this;
             }
         }
 
@@ -240,10 +234,9 @@ namespace Npf\Core {
          * @param $arguments
          * @return null
          */
-        public function __call($name, $arguments)
+        public function __call(string $name, ?array $arguments)
         {
             return null;
         }
     }
-
 }

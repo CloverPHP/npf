@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Exception {
 
@@ -10,6 +11,6 @@ namespace Npf\Exception {
      */
     class InvalidParams extends Exception
     {
-        protected $error = 'invalid_params';
+        protected string $error = 'invalid_params';
     }
 }

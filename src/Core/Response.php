@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
     /**
@@ -10,15 +11,15 @@ namespace Npf\Core {
         /**
          * @var array
          */
-        private $headers = [];
+        private array $headers;
         /**
-         * @var int Response Http Status Code
+         * @var bool|int Response Http Status Code
          */
-        private $statusCode = false;
+        private int|bool $statusCode = false;
         /**
          * @var array
          */
-        private $initial = [
+        private array $initial = [
             'status' => 'ok',
             'error' => '',
             'code' => ''
@@ -26,12 +27,10 @@ namespace Npf\Core {
 
         /**
          * Response constructor
-         * @param null $data
+         * @param array|null $data
          */
-        public function __construct($data = NULL)
+        public function __construct(array $data = NULL)
         {
-            if (!is_array($data))
-                $data = [];
             $data += $this->initial;
             parent::__construct($data, false, true);
         }
@@ -40,11 +39,10 @@ namespace Npf\Core {
          * @param $error
          * @param string $desc
          * @param string $code
-         * @return Response
+         * @return self
          */
-        public function error($error, $desc = '', $code = '')
+        public function error(string $error, string $desc = '', string $code = ''): self
         {
-            $this->set('status', 'error');
             $this->set('status', (string)$error);
             if ($desc)
                 $this->set('profiler', ['desc' => (string)$desc]);
@@ -55,9 +53,9 @@ namespace Npf\Core {
 
         /**
          * @param array $data
-         * @return Response
+         * @return self
          */
-        public function success(array $data = [])
+        public function success(array $data = []): self
         {
             $this->set('status', 'ok');
             $this->set('error', null);
@@ -70,7 +68,7 @@ namespace Npf\Core {
          * @param null $statusCode
          * @return int
          */
-        public function statusCode($statusCode = null)
+        public function statusCode($statusCode = null): bool|int
         {
             if (!empty($statusCode)) {
                 $statusCode = (int)$statusCode;
@@ -83,9 +81,9 @@ namespace Npf\Core {
          * Response constructor
          * @param $array
          * @param bool $overwrite
-         * @return Response
+         * @return self
          */
-        public function setHeaders($array, $overwrite = false)
+        public function setHeaders(array $array, bool $overwrite = false): self
         {
             if (!empty($array) && is_array($array)) {
                 if (!is_array($this->headers))
@@ -100,7 +98,7 @@ namespace Npf\Core {
          * Response constructor
          * @return array
          */
-        public function getHeaders()
+        public function getHeaders(): array
         {
             if (!is_array($this->headers))
                 $this->headers = [];
@@ -109,12 +107,12 @@ namespace Npf\Core {
 
         /**
          * Response constructor
-         * @param $name
-         * @param $value
+         * @param string $name
+         * @param mixed $value
          * @param bool $overwrite
-         * @return mixed|null
+         * @return mixed
          */
-        public function header($name, $value = null, $overwrite = false)
+        public function header(string $name, mixed $value = null, bool $overwrite = false): mixed
         {
             if (!is_array($this->headers))
                 $this->headers = [];
@@ -131,7 +129,7 @@ namespace Npf\Core {
         /**
          * @return array
          */
-        public function fetch()
+        public function fetch(): array
         {
             return [
                 'statusCode' => $this->statusCode,
@@ -140,11 +138,11 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $name
-         * @param $value
-         * @return $this
+         * @param string $name
+         * @param mixed $value
+         * @return self
          */
-        public function add($name, $value)
+        public function add(string $name, mixed $value): self
         {
             $data = $this->{$name};
             switch (gettype($data)) {
@@ -169,20 +167,19 @@ namespace Npf\Core {
          * Change a buffer item
          * @param string $name
          * @param mixed $data
-         * @return Response
+         * @return self
          */
-        final public function chg($name, $data)
+        final public function chg(string $name, mixed $data): self
         {
-            if (!empty($name)) {
+            if (!empty($name))
                 $this->{$name} = $data;
-            }
             return $this;
         }
 
         /**
          * Clear buffer
          */
-        final public function clear()
+        final public function clear(): self
         {
             parent::clear();
             $this->import($this->initial);

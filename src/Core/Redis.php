@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
@@ -8,156 +9,152 @@ namespace Npf\Core {
     /**
      * Class ShadingRedis
      *
-     * @method psetex()
-     * @method getSet()
-     * @method randomKey()
-     * @method renameKey()
-     * @method renameNx()
-     * @method expire(string $name, $second)
-     * @method exists(string $name)
-     * @method incr(string $name)
-     * @method incrBy(string $name, int $value)
-     * @method incrByFloat(string $name, float $value)
-     * @method decr(string $name)
-     * @method decrBy(string $name, int $value)
-     * @method type()
-     * @method append()
-     * @method getRange()
-     * @method setRange()
-     * @method getBit()
-     * @method setBit()
-     * @method strlen(string $name)
-     * @method sort()
-     * @method sortAsc()
-     * @method sortAscAlpha()
-     * @method sortDesc()
-     * @method sortDescAlpha()
-     * @method lPush(string $name, string $value)
-     * @method rPush(string $name, string $value)
-     * @method lPushX(string $name, string $value)
-     * @method rPushX(string $name, string $value)
-     * @method lPop(string $name)
-     * @method rPop(string $name)
-     * @method bLPop(string $name)
-     * @method bRPop(string $name)
-     * @method lLen(string $name)
-     * @method lRem(string $name, int $index, string $value)
-     * @method lTrim(string $name, int $start, int $end)
-     * @method lIndex(string $name, int $index)
-     * @method lRange(string $name, int $start, int $end)
-     * @method lSet(string $name, int $index, string $value)
-     * @method lInsert()
-     * @method sAdd()
-     * @method sSize()
-     * @method sRemove()
-     * @method sMove()
-     * @method sPop()
-     * @method sRandMember()
-     * @method sContains()
-     * @method sMembers($name)
-     * @method sInter()
-     * @method sInterStore()
-     * @method sUnion()
-     * @method sUnionStore()
-     * @method sDiff()
-     * @method sDiffStore()
-     * @method setTimeout()
-     * @method save()
-     * @method bgSave()
-     * @method lastSave()
-     * @method flushDB(int $dbIndex)
-     * @method flushAll()
-     * @method dbSize()
-     * @method ttl(string $key)
-     * @method pttl()
-     * @method persist()
-     * @method info()
-     * @method resetStat()
-     * @method move()
-     * @method bgrewriteaof()
-     * @method slaveof()
-     * @method object()
-     * @method bitop()
-     * @method bitcount()
-     * @method bitpos()
-     * @method mset()
-     * @method msetnx()
-     * @method rpoplpush()
-     * @method brpoplpush()
-     * @method zAdd()
-     * @method zDelete()
-     * @method zRange()
-     * @method zReverseRange()
-     * @method zRangeByScore()
-     * @method zRevRangeByScore()
-     * @method zCount()
-     * @method zDeleteRangeByScore()
-     * @method zDeleteRangeByRank()
-     * @method zCard()
-     * @method zScore()
-     * @method zRank()
-     * @method zRevRank()
-     * @method zInter()
-     * @method zUnion()
-     * @method zIncrBy()
+     * Key Timing
+     * @method ttl(string $name): int
+     * @method pTtl(string $name): int
      * @method expireAt(string $name, int $timestamp)
      * @method pExpire(string $name, int $milliSecond)
      * @method pExpireAt(string $name, int $milliSecondTimestamp)
-     * @method hGet(string $name, string $field)
-     * @method hSet(string $name, string $field, string $value)
-     * @method hSetNx(string $name, string $field, string $value)
-     * @method hDel(string $name, string $field)
-     * @method hLen(string $name)
-     * @method hKeys(string $name)
-     * @method hVals(string $name)
-     * @method hGetAll(string $name)
-     * @method hExists(string $name, string $field)
-     * @method hIncrBy(string $name, string $field, int $number)
-     * @method hIncrByFloat(string $name, string $field, float $number)
-     * @method hMset()
-     * @method hMget()
-     * @method pipeline()
-     * @method watch()
-     * @method unwatch()
-     * @method psubscribe()
-     * @method unsubscribe()
-     * @method punsubscribe()
-     * @method time()
-     * @method evalsha()
-     * @method script()
-     * @method dump()
+     * @method expire(string $name, int $second): boolean
+     *
+     * Standard key
+     * @method move(string $name, int $dbIndex): int
+     * @method object(string $method, string $name): mixed
+     * @method type(string $name): string
+     * @method exists(string $name): int
+     * @method persist(string $name): int
+     * @method get(string $name)
+     * @method strLen(string $name): int
+     * @method getUnserialise(string $name)
+     * @method set(string $name, string|int|float $value, int $lifetime = 0, boolean $noExists = null)
+     * @method setEx(string $name, string|int|float $value, int $lifetime = 0)
+     * @method setSerialise(string $name, mixed $value, int $lifetime = 0, boolean $noExists = null)
+     * @method setNx(string $name, string|int|float $value, int $lifetime = 0)
+     * @method setNxSerialise(string $name, mixed $value, int $lifetime = 0)
+     * @method pSetEx(string $name, int $milliSec): bool
+     * @method getSet(string $name, string $value): mixed
+     * @method append(string $name, string $value): int
+     * @method randomKey(): string
+     * @method rename(string $oriKey, string $newKey): boolean
+     * @method renameNx(string $oriKey, string $newKey): boolean
+     * @method incr(string $name): int
+     * @method incrBy(string $name, int $value): int
+     * @method incrByFloat(string $name, float $value): float
+     * @method decr(string $name): int
+     * @method decrBy(string $name, int $value): int
+     * @method getRange(string $name, int $start, int $end)
+     * @method setRange(string $name, int $offset, string $value)
+     * @method getBit(string $name, int $offset): int
+     * @method setBit(string $name, int $offset, int $value): int
+     *
+     * M Series (Multi)
+     * @method mGet(string ...$name): array
+     * @method mSet(string ...$args): bool
+     * @method mSetNx(string ...$args): int
+     *
+     * L Series (List)
+     * @method sort(string $name, ...$arg): array
+     * @method lPush(string $name, string ...$value): int
+     * @method rPush(string $name, string ...$value): int
+     * @method lPushX(string $name, string $value): int
+     * @method rPushX(string $name, string $value): int
+     * @method lPop(string $name): string
+     * @method rPop(string $name): string
+     * @method lLen(string $name): int
+     * @method lRem(string $name, int $index, string $value): int
+     * @method lTrim(string $name, int $start, int $end): bool
+     * @method lIndex(string $name, int $index): null|bool|string
+     * @method lRange(string $name, int $start, int $end): array
+     * @method lSet(string $name, int $index, string $value): bool
+     * @method lInsert(string $name, string $position, string $search, string $value): int
+     *
+     * S Series
+     * @method sAdd(string $name, string ...$member): int
+     * @method sRem(string $name, string ...$member): int
+     * @method sCard(string $name): int
+     * @method sMove(string $oriName, string $newName, string $member): int
+     * @method sPop(string $name, int $count): array
+     * @method sRandMember(string $name, int $count): array
+     * @method sMembers(string $name): array
+     * @method sDiff (string $source, string $destination): array
+     * @method sDiffStore(string $name, string $source, string $destination): int
+     * @method sIsMember(string $name, string $value): int
+     * @method sInter(string $source, string $destination): array
+     * @method sInterStore(string $name, string $source, string $destination): int
+     * @method sUnion(string $source, string $destination): array
+     * @method sUnionStore(string $name, string $source, string $destination): int
+     *
+     * H Series (Hash Map)
+     * @method hGet(string $name, string $field): string|null
+     * @method hSet(string $name, string $field, string $value): int
+     * @method hSetNx(string $name, string $field, string $value): int
+     * @method hDel(string $name, string ...$field): int
+     * @method hLen(string $name): int
+     * @method hKeys(string $name): array
+     * @method hVals(string $name): array
+     * @method hGetAll(string $name): array
+     * @method hExists(string $name, string $field): int
+     * @method hIncrBy(string $name, string $field, int $number): int
+     * @method hIncrByFloat(string $name, string $field, float $number): float
+     * @method hMSet(string $name, string ...$args): bool
+     * @method hMGet(string $name, string ...$args): array
+     *
+     * Z Series (Z Score)
+     * @method zAdd(string $name, string ...$args): int
+     * @method zRem(string $name, string $member): int
+     * @method zRange(string $name, int $start, int $end, string $withScores)
+     * @method zRangeByScore(string $name, int $min, int $max, string $withScores): array
+     * @method zRevRangeByScore(string $name, int $max, int $min, string $withScores): array
+     * @method zCount(string $name, int $min, int $max): int
+     * @method zCard(string $name): int
+     * @method zScore(string $name, string $member): string
+     * @method zRank(string $name, string $member): int|null
+     * @method zRevRank(string $name, string $member): int|null
+     * @method zInter(int $numberKey, string ...$args): array
+     * @method zInterStore(string $destination, int $numberKey, string ...$args): array
+     * @method zUnion(int $numberKey, string ...$args): array
+     * @method zUnionStore(string $name, int $numberKey, string ...$args): int
+     * @method zIncrBy(string $name, int $increment, string $member)
+     * @method rPopLPush(string $source, string $destination): string
+     *
+     * Db Function
+     * @method flushDB(int $dbIndex): bool
+     * @method flushAll(): bool
+     * @method dbSize(): int
+     * @method time(): array
+     * @method dump(string $name): string
      * @method getLastError()
      * @method clearLastError()
      * @method _prefix()
-     * @method get(string $name)
-     * @method getUnserialise(string $name)
-     * @method set(string $name, string $value, int $lifetime = 0, boolean $noExists = null)
-     * @method setex(string $name, string $value, int $lifetime = 0)
-     * @method setSerialise(string $name, mixed $value, int $lifetime = 0, boolean $noExists = null)
-     * @method setnx(string $name, string $value, int $lifetime = 0)
-     * @method setnxSerialise(string $name, mixed $value, int $lifetime = 0)
+     *
+     * Transaction (Watch/Unwatch)
+     * @method watch()
+     * @method unwatch()
+     *
+     * Redis server Control/Info
+     * @method info(string $section): string
+     * @method save(): bool
+     * @method lastSave(): int
      * @method close()
      */
     class Redis
     {
         /**
-         * @var App
+         * @var array
          */
-        private $app;
-
-        /**
-         * @var RedisBase
-         */
-        private $redis = [];
-        private $instance = [];
-        private $size = 0;
-        private $db = 0;
-        private $timeout = 0;
-        private $rwTimeout = 0;
-        private $authPass = '';
-        private $allowReconnect = true;
-        private $persistent = false;
-        private $restrictFnc = ['PING', 'SAVE', 'SCAN', 'OBJECT', 'CONNECT', 'OPEN',
+        private array $redis;
+        private array $instance;
+        private int $size;
+        private int $db;
+        private int $timeout;
+        private int $rwTimeout;
+        private string $authPass;
+        private bool $allowReconnect = true;
+        private bool $persistent;
+        private string $postHash;
+        private string $tempHash;
+        private string $hashRegex = "/\{(?<key>\w+)\}/";
+        private array $restrictFnc = ['PING', 'SAVE', 'SCAN', 'OBJECT', 'CONNECT', 'OPEN',
             'PCONNECT', 'POPEN', 'AUTH', 'ECHO', 'BGREWRITEAOF', 'BGSAVE', 'CONFIG',
             'FLUSHALL', 'RESETSTAT', 'SLAVEOF', 'SLOWLOG', 'PEXPIRE', 'PEXPIREAT',
             'BITCOUNT', 'BITOP', 'PTTL', 'MIGRATE', 'SSCAN', 'ZSCAN', 'PSUBSCRIBE',
@@ -165,18 +162,14 @@ namespace Npf\Core {
             'CLEARLASTERROR', '_SERIALIZE', '_UNSERIALIZE', 'GETOPTION', 'DBSIZE', 'MGET',
             'GETMULTIPLE', 'GETMATCH', 'GETCOUNT', 'KEYS', 'GETKEYS', 'MULTI', 'WATCH',
             'EXEC'];
-        private $hashRegex = "/\{(?<key>\w+)\}/";
-        private $postHash = '';
-        private $tempHash = '';
 
         /**
          * Redis constructor.
          * @param App $app
          * @throws InternalError
          */
-        final public function __construct(App &$app)
+        final public function __construct(private App $app)
         {
-            $this->app = &$app;
             $config = $app->config('Redis');
             if (!$config->get('enable', false))
                 throw new InternalError('Redis is not enable.');
@@ -189,11 +182,11 @@ namespace Npf\Core {
                 $range = range(0, $size - 1);
                 $this->allowReconnect = (bool)$config->get('allowReconnect');
                 if (array_keys($config->instance) === $range) {
-                    $this->persistent = (isset($config->persistent) && $config->persistent) ? true : false;
+                    $this->persistent = isset($config->persistent) && $config->persistent;
                     $this->instance = $config->instance;
                     $this->size = $size;
                     $this->db = (int)$config->db;
-                    $this->authPass = (int)$config->authPass;
+                    $this->authPass = (string)$config->authPass;
                     $this->timeout = (int)$config->timeout;
                     $this->rwTimeout = (int)$config->rwTimeout;
                 }
@@ -202,16 +195,14 @@ namespace Npf\Core {
 
         /**
          * @param $postHash
-         * @return bool
+         * @return self
          */
-        final public function setPostHash($postHash)
+        final public function setPostHash(string $postHash): self
         {
             $postHash = (string )$postHash;
-            if (!empty($postHash)) {
+            if (!empty($postHash))
                 $this->postHash = substr($postHash, 0, 1) === "{" ? $postHash : "{{$postHash}}";
-                return TRUE;
-            } else
-                return FALSE;
+            return $this;
         }
 
         /**
@@ -231,41 +222,49 @@ namespace Npf\Core {
 
         /**
          * @param $tempHash
-         * @return bool
+         * @return self
          */
-        final public function tempHash($tempHash)
+        final public function tempHash($tempHash): self
         {
             $tempHash = (string )$tempHash;
-            if (!empty($tempHash)) {
+            if (!empty($tempHash))
                 $this->tempHash = substr($tempHash, 0, 1) === "{" ? $tempHash : "{{$tempHash}}";
-                return TRUE;
-            } else
-                return FALSE;
+            return $this;
         }
 
         /**
-         * @param $db
+         * @param int $db
          * @return bool
          * @throws InternalError
          */
-        final public function select($db)
+        final public function select(int $db): bool
         {
             $db = (int)$db;
             $success = true;
-            foreach ($this->redis as $redis) {
+            foreach ($this->redis as $redis)
                 if ($redis instanceof RedisBase && !$redis->select($db))
                     $success = false;
-            }
             $this->db = $db;
             return $success;
         }
+
+        /**
+         * getMultiple alias keys
+         * @param string $key
+         * @return array
+         */
+        final public function getMultiple(string $key = ''): array
+        {
+            return $this->keys($key);
+        }
+
 
         /**
          * Sharding Redis Keys Performance
          * @param string $key
          * @return array
          */
-        final public function getkeys($key = '')
+        final public function getKeys(string $key = ''): array
         {
             return $this->keys($key);
         }
@@ -273,9 +272,9 @@ namespace Npf\Core {
         /**
          * Sharding Redis Keys Performance
          * @param string $key
-         * @return mixed
+         * @return array|bool
          */
-        final public function keys($key = '')
+        final public function keys(string $key = ''): array|bool
         {
             if ($this->hasHash($key)) {
                 return $this->__call('keys', [$key]);
@@ -288,21 +287,21 @@ namespace Npf\Core {
          * @param string $key
          * @return boolean
          */
-        private function hasHash($key)
+        private function hasHash(string $key): bool
         {
             $matches = [];
             if (empty($key))
                 return false;
             preg_match($this->hashRegex, $key, $matches);
-            return !empty($matches) && !empty($matches['key']) ? true : false;
+            return !empty($matches) && !empty($matches['key']);
         }
 
         /**
          * @param string $name
          * @param array $args
-         * @return bool|mixed
+         * @return mixed
          */
-        public function __call($name, $args)
+        public function __call(string $name, array $args): mixed
         {
             $profiler = &$this->app->profiler;
             $sTime = -$profiler->elapsed();
@@ -331,7 +330,7 @@ namespace Npf\Core {
          * @param string $key
          * @return int
          */
-        private function getIndex($key = '')
+        private function getIndex(string $key = ''): int|bool
         {
             if (!is_string($key))
                 $key = '';
@@ -354,7 +353,7 @@ namespace Npf\Core {
          * @param string $key
          * @return string Hash
          */
-        private function getHash($key)
+        private function getHash(string $key): string
         {
             $matches = [];
             if (empty($key))
@@ -364,19 +363,9 @@ namespace Npf\Core {
         }
 
         /**
-         * getMultiple alias keys
-         * @param string $key
-         * @return array
-         */
-        final public function getMultiple($key = '')
-        {
-            return $this->keys($key);
-        }
-
-        /**
          * Restate Shading Redis.
          */
-        final public function restate()
+        final public function restate(): void
         {
             foreach ($this->redis as $index => $redis)
                 unset($this->redis[$index]);
@@ -385,10 +374,10 @@ namespace Npf\Core {
 
         /**
          * getMultiple alias keys
-         * @param string|boolean $keys
+         * @param string $keys
          * @return int
          */
-        final public function del($keys)
+        final public function del(string $keys): int
         {
             if (is_array($keys)) {
                 $deleteKeys = [];

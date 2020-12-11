@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf;
 
@@ -14,7 +15,7 @@ final class Daemon
     /**
      * @var StartUp
      */
-    private $startUp;
+    private StartUp $startUp;
 
     /**
      * StartUp constructor.

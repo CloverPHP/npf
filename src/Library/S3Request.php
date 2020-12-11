@@ -1,14 +1,9 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: User
- * Date: 23/8/2018
- * Time: 4:11 PM
- */
+declare(strict_types=1);
 
 namespace Npf\Library;
 
-
+use JetBrains\PhpStorm\Pure;
 use stdClass;
 
 /**
@@ -31,77 +26,49 @@ final class S3Request
      * @var int
      * @access public
      */
-    public $size = 0;
+    public int $size = 0;
     /**
      * PUT post fields
      *
-     * @var array
+     * @var array|bool
      * @access public
      */
-    public $data = false;
+    public bool|array $data = false;
     /**
      * S3 request respone
      *
      * @var object
      * @access public
      */
-    public $response;
-    /**
-     * AWS URI
-     *
-     * @var string
-     * @access private
-     */
-    private $endpoint;
-    /**
-     * Verb
-     *
-     * @var string
-     * @access private
-     */
-    private $verb;
-    /**
-     * S3 bucket name
-     *
-     * @var string
-     * @access private
-     */
-    private $bucket;
-    /**
-     * Object URI
-     *
-     * @var string
-     * @access private
-     */
-    private $uri;
+    public object $response;
     /**
      * Final object URI
      *
      * @var string
      * @access private
      */
-    private $resource = '';
+    private string $resource = '';
     /**
      * Additional request parameters
      *
      * @var array
      * @access private
      */
-    private $parameters = [];
+    private array $parameters = [];
     /**
      * Amazon specific request headers
      *
      * @var array
      * @access private
      */
-    private $amzHeaders = [];
+    private array $amzHeaders = [];
     /**
      * HTTP request headers
      *
      * @var array
      * @access private
      */
-    private $headers = [
+    private array $headers = [
         'Host' => '', 'Date' => '', 'Content-MD5' => '', 'Content-Type' => ''
     ];
 
@@ -113,13 +80,12 @@ final class S3Request
      * @param string $uri Object URI
      * @param string $endpoint AWS endpoint URI
      */
-    function __construct($verb, $bucket = '', $uri = '', $endpoint = 's3.amazonaws.com')
+    function __construct(private string $verb,
+                         private $bucket = '',
+                         private $uri = '',
+                         private $endpoint = 's3.amazonaws.com')
     {
-
-        $this->endpoint = $endpoint;
-        $this->verb = $verb;
-        $this->bucket = $bucket;
-        $this->uri = $uri !== '' ? '/' . str_replace('%2F', '/', rawurlencode($uri)) : '/';
+        $this->uri = $this->uri !== '' ? '/' . str_replace('%2F', '/', rawurlencode($this->uri)) : '/';
         if ($this->bucket !== '') {
             if ($this->__dnsBucketName($this->bucket)) {
                 $this->headers['Host'] = $this->bucket . '.' . $this->endpoint;
@@ -147,7 +113,7 @@ final class S3Request
      * @param string $bucket Bucket name
      * @return boolean
      */
-    private function __dnsBucketName($bucket)
+    private function __dnsBucketName(string $bucket): bool
     {
         if (strlen($bucket) > 63 || preg_match("/[^a-z0-9.-]/", $bucket) > 0) return false;
         if (S3::$useSSL && strstr($bucket, '.') !== false) return false;
@@ -162,10 +128,10 @@ final class S3Request
      * Set request parameter
      *
      * @param string $key Key
-     * @param string $value Value
+     * @param string|null $value Value
      * @return void
      */
-    public function setParameter($key, $value)
+    public function setParameter(string $key, ?string $value)
     {
         $this->parameters[$key] = $value;
     }
@@ -174,10 +140,10 @@ final class S3Request
      * Set request header
      *
      * @param string $key Key
-     * @param string $value Value
+     * @param string|null $value Value
      * @return void
      */
-    public function setHeader($key, $value)
+    public function setHeader(string $key, ?string $value)
     {
         $this->headers[$key] = $value;
     }
@@ -186,10 +152,10 @@ final class S3Request
      * Set x-amz-meta-* header
      *
      * @param string $key Key
-     * @param string $value Value
+     * @param string|null $value Value
      * @return void
      */
-    public function setAmzHeader($key, $value)
+    public function setAmzHeader(string $key, ?string $value)
     {
         $this->amzHeaders[$key] = $value;
     }
@@ -197,9 +163,9 @@ final class S3Request
     /**
      * Get the S3 response
      *
-     * @return object | false
+     * @return object | bool
      */
-    public function getResponse()
+    public function getResponse(): object|bool
     {
         if (sizeof($this->parameters) > 0) {
             $query = substr($this->uri, -1) !== '?' ? '?' : '&';
@@ -338,7 +304,7 @@ final class S3Request
      * @return integer
      * @internal Used to sort x-amz meta headers
      */
-    private function __sortMetaHeadersCmp($a, $b)
+    #[Pure] private function __sortMetaHeadersCmp(string $a, string $b): int
     {
         $lenA = strpos($a, ':');
         $lenB = strpos($b, ':');
@@ -356,7 +322,7 @@ final class S3Request
      * @param string &$data Data
      * @return integer
      */
-    private function __responseWriteCallback(&$curl, &$data)
+    private function __responseWriteCallback(&$curl, string &$data): int
     {
         if (in_array($this->response->code, [200, 206]) && $this->fp)
             return fwrite($this->fp, $data);
@@ -372,7 +338,7 @@ final class S3Request
      * @param string $data Data
      * @return integer
      */
-    private function __responseHeaderCallback($curl, $data)
+    private function __responseHeaderCallback($curl, string $data): int
     {
         if (($strlen = strlen($data)) <= 2) return $strlen;
         if (substr($data, 0, 4) == 'HTTP')
@@ -390,7 +356,7 @@ final class S3Request
             elseif ($header == 'Content-Type')
                 $this->response->headers['type'] = $value;
             elseif ($header == 'ETag')
-                $this->response->headers['hash'] = $value{0} == '"' ? substr($value, 1, -1) : $value;
+                $this->response->headers['hash'] = $value[0] == '"' ? substr($value, 1, -1) : $value;
             elseif (preg_match('/^x-amz-meta-.*$/', $header))
                 $this->response->headers[$header] = $value;
         }

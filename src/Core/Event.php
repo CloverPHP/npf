@@ -1,6 +1,9 @@
-<?php /** @noinspection PhpComposerExtensionStubsInspection */
+<?php
+declare(strict_types=1);
 
 namespace Npf\Core {
+
+    use JetBrains\PhpStorm\Pure;
 
     /**
      * Class EventEmitter
@@ -8,15 +11,14 @@ namespace Npf\Core {
      */
     class Event
     {
-        private $listeners = [];
-        private $timerListener = [];
-        private $scheduleListener = [];
-        private $termListener = [];
-        private $eventParams = [];
-        private $timeInterval = 0;
-        private $timerOut = 0;
-        private $tick = 0;
-        private $timerLastTimestamp = 0;
+        private array $listeners;
+        private array $timerListener;
+        private array $scheduleListener;
+        private array $termListener;
+        private array $eventParams;
+        private int $timerOut;
+        private int $tick;
+        private float $timerLastTimestamp;
 
         /**
          * EventEmitter constructor.
@@ -30,16 +32,18 @@ namespace Npf\Core {
         /**
          * Setup Emitter Parameter
          * @param array $eventParams the params will be pass when a emit.
+         * @return Event
          */
-        final public function setParams(array $eventParams)
+        final public function setParams(array $eventParams): self
         {
             $this->eventParams = $eventParams;
+            return $this;
         }
 
         /**
          * Execute/Fire an terminal Event
          */
-        final public function launchSignalListener()
+        final public function launchSignalListener(): void
         {
             //Register Signal for event
             declare(ticks=1);
@@ -59,13 +63,13 @@ namespace Npf\Core {
         /**
          * @param callable $listener Event Listener to register
          * @param int $priority Event Priority
-         * @return bool
+         * @return self
          */
-        final public function onTermSignal(callable $listener, $priority = 0)
+        final public function onTermSignal(callable $listener, $priority = 0): self
         {
             $this->termListener[] = ["listener" => $listener, "priority" => $priority];
             Common::multiArraySort($this->termListener, ["priority" => [SORT_DESC, SORT_NATURAL]]);
-            return true;
+            return $this;
         }
 
         /**
@@ -73,9 +77,9 @@ namespace Npf\Core {
          * @param string $event Event Name to register
          * @param callable $listener Event Listener to register
          * @param int $priority Event Priority
-         * @return bool
+         * @return Event
          */
-        final public function once($event, callable $listener, $priority = 0)
+        final public function once(string $event, callable $listener, $priority = 0): self
         {
             return self::on($event, $listener, 1, $priority);
         }
@@ -83,20 +87,22 @@ namespace Npf\Core {
         /**
          * @param string $event Event Name to register
          * @param callable $listener Event Listener to register
-         * @param int $times Event available fire times, 0 = not limit.
+         * @param int|string $times Event available fire times, 0 = not limit.
          * @param int $priority Event Priority
-         * @return bool
+         * @return Event
          */
-        final public function on($event, callable $listener, $times = 0, $priority = 0)
+        final public function on(string $event,
+                                 callable $listener,
+                                 int|string $times = 0,
+                                 int $priority = 0): self
         {
-            if (is_string($event) && !empty($event)) {
+            if (!empty($event)) {
                 if (!isset($this->listeners[$event]))
                     $this->listeners[$event] = [];
                 $this->listeners[$event][] = ["listener" => $listener, "times" => $times, "priority" => $priority];
                 Common::multiArraySort($this->listeners[$event], ["priority" => [SORT_DESC, SORT_NATURAL]]);
-                return true;
-            } else
-                return false;
+            }
+            return $this;
         }
 
         /**
@@ -104,11 +110,13 @@ namespace Npf\Core {
          * @param string $event Event Name to turn off
          * @param callable $listener Event Listener to turn off
          * @param bool $all Remove only match or all match event listener
-         * @return bool
+         * @return Event
          */
-        final public function off($event, callable $listener, $all = true)
+        final public function off(string $event,
+                                  callable $listener,
+                                  bool $all = true): self
         {
-            if (is_string($event) && !empty($event) && isset($this->listeners[$event])) {
+            if (!empty($event) && isset($this->listeners[$event])) {
                 foreach ($this->listeners[$event] as $key => $event)
                     if ($event['listener'] === $listener) {
                         unset($this->listeners[$event][$key]);
@@ -116,41 +124,41 @@ namespace Npf\Core {
                             break;
                     }
             }
-            return true;
+            return $this;
         }
 
         /**
          * Remove Event
          * @param string $event Event Name to remove
-         * @return bool
+         * @return Event
          */
-        final public function removeEvent($event)
+        final public function removeEvent(string $event): self
         {
-            if (is_string($event) && !empty($event) && isset($this->listeners[$event])) {
+            if (!empty($event) && isset($this->listeners[$event]))
                 unset($this->listeners[$event]);
-                return true;
-            } else
-                return false;
+            return $this;
         }
 
         /**
          * Event on every n tick
          * @param callable $listener
          * @param int $tick
-         * @param int $times
+         * @param int|string $times
          * @param int $priority
-         * @return bool
+         * @return self
          */
-        final public function onTick(callable $listener, $tick = 1, $times = 0, $priority = 0)
+        final public function onTick(callable $listener,
+                                     int $tick = 1,
+                                     int|string $times = 0,
+                                     int $priority = 0): self
         {
             $event = 'timerTick';
-            if (!isset($this->timerListener[$event]) && !empty($interval)) {
+            if (!isset($this->timerListener[$event]) && !empty($interval))
                 $this->timerListener[$event] = [];
-            }
 
             $this->timerListener[$event][] = ["listener" => $listener, "tick" => $tick, "times" => $times, "priority" => $priority];
             Common::multiArraySort($this->timerListener[$event], ["priority" => [SORT_DESC, SORT_NATURAL]]);
-            return true;
+            return $this;
         }
 
         /**
@@ -158,20 +166,22 @@ namespace Npf\Core {
          * Event on Schedule (like cron)
          * @param string $schedule
          * @param callable $listener
-         * @param int $times
+         * @param int|string $times
          * @param int $priority
-         * @return bool
+         * @return self
          */
-        final public function onSchedule($schedule, callable $listener, $times = 0, $priority = 0)
+        final public function onSchedule(string $schedule,
+                                         callable $listener,
+                                         int|string $times = 0,
+                                         int $priority = 0): self
         {
             if (self::scheduleValidate($schedule)) {
                 if (!isset($this->scheduleListener[$schedule]))
                     $this->scheduleListener[$schedule] = [];
                 $this->scheduleListener[$schedule][] = ["listener" => $listener, "times" => $times, "priority" => $priority];
                 Common::multiArraySort($this->scheduleListener[$schedule], ["priority" => [SORT_DESC, SORT_NATURAL]]);
-                return true;
-            } else
-                return false;
+            }
+            return $this;
         }
 
         /**
@@ -179,7 +189,7 @@ namespace Npf\Core {
          * @param string $schedule
          * @return boolean
          */
-        private function scheduleValidate($schedule)
+        private function scheduleValidate(string $schedule): bool
         {
             $parts = explode(" ", $schedule);
             if (6 !== count($parts))
@@ -194,33 +204,33 @@ namespace Npf\Core {
          * Launch
          * @param int $timeout Timer Stop Timing
          * @param int $interval Timer Interval
-         * @return bool
+         * @return self
          * @internal param $event
          */
-        final public function launchTimer($timeout, $interval = 1000)
+        final public function launchTimer(int $timeout, int $interval = 1000): self
         {
             $this->timerOut = (int)$timeout;
-            $this->timeInterval = (int)$interval;
             $this->timerLastTimestamp = ceil(Common::timestamp(true));
+            $interval = (int)$interval;
 
             $this->emit('timerStart');
 
             while ($this->timerTick())
-                usleep($this->timeInterval * 1000);
+                usleep($interval * 1000);
 
             $this->emit('timerStop');
-            return true;
+            return $this;
         }
 
         /**
          * Execute/Fire an event
          * @param $eventName
          * @param array $args
-         * @return bool
+         * @return self
          */
-        final public function emit($eventName, array $args = [])
+        final public function emit(string $eventName, array $args = []): self
         {
-            if (is_string($eventName) && !empty($eventName) && isset($this->listeners[$eventName])) {
+            if (!empty($eventName) && isset($this->listeners[$eventName])) {
                 foreach ($this->listeners[$eventName] as $key => &$event)
                     if (isset($event['listener'])) {
                         $result = $this->eventFire($event['listener'], $args);
@@ -230,9 +240,8 @@ namespace Npf\Core {
                         if ($result === false)
                             break;
                     }
-                return true;
-            } else
-                return false;
+            }
+            return $this;
         }
 
         /**
@@ -240,7 +249,7 @@ namespace Npf\Core {
          * @param mixed $args
          * @return mixed
          */
-        private function eventFire(callable $callable, $args = [])
+        private function eventFire(callable $callable, mixed $args = []): mixed
         {
             if (!is_array($args))
                 $args = [$args];
@@ -251,7 +260,7 @@ namespace Npf\Core {
          * Timer Tick
          * @return bool
          */
-        private function timerTick()
+        private function timerTick(): bool
         {
             $elapsed = $this->elapsed();
             if ($elapsed <= $this->timerOut) {
@@ -271,9 +280,9 @@ namespace Npf\Core {
          * get elapsed milli seconds
          * @param bool $milliSecond
          * @param bool $current Start Current or initial time
-         * @return int
+         * @return float
          */
-        final public function elapsed($milliSecond = false, $current = false)
+        #[Pure] final public function elapsed(bool $milliSecond = false, bool $current = false): float
         {
             $now = Common::timestamp($current);
             return (true === $milliSecond) ? floor((microtime(true) - $now) * 1000) : floor(microtime(true) - $now);
@@ -281,9 +290,9 @@ namespace Npf\Core {
 
         /**
          * Execute/Fire an schedule
-         * @return bool
+         * @return self
          */
-        final public function emitSchedule()
+        final public function emitSchedule(): self
         {
             if (!empty($this->scheduleListener)) {
                 foreach ($this->scheduleListener as $schedule => &$events)
@@ -298,27 +307,26 @@ namespace Npf\Core {
                                     break;
                             }
                     }
-                return true;
-            } else
-                return false;
+            }
+            return $this;
         }
 
         /**
          * @param $schedule
          * @return bool
          */
-        private function scheduleMatch($schedule)
+        private function scheduleMatch(string $schedule): bool
         {
             $date = explode(":", date("s:i:H:d:m:N"));
             $schedule = explode(" ", $schedule);
             for ($i = 0; $i < 6; $i++) {
                 if ("*" === $schedule[$i] || $date[$i] === $schedule[$i]) {
                     continue;
-                } elseif (false !== strpos($schedule[$i], ',')) {
+                } elseif (str_contains($schedule[$i], ',')) {
                     if (in_array(ltrim($date[$i], '0'), explode(",", $schedule[$i]), true)) {
                         continue;
                     }
-                } elseif (false !== strpos($schedule[$i], '-')) {
+                } elseif (str_contains($schedule[$i], '-')) {
                     $parts = explode("-", $schedule[$i]);
                     if (in_array((int)ltrim($date[$i], '0'), range($parts[0], $parts[1]), true)) {
                         continue;
@@ -331,13 +339,13 @@ namespace Npf\Core {
 
         /**
          * Execute/Fire an event
-         * @param $eventName
-         * @param int $timestamp
+         * @param string $eventName
+         * @param float $timestamp
          * @param int $offset
-         * @return bool
+         * @return Event
          * @internal param string $event Event Name
          */
-        private function timerEmit($eventName, $timestamp, $offset)
+        private function timerEmit(string $eventName, float $timestamp, int $offset): self
         {
             if (is_string($eventName) && !empty($eventName) && isset($this->timerListener[$eventName])) {
                 foreach ($this->timerListener[$eventName] as $key => $event)
@@ -357,16 +365,15 @@ namespace Npf\Core {
                                 break;
                         }
                     }
-                return true;
-            } else
-                return false;
+            }
+            return $this;
         }
 
         /**
          * Execute/Fire an terminal Event
          * @param int $sigNo
          */
-        private function emitTermSignal($sigNo = 0)
+        private function emitTermSignal(int $sigNo = 0): void
         {
             $this->eventParams[] = $sigNo;
             foreach ($this->termListener as $key => &$event)

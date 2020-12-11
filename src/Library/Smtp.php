@@ -1,8 +1,11 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Library;
 
 use finfo;
+use JetBrains\PhpStorm\ArrayShape;
+use JetBrains\PhpStorm\Pure;
 
 /**
  * Class Smtp
@@ -10,13 +13,13 @@ use finfo;
  */
 class Smtp
 {
-    private $socket;
-    private $logs = [];
-    private $lastResponse = '';
-    private $eol = "\n";
-    private $error = [];
-    private $serverElm = [];
-    private $mail = [
+    private resource|null $socket;
+    private array $logs;
+    private string $lastResponse;
+    private string $eol = "\n";
+    private array $error;
+    private array $serverElm;
+    private array $mail = [
         'server' => [],
         'messageId' => '',
         'auth' => [],
@@ -50,7 +53,10 @@ class Smtp
      * @param string $secure
      * @param int $timeout
      */
-    public function __construct($server = '', $port = 25, $secure = '', $timeout = 30)
+    public function __construct(string $server = '',
+                                int $port = 25,
+                                string $secure = '',
+                                int $timeout = 30)
     {
         //Note the server info.
         $port = (int)$port;
@@ -65,10 +71,10 @@ class Smtp
 
     /**
      * Validate Host name
-     * @param $host
+     * @param string $host
      * @return bool
      */
-    private function isValidHost($host)
+    private function isValidHost(string $host): bool
     {
         if (empty($host) || !is_string($host) || strlen($host) > 256 || !preg_match('/^([a-zA-Z\d.-]*|\[[a-fA-F\d:]+])$/', $host))
             return false;
@@ -82,10 +88,10 @@ class Smtp
     }
 
     /**
-     * @param $content
-     * @return mixed
+     * @param string $content
+     * @return string
      */
-    private function safeText($content)
+    private function safeText(string $content): string
     {
         return str_replace(["\r\n", "\r", "\n"], "", $content);
     }
@@ -95,7 +101,7 @@ class Smtp
      * Returns 'localhost.localdomain' if unknown.
      * @return string
      */
-    private function getServerName()
+    private function getServerName(): string
     {
         $result = '';
         if (isset($_SERVER) && array_key_exists('SERVER_NAME', $_SERVER))
@@ -114,7 +120,7 @@ class Smtp
      * @param $email
      * @return bool
      */
-    public function isEmail($email)
+    #[Pure] public function isEmail(string $email): bool
     {
         return is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL);
     }
@@ -126,8 +132,12 @@ class Smtp
      * @param string $detail
      * @param string $code
      * @param string $extend
+     * @return self
      */
-    private function setError($message, $detail = '', $code = '', $extend = '')
+    private function setError(string $message,
+                              string $detail = '',
+                              string $code = '',
+                              string $extend = ''): self
     {
         $this->error = [
             'error' => $message,
@@ -135,13 +145,14 @@ class Smtp
             'code' => $code,
             'extend' => $extend,
         ];
+        return $this;
     }
 
     /**
      * Disconnect from server if connected
-     * @return Smtp
+     * @return self
      */
-    private function disconnect()
+    private function disconnect(): self
     {
         if (is_resource($this->socket)) {
             $this->logs[] = "Disconnected";
@@ -155,7 +166,11 @@ class Smtp
         return $this;
     }
 
-    private function getHost()
+    /**
+     * Get ESmtp Server
+     * @return array
+     */
+    #[ArrayShape(['host' => "string", 'port' => "mixed"])] private function getHost(): array
     {
         $prefix = '';
         if (!empty($this->mail['server']['secure']))
@@ -168,9 +183,10 @@ class Smtp
     }
 
     /**
+     * Connect to estmp server
      * @return bool
      */
-    private function connect()
+    private function connect(): bool
     {
         $errorNo = 0;
         $errStr = '';
@@ -233,20 +249,23 @@ class Smtp
      *
      * @param int $errNo The error number returned by PHP
      * @param string $errStr The error message returned by PHP
+     * @return self
      */
-    private function errorHandler($errNo, $errStr)
+    private function errorHandler(int $errNo, string $errStr): self
     {
         $this->setError(
             'Connection failed.',
             $errStr,
             (string)$errNo
         );
+        return $this;
     }
 
     /**
+     * Read socket line
      * @return string
      */
-    private function readLine()
+    private function readLine(): string
     {
         if (!is_resource($this->socket))
             return '';
@@ -282,11 +301,11 @@ class Smtp
 
     /**
      * Add Log
-     * @param $name
-     * @param $expect
+     * @param string $name
+     * @param array|int|bool $expect
      * @return bool|array
      */
-    private function execute($name, $expect)
+    private function execute(string $name, bool|int|array $expect): bool|array
     {
         if (is_resource($this->socket)) {
             $this->lastResponse = $this->readLine();
@@ -311,12 +330,12 @@ class Smtp
 
     /**
      * Send Content to server
-     * @param $content
+     * @param string $content
+     * @param array|int|bool $expect
      * @param bool $log
-     * @param $expect
-     * @return bool
+     * @return bool|array
      */
-    private function send($content, $expect, $log = true)
+    private function send(string $content, array|int|bool $expect, $log = true): bool|array
     {
         if ($this->connected()) {
             @fwrite($this->socket, "{$content}{$this->eol}");
@@ -334,7 +353,7 @@ class Smtp
      *
      * @return bool True if connected
      */
-    private function connected()
+    private function connected(): bool
     {
         if (is_resource($this->socket)) {
             $sock_status = stream_get_meta_data($this->socket);
@@ -347,7 +366,7 @@ class Smtp
         return false;
     }
 
-    private function sendHello($cmd, $host)
+    private function sendHello(string $cmd, string $host): bool
     {
         $response = $this->send("{$cmd} {$host}", 250);
         if ($response) {
@@ -388,16 +407,16 @@ class Smtp
     /**
      * Say hello to smtp server
      */
-    private function welcomeServer()
+    private function welcomeServer(): bool
     {
         return $this->sendHello('EHLO', $this->mail['server']['server']) or $this->sendHello('HELO', $this->mail['server']['server']);
     }
 
     /**
      * Start TLS (encrypted) session if needed.
-     * @return bool
+     * @return bool|int
      */
-    public function startTLS()
+    public function startTLS(): bool|int
     {
         if (isset($this->serverElm['STARTTLS'])) {
             if (!$this->send('STARTTLS', 220))
@@ -423,7 +442,7 @@ class Smtp
     /**
      * Auth User
      */
-    private function authUser()
+    private function authUser(): bool
     {
         if (!$this->serverElm)
             return false;
@@ -476,14 +495,14 @@ class Smtp
 
     /**
      * @param $data
-     * @return bool
+     * @return bool|array
      */
-    private function sendContent($data)
+    private function sendContent($data): bool|array
     {
         $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $data));
         $field = substr($lines[0], 0, strpos($lines[0], ':'));
         $in_headers = false;
-        if (!empty($field) && strpos($field, ' ') === false)
+        if (!empty($field) && !str_contains($field, ' '))
             $in_headers = true;
 
         foreach ($lines as $line) {
@@ -618,9 +637,9 @@ class Smtp
 
     /**
      * Send Mail
-     * @return Smtp
+     * @return self
      */
-    public function sendMail()
+    public function sendMail(): self
     {
         //Check got any recipient
         if (empty($this->mail['contact']['to']) &&
@@ -701,11 +720,11 @@ class Smtp
     }
 
     /**
-     * @param $user
-     * @param $password
-     * @return Smtp
+     * @param string $user
+     * @param string $password
+     * @return self
      */
-    public function login($user, $password)
+    public function login(string $user, string $password): self
     {
         $this->mail['auth'] = [
             'user' => $user,
@@ -715,11 +734,11 @@ class Smtp
     }
 
     /**
-     * @param $email
-     * @param null $name
-     * @return Smtp
+     * @param string $email
+     * @param string|null $name
+     * @return self
      */
-    public function setFrom($email, $name = null)
+    public function setFrom(string $email, ?string $name = null): self
     {
         if ($this->isEmail($email)) {
             $this->mail['contact']['from'] = [
@@ -732,11 +751,11 @@ class Smtp
     }
 
     /**
-     * @param $email
-     * @param null $name
-     * @return Smtp
+     * @param string $email
+     * @param ?string $name
+     * @return self
      */
-    public function setReply($email, $name = null)
+    public function setReply(string $email, ?string $name = null): self
     {
         if ($this->isEmail($email)) {
             $this->mail['contact']['reply'] = [
@@ -749,11 +768,11 @@ class Smtp
     }
 
     /**
-     * @param $email
-     * @param null $name
-     * @return Smtp
+     * @param string $email
+     * @param string|null $name
+     * @return self
      */
-    public function addTo($email, $name = null)
+    public function addTo(string $email, ?string $name = null): self
     {
         if ($this->isEmail($email))
             $this->mail['contact']['to'][$email] = !empty($name) && is_string($name) ? $name : null;
@@ -761,11 +780,11 @@ class Smtp
     }
 
     /**
-     * @param $email
-     * @param null $name
-     * @return Smtp
+     * @param string $email
+     * @param string|null $name
+     * @return self
      */
-    public function addCc($email, $name = null)
+    public function addCc(string $email, ?string $name = null): self
     {
         if ($this->isEmail($email))
             $this->mail['contact']['cc'][$email] = !empty($name) && is_string($name) ? $name : null;
@@ -773,11 +792,11 @@ class Smtp
     }
 
     /**
-     * @param $email
-     * @param null $name
-     * @return Smtp
+     * @param string $email
+     * @param string|null $name
+     * @return self
      */
-    public function addBcc($email, $name = null)
+    public function addBcc(string $email, ?string $name = null): self
     {
         if ($this->isEmail($email))
             $this->mail['contact']['bcc'][$email] = !empty($name) && is_string($name) ? $name : null;
@@ -785,43 +804,46 @@ class Smtp
     }
 
     /**
-     * @param $subject
-     * @return Smtp
+     * @param string $subject
+     * @return self
      */
-    public function setSubject($subject)
+    public function setSubject(string $subject): self
     {
         $this->mail['subject'] = $subject;
         return $this;
     }
 
     /**
-     * @param $content
-     * @return Smtp
+     * @param string $content
+     * @return self
      */
-    public function setContentText($content)
+    public function setContentText(string $content): self
     {
         $this->mail['content']['text'] = $content;
         return $this;
     }
 
     /**
-     * @param $content
-     * @return Smtp
+     * @param string $content
+     * @return self
      */
-    public function setContentHtml($content)
+    public function setContentHtml(string $content): self
     {
         $this->mail['content']['html'] = $content;
         return $this;
     }
 
     /**
-     * @param $fileName
-     * @param $id
+     * @param string $fileName
+     * @param string $id
      * @param string $displayName
      * @param string $desc
-     * @return Smtp
+     * @return self
      */
-    public function addInlineImage($fileName, $displayName = '', $id = '', $desc = '')
+    public function addInlineImage(string $fileName,
+                                   string $id = '',
+                                   string $displayName = '',
+                                   string $desc = ''): self
     {
         $attachment = [];
         $fileInfo = new finfo(FILEINFO_MIME_TYPE);
@@ -851,13 +873,16 @@ class Smtp
     }
 
     /**
-     * @param $fileName
+     * @param string $fileName
      * @param string $displayName
      * @param string $id
      * @param string $desc
-     * @return Smtp
+     * @return self
      */
-    public function addAttachment($fileName, $displayName = '', $id = '', $desc = '')
+    public function addAttachment(string $fileName,
+                                  string $displayName = '',
+                                  string $id = '',
+                                  string $desc = ''): self
     {
         $attachment = [];
         $fileInfo = new finfo(FILEINFO_MIME_TYPE);
@@ -888,10 +913,10 @@ class Smtp
     }
 
     /**
-     * @param $contact
-     * @return Smtp
+     * @param array $contact
+     * @return string
      */
-    public function getEmailList($contact)
+    public function getEmailList(array $contact): string
     {
         $result = [];
         foreach ($contact as $email => $name)
@@ -903,20 +928,21 @@ class Smtp
     }
 
     /**
-     * @param $name
-     * @param $content
-     * @return Smtp
+     * @param string $name
+     * @param string|null $content
+     * @return self
      */
-    public function addHeader($name, $content)
+    public function addHeader(string $name, ?string $content): self
     {
-        $this->mail['header'][$name] = $content;
+        if (!empty($content))
+            $this->mail['header'][$name] = $content;
         return $this;
     }
 
     /**
      * @return array
      */
-    public function getContent()
+    public function getContent(): array
     {
         return $this->mail['content'];
     }
@@ -924,7 +950,7 @@ class Smtp
     /**
      * @return array
      */
-    public function getLogs()
+    public function getLogs(): array
     {
         return $this->logs;
     }

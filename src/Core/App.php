@@ -1,13 +1,16 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
     use Composer\Autoload\ClassLoader;
+    use JetBrains\PhpStorm\NoReturn;
     use Npf\Exception\DBQueryError;
     use Npf\Exception\InternalError;
     use Npf\Exception\UnknownClass;
     use ReflectionClass;
     use ReflectionException;
+    use Throwable;
     use Twig\Error\LoaderError;
     use Twig\Error\RuntimeError;
     use Twig\Error\SyntaxError;
@@ -32,90 +35,77 @@ namespace Npf\Core {
         /**
          * @var array
          */
-        private $models = [];
+        private array $models;
 
         /**
          * @var array
          */
-        private $modules = [];
+        private array $modules;
 
         /**
          * @var array
          */
-        private $config = [];
+        private array $config;
 
         /**
          * @var array
          */
-        private $components = [];
+        private array $components;
 
         /**
          * @var Request
          */
-        private $request;
+        private Request $request;
 
         /**
          * @var Response
          */
-        private $response;
+        private Response $response;
 
         /**
          * @var View
          */
-        private $view;
+        private View $view;
 
         /**
          * @var string Config Path
          */
-        private $configPath;
+        private string $configPath;
 
         /**
          * @var string Root Path
          */
-        private $rootPath = '';
+        private string $rootPath;
 
         /**
          * @var string Base Path
          */
-        private $basePath = '';
-
-        /**
-         * @var string Environment Name
-         */
-        private $appEnv = 'local';
-
-        /**
-         * @var string App Name
-         */
-        private $appName = 'defaultApp';
-
-        /**
-         * @var string Roles
-         */
-        private $roles = 'web';
+        private string $basePath;
 
         /**
          * @var bool Ignore Error
          */
-        private $ignoreError = false;
+        private bool $ignoreError;
 
         /**
          * @var bool Ignore Error
          */
-        private $ignoreException = false;
+        private bool $ignoreException;
 
         /**
          * App constructor.
          * @param string $roles
-         * @param string $env
-         * @param string $name
+         * @param string $appEnv
+         * @param string $appName
          */
-        final public function __construct($roles = 'web', $env = 'local', $name = 'defaultApp')
+        final public function __construct(
+            private string $roles = 'web',
+            private string $appEnv = 'local',
+            private string $appName = 'defaultApp'
+        )
         {
             parent::__construct();
             $this->roles = !empty($roles) ? $roles : 'web';
-            $this->appEnv = !empty($env) ? $env : 'local';
-            $this->appName = !empty($name) ? $name : 'defaultApp';
             $this->basePath = getcwd();
             $this->configPath = sprintf("Config\\%s\\%s\\", ucfirst($this->appEnv), ucfirst($this->appName));
             $this->request = new Request($this);
@@ -131,14 +121,14 @@ namespace Npf\Core {
          * @throws DBQueryError
          * @throws InternalError
          * @throws LoaderError
-         * @throws ReflectionException
          * @throws RuntimeError
          * @throws SyntaxError
          */
-        final public function forceSecure()
+        final public function forceSecure(): self
         {
             if (!$this->request->isSecure() && isset($_SERVER["HTTP_HOST"]) && isset($_SERVER["REQUEST_URI"]))
                 $this->redirect("https://{$_SERVER["HTTP_HOST"]}{$_SERVER["REQUEST_URI"]}");
+            return $this;
         }
 
         /**
@@ -148,11 +138,10 @@ namespace Npf\Core {
          * @throws DBQueryError
          * @throws InternalError
          * @throws LoaderError
-         * @throws ReflectionException
          * @throws RuntimeError
          * @throws SyntaxError
          */
-        final public function redirect($url, $statsCode = 302)
+        #[NoReturn] final public function redirect(string $url, int $statsCode = 302): void
         {
             if ($this->request->isXHR()) {
                 $this->response->header('Go', $url, true);
@@ -171,7 +160,7 @@ namespace Npf\Core {
          * App Execute
          * @throws \Exception
          */
-        final public function __invoke()
+        #[NoReturn] final public function __invoke(): void
         {
             $this->emit('appStart', [&$this]);
             $route = new Route($this);
@@ -183,15 +172,13 @@ namespace Npf\Core {
         }
 
         /**
-         * @return mixed
          * @throws DBQueryError
          * @throws InternalError
          * @throws LoaderError
-         * @throws ReflectionException
          * @throws RuntimeError
          * @throws SyntaxError
          */
-        private function finishingApp()
+        #[NoReturn] private function finishingApp(): void
         {
             $profiler = $this->profiler->fetch();
             $this->response->add('profiler', $profiler);
@@ -209,7 +196,7 @@ namespace Npf\Core {
          * @return Container
          * @throws InternalError
          */
-        final public function config($name, $ignoreError = false)
+        final public function config(string $name, bool $ignoreError = false): Container
         {
             if (isset($this->config[$name]))
                 return $this->config[$name];
@@ -232,7 +219,7 @@ namespace Npf\Core {
          * @param $origin
          * @throws InternalError
          */
-        private function corsSupport($origin)
+        private function corsSupport(string $origin): void
         {
             $origin = $this->request->header('origin', $origin);
             $this->response->header('Access-Control-Allow-Origin', $origin, true);
@@ -246,7 +233,7 @@ namespace Npf\Core {
          * App Commit
          * @throws DBQueryError
          */
-        final public function commit()
+        final public function commit(): self
         {
             $this->emit('beforeCommit', [&$this]);
             $this->dbCommit();
@@ -258,13 +245,14 @@ namespace Npf\Core {
                 $session->close();
 
             $this->emit('afterCommit', [&$this]);
+            return $this;
         }
 
         /**
          * DB Commit
          * @throws DBQueryError
          */
-        final public function dbCommit()
+        final public function dbCommit(): bool
         {
             $this->emit('dbCommit', [&$this]);
             if (isset($this->components['db']) && $this->components['db'] instanceof Db)
@@ -285,28 +273,28 @@ namespace Npf\Core {
         /**
          * App Components Clean Up
          */
-        final public function clean()
+        final public function clean(): self
         {
-            foreach ($this->components as $name => &$component) {
+            foreach ($this->components as $name => $component) {
                 if (!in_array($name, ['request', 'response', 'profiler'], true)) {
                     if (method_exists($component, '__destruct'))
                         $component->__destruct();
                     unset($this->components[$name]);
                 }
             }
+            return $this;
         }
 
         /**
          * @return string
-         * @throws ReflectionException
          */
-        final public function getRootPath()
+        final public function getRootPath(): string
         {
             if (empty($this->rootPath)) {
                 $reflection = new ReflectionClass(ClassLoader::class);
-                $this->rootPath = explode('/', str_replace('\\', '/', dirname(dirname($reflection->getFileName()))));
-                array_pop($this->rootPath);
-                $this->rootPath = implode("/", $this->rootPath) . '/';
+                $rootPath = explode('/', str_replace('\\', '/', dirname(dirname($reflection->getFileName()))));
+                array_pop($rootPath);
+                $this->rootPath = implode("/", $rootPath) . '/';
             }
             return $this->rootPath;
         }
@@ -314,7 +302,7 @@ namespace Npf\Core {
         /**
          * @return string
          */
-        final public function getRoles()
+        final public function getRoles(): string
         {
             return $this->roles;
         }
@@ -322,7 +310,7 @@ namespace Npf\Core {
         /**
          * @return string
          */
-        final public function getEnv()
+        final public function getAppEnv(): string
         {
             return $this->appEnv;
         }
@@ -330,10 +318,10 @@ namespace Npf\Core {
         /**
          * @param $modelName
          * @param array $params
-         * @return mixed|Model
+         * @return mixed
          * @throws InternalError
          */
-        final public function model($modelName, $params = null)
+        final public function model($modelName, array $params): mixed
         {
             $className = "\\Model\\" . $modelName;
 
@@ -369,10 +357,10 @@ namespace Npf\Core {
         /**
          * @param $moduleName
          * @param array $params
-         * @return mixed|Model
+         * @return mixed
          * @throws InternalError
          */
-        final public function module($moduleName, array $params = [])
+        final public function module(string $moduleName, array $params = []): mixed
         {
             $className = "\\Module\\" . $moduleName;
             if (isset($this->modules[$className])) {
@@ -404,9 +392,10 @@ namespace Npf\Core {
          * Setup View File
          * @param string $viewType
          * @param array $twigExtension
+         * @return App
          * @throws InternalError
          */
-        final public function view($viewType, array $twigExtension = [])
+        final public function view(string $viewType, array $twigExtension = []): self
         {
             $viewInfo = null;
             if (!in_array($viewType, ['json', 'xml', 'none', 'static', 'twig'], true)) {
@@ -415,13 +404,14 @@ namespace Npf\Core {
             }
             $this->view->setView($viewType, $viewInfo, 2);
             $this->view->addTwigExtension($twigExtension);
+            return $this;
         }
 
         /**
          * @param int $seek
          * @return array|null
          */
-        public final function getCallerInfo($seek = 1)
+        public final function getCallerInfo(int $seek = 1): array|null
         {
             $bt = debug_backtrace();
             return !isset($bt[$seek]['file']) ? null : ['file' => str_replace('\\', '/', $bt[$seek]['file']), 'line' => $bt[$seek]['line'], 'class' => isset($bt[$seek]['class']) ? $bt[$seek]['class'] : null, 'function' => isset($bt[$seek]['function']) ? $bt[$seek]['function'] : null];
@@ -429,10 +419,10 @@ namespace Npf\Core {
 
         /**
          * @param array $trace
-         * @param \Exception $exception
+         * @param Throwable $exception
          * @param bool $event
          */
-        final public function handleException(array $trace, $exception, $event = false)
+        final public function handleException(array $trace, Throwable $exception, bool $event = false): void
         {
             try {
                 if ($exception instanceof Exception) {
@@ -487,7 +477,7 @@ namespace Npf\Core {
             } catch (\Exception $ex) {
                 if (!$this->ignoreException) {
                     $this->ignoreException = true;
-                    $this->handleException($this->trace(), $ex, false);
+                    $this->handleException($this->trace(), $ex);
                 } else {
                     if ($ex instanceof Exception) {
                         $profiler = $this->response->get('profiler');
@@ -507,9 +497,10 @@ namespace Npf\Core {
 
         /**
          * App Rollback
+         * @return self
          * @throws DBQueryError
          */
-        final public function rollback()
+        final public function rollback(): self
         {
             $this->emit('beforeRollback', [&$this]);
 
@@ -522,13 +513,15 @@ namespace Npf\Core {
                 $session->rollback();
 
             $this->emit('afterRollback', [&$this]);
+
+            return $this;
         }
 
         /**
          * DB Rollback
          * @throws DBQueryError
          */
-        final public function dbRollback()
+        final public function dbRollback(): bool
         {
             $this->emit('dbRollback', [&$this]);
             if (isset($this->components['db']) && $this->components['db'] instanceof Db)
@@ -544,7 +537,7 @@ namespace Npf\Core {
          * @param int $seek
          * @return array
          */
-        final public function trace($seek = 1)
+        final public function trace(int $seek = 1): array
         {
             $stack = debug_backtrace(0);
             $trace = [];
@@ -565,7 +558,7 @@ namespace Npf\Core {
         /**
          * @param array $error
          */
-        final public function handleCritical(array $error)
+        final public function handleCritical(array $error): void
         {
             try {
                 $trace = ["#1. {$error['file']}:{$error['line']}"];
@@ -590,7 +583,7 @@ namespace Npf\Core {
                 $this->emit('appBeforeClean', [&$this, $profiler]);
                 $this->clean();
                 $this->view->render();
-            } catch (\Exception $e) {
+            } catch (Throwable) {
                 exit(6);
             }
             exit(5);
@@ -599,17 +592,19 @@ namespace Npf\Core {
         /**
          * Ignore Error Report
          */
-        final public function ignoreError()
+        final public function ignoreError(): self
         {
             $this->ignoreError = (boolean)true;
+            return $this;
         }
 
         /**
          * Attention Error
          */
-        final public function noticeError()
+        final public function noticeError(): self
         {
             $this->ignoreError = (boolean)false;
+            return $this;
         }
 
         /**
@@ -624,15 +619,16 @@ namespace Npf\Core {
          * @param string $characterSet
          * @param string $collate
          * @param bool $persistent
-         * @return mixed
+         * @return Db
          * @throws DBQueryError
          * @throws InternalError
          * @throws UnknownClass
          */
-        final public function createDb($host = 'localhost', $port = 3306, $user = 'root', $pass = '',
-                                       $name = '', $event = false,
-                                       $timeOut = 10, $characterSet = 'UTF8MB4',
-                                       $collate = 'UTF8MB4_UNICODE_CI', $persistent = false)
+        final public function createDb(string|Container $host = 'localhost',
+                                       int $port = 3306, string $user = 'root', string $pass = '',
+                                       string $name = '', bool $event = false,
+                                       int $timeOut = 10, string $characterSet = 'UTF8MB4',
+                                       string $collate = 'UTF8MB4_UNICODE_CI', bool $persistent = false): Db
         {
             if ($host instanceof Container)
                 $config = $host;
@@ -663,7 +659,7 @@ namespace Npf\Core {
          * @return mixed
          * @throws InternalError
          */
-        final public function __get($name)
+        final public function __get(string $name): mixed
         {
             $name = strtolower($name);
             if (!empty($this->components[$name])) {
@@ -679,7 +675,7 @@ namespace Npf\Core {
          * @param $name
          * @return bool
          */
-        final public function __isset($name)
+        final public function __isset(string $name): bool
         {
             return isset($this->components[$name]);
         }
@@ -687,7 +683,7 @@ namespace Npf\Core {
         /**
          * @param $name
          */
-        final public function __unset($name)
+        final public function __unset(string $name): void
         {
             if (isset($this->components[$name]))
                 unset($this->components[$name]);
@@ -696,7 +692,7 @@ namespace Npf\Core {
         /**
          * @return string
          */
-        final public function getAppName()
+        final public function getAppName(): string
         {
             return $this->appName;
         }
@@ -704,17 +700,19 @@ namespace Npf\Core {
         /**
          * @return string
          */
-        final public function getBasePath()
+        final public function getBasePath(): string
         {
             return $this->basePath;
         }
 
         /**
          * @param Container $response
+         * @return App
          */
-        final public function replaceResponse(Container &$response)
+        final public function replaceResponse(Container &$response): self
         {
             $this->response = &$response;
+            return $this;
         }
 
         /**

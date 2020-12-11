@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
@@ -11,26 +12,21 @@ namespace Npf\Core {
     class Lock
     {
         /**
-         * @var App
+         * @var string
          */
-        private $app;
-        /**
-         * @var int
-         */
-        private $uniqueValue;
+        private string $uniqueValue;
         /**
          * @var string
          */
-        private $prefix = '';
+        private string $prefix;
 
         /**
          * Consistent Lock Constructor
          * @param App $app
          * @throws InternalError
          */
-        final public function __construct(App &$app)
+        final public function __construct(private App $app)
         {
-            $this->app = &$app;
             $config = $app->config('General');
             $prefix = $config->get('lockPrefix', 'lock');
             $this->uniqueValue = Common::getServerIp() . ":" . getmypid();
@@ -42,7 +38,7 @@ namespace Npf\Core {
          * @param $allow
          * @return void
          */
-        final public function allowSameInstance($allow = true)
+        final public function allowSameInstance($allow = true): void
         {
             if ($allow)
                 $this->uniqueValue = Common::getServerIp() . ":" . getmypid();
@@ -54,9 +50,9 @@ namespace Npf\Core {
          * 释放锁
          * @param $name
          * @param bool $immediately
-         * @return bool
+         * @return int|bool
          */
-        final public function release($name, $immediately = false)
+        final public function release($name, $immediately = false): bool|int
         {
             $name = "{$this->prefix}{$name}";
             $redis = $this->app->redis;
@@ -70,11 +66,11 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @param int $ttl
          * @return bool|int
          */
-        final public function ttl($name, $ttl = 0)
+        final public function ttl(string $name, $ttl = 0): bool|int
         {
             $name = "{$this->prefix}{$name}";
             $redis = $this->app->redis;
@@ -96,7 +92,7 @@ namespace Npf\Core {
          * @param int $maxWait
          * @return boolean
          */
-        final public function waitAcquireDone($name, $ttl = 60, $maxWait = 120)
+        final public function waitAcquireDone(string $name, int $ttl = 60, int $maxWait = 120): bool
         {
             $start = -1 * (int)microtime(true);
             while (!$this->acquire($name, $ttl)) {
@@ -111,9 +107,9 @@ namespace Npf\Core {
          * Acquire Look
          * @param $name
          * @param int $ttl
-         * @return bool
+         * @return bool|int
          */
-        final public function acquire($name, $ttl = 60)
+        final public function acquire(string $name, $ttl = 60): bool|int
         {
             usleep(Common::randomInt(10000, 300000));
             $redis = $this->app->redis;
@@ -127,11 +123,11 @@ namespace Npf\Core {
 
         /**
          * Acquire Look
-         * @param $name
-         * @param int $ttl
-         * @return bool
+         * @param string $name
+         * @param int|null $ttl
+         * @return bool|int
          */
-        final public function expire($name, $ttl = null)
+        final public function expire(string $name, ?int $ttl = null): bool|int
         {
             $redis = $this->app->redis;
             $name = "{$this->prefix}{$name}";
@@ -144,11 +140,11 @@ namespace Npf\Core {
 
         /**
          * Acquire Look
-         * @param $name
+         * @param string $name
          * @param int $ttl
-         * @return bool
+         * @return bool|int
          */
-        final public function extend($name, $ttl)
+        final public function extend(string $name, int $ttl): bool|int
         {
             $redis = $this->app->redis;
             $name = "{$this->prefix}{$name}";

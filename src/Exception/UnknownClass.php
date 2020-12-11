@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Exception {
 
@@ -10,6 +11,6 @@ namespace Npf\Exception {
      */
     class UnknownClass extends Exception
     {
-        protected $error = 'unknown_action';
+        protected string $error = 'unknown_action';
     }
 }

@@ -1,13 +1,12 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
     use Npf\Exception\InternalError;
     use Npf\Library\Aes;
-    use Npf\Library\Daemon;
     use Npf\Library\Gd;
     use Npf\Library\GeoIp;
-    use Npf\Library\Monitor;
     use Npf\Library\Rpc;
     use Npf\Library\S3;
     use Npf\Library\TwoFactorAuth;
@@ -29,22 +28,16 @@ namespace Npf\Core {
     class Library
     {
         /**
-         * @var App
-         */
-        private $app;
-
-        /**
          * @var array
          */
-        private $component;
+        private array $component;
 
         /**
          * Session constructor.
          * @param App $app
          */
-        final public function __construct(App $app)
+        final public function __construct(private App $app)
         {
-            $this->app = &$app;
         }
 
         /**
@@ -53,7 +46,7 @@ namespace Npf\Core {
          * @return mixed
          * @throws InternalError
          */
-        final public function create($name)
+        final public function create(string $name): mixed
         {
             $className = "Npf\\Library\\" . ucfirst($name);
             if (!class_exists($className))
@@ -67,7 +60,7 @@ namespace Npf\Core {
          * @return mixed
          * @throws InternalError
          */
-        final public function __get($name)
+        final public function __get(string $name): mixed
         {
             if (!isset($this->component[$name]))
                 $this->component[$name] = $this->create($name);
