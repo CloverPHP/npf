@@ -43,8 +43,7 @@
     "react/http": "^0.8.4",
     "react/mysql": "^0.5.4",
     "clue/redis-react": "^2.3",
-    "mobiledetect/mobiledetectlib": "^2.8",
-    "ext-pcntl": "*"
+    "mobiledetect/mobiledetectlib": "^2.8"
   },
   "autoload": {
     "psr-4": {
