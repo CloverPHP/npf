@@ -15,10 +15,10 @@ namespace Npf\Core {
      */
     class Common
     {
-        private static float $timestamp;
-        private static string $datetime;
-        private static string $date;
-        private static string $time;
+        private static float $timestamp = 0;
+        private static string $datetime = '';
+        private static string $date = '';
+        private static string $time = '';
         private static string $timezone = '';
 
         /**

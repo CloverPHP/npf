@@ -135,14 +135,14 @@ namespace Npf\Core\Redis {
         private bool $connected;
         private mixed $socket = null;
         private string $mode = '';
-        private int $db;
-        private string $authPass;
-        private int $timeout;
+        private int $db = 0;
+        private string $authPass = '';
+        private int $timeout = 0;
         private int $rwTimeout = 3;
-        private string $lastError;
+        private string $lastError = '';
         private int $retry = 1;
-        private bool $trans;
-        private bool $transError;
+        private bool $trans = false;
+        private bool $transError = false;
         private bool $allowReconnect;
         private int $bufferSize = 10240;
         private bool $persistent;
@@ -150,7 +150,7 @@ namespace Npf\Core\Redis {
             'no' => 0,
             'msg' => '',
         ];
-        private string $currentHost;
+        private string $currentHost = '';
         private array $readFnc = ['GETOPTION', 'TIME', 'EXISTS', 'GET', 'GETUNSERIALISE',
             'LASTSAVE', 'GETRANGE', 'STRLEN', 'HGET', 'HLEN', 'HKEYS', 'HVALS', 'HGETALL',
             'HEXISTS', 'LINDEX', 'LGET', 'LLEN', 'LSIZE', 'SCARD', 'SSIZE', 'SDIFF',

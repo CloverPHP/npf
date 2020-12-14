@@ -9,6 +9,6 @@ namespace Npf\Core\Db {
      */
     abstract class DbDriver
     {
-        public string $lastQuery;
+        public string $lastQuery = '';
     }
 }

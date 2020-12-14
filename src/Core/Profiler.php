@@ -19,19 +19,19 @@ namespace Npf\Core {
          *
          * @var float|string
          */
-        private float|string $initTime;
+        private float|string $initTime = '';
 
         /**
          *
          * @var array
          */
-        private array $timeUsage;
+        private array $timeUsage = [];
 
         /**
          *
          * @var array
          */
-        private array $query;
+        private array $query = [];
 
         /**
          * @var array
@@ -44,7 +44,7 @@ namespace Npf\Core {
         /**
          * @var int
          */
-        private $maxLog;
+        private $maxLog = 100;
 
         /**
          * Profiler constructor.

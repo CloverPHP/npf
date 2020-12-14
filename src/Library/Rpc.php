@@ -16,17 +16,17 @@ final class Rpc
     /**
      * @var string Url
      */
-    private string $url;
+    private string $url = '';
 
     /**
      * @var bool Enable Verbose Debug
      */
-    private bool $verboseDebug;
+    private bool $verboseDebug = false;
 
     /**
      * @var string CURL Verbose Debug Log
      */
-    private string $verboseDebugLog;
+    private string $verboseDebugLog = '';
 
     /**
      * @var int Request Timeout
@@ -36,7 +36,7 @@ final class Rpc
     /**
      * @var int Request Timeout in ms
      */
-    private int $timeoutMS;
+    private int $timeoutMS = 0;
 
     /**
      * @var int Request Timeout
@@ -46,7 +46,7 @@ final class Rpc
     /**
      * @var int Request Connection Port
      */
-    private int $port;
+    private int $port = 0;
 
     /**
      * @var array Request Header
@@ -56,27 +56,27 @@ final class Rpc
     /**
      * @var array Basic Auth
      */
-    private array $basicAuth;
+    private array $basicAuth = [];
 
     /**
      * @var array Get/Post Parameters
      */
-    private array $params;
+    private array $params = [];
 
     /**
      * @var array Get/Post Binding Parameters
      */
-    private array $bindingParams;
+    private array $bindingParams = [];
 
     /**
      * @var array Cookie
      */
-    private array $cookie;
+    private array $cookie = [];
 
     /**
      * @var string Body Content
      */
-    private string $content;
+    private string $content = '';
 
     /**
      * @var string Request Method : Post/Get/Put/HTTP2.0 Custom method
@@ -96,7 +96,7 @@ final class Rpc
     /**
      * @var array Response Data
      */
-    private array $response;
+    private array $response = [];
 
     /**
      * @var ?array Request Proxy
@@ -106,22 +106,22 @@ final class Rpc
     /**
      * @var string Internal Cookie Handle
      */
-    private string $internalCookie;
+    private string $internalCookie = '';
 
     /**
      * @var bool Flag is have file upload
      */
-    private bool $fileUpload;
+    private bool $fileUpload = false;
 
     /**
      * @var array Curl additional option
      */
-    private array $curlOpt;
+    private array $curlOpt = [];
 
     /**
      * @var string CA Cert File Path to load
      */
-    private string $CACert;
+    private string $CACert = '';
 
     /**
      * @var bool
@@ -132,7 +132,7 @@ final class Rpc
      */
     private mixed $handle;
 
-    private array $rpcThread;
+    private array $rpcThread = [];
 
     /**
      * Rpc constructor.

@@ -35,7 +35,7 @@ namespace Npf\Core {
         /**
          * @var array
          */
-        private array $appPath;
+        private array $appPath = [];
         /**
          * @var string Root Directory
          */
@@ -56,7 +56,7 @@ namespace Npf\Core {
         /**
          * @var bool Is Static Route
          */
-        private bool $isStatic;
+        private bool $isStatic = false;
 
         /**
          * Route constructor.

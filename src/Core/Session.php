@@ -20,7 +20,7 @@ namespace Npf\Core {
         /**
          * @var bool
          */
-        private bool $status;
+        private bool $status = false;
         /**
          * @var array
          */

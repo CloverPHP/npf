@@ -12,8 +12,8 @@ namespace Npf\Core {
     class Crypt
     {
         private string $cipher = 'AES-256-CTR';
-        private string $secretKey;
-        private string $iv;
+        private string $secretKey = '';
+        private string $iv = '';
 
         /**
          * AES constructor.

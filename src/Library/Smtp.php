@@ -14,11 +14,11 @@ use JetBrains\PhpStorm\Pure;
 class Smtp
 {
     private resource|null $socket;
-    private array $logs;
-    private string $lastResponse;
+    private array $logs = [];
+    private string $lastResponse = '';
     private string $eol = "\n";
-    private array $error;
-    private array $serverElm;
+    private array $error = [];
+    private array $serverElm = [];
     private array $mail = [
         'server' => [],
         'messageId' => '',

@@ -144,15 +144,15 @@ namespace Npf\Core {
          */
         private array $redis;
         private array $instance;
-        private int $size;
-        private int $db;
-        private int $timeout;
-        private int $rwTimeout;
-        private string $authPass;
+        private int $size = 0;
+        private int $db = 0;
+        private int $timeout = 0;
+        private int $rwTimeout = 0;
+        private string $authPass = '';
         private bool $allowReconnect = true;
-        private bool $persistent;
-        private string $postHash;
-        private string $tempHash;
+        private bool $persistent = false;
+        private string $postHash = '';
+        private string $tempHash = '';
         private string $hashRegex = "/\{(?<key>\w+)\}/";
         private array $restrictFnc = ['PING', 'SAVE', 'SCAN', 'OBJECT', 'CONNECT', 'OPEN',
             'PCONNECT', 'POPEN', 'AUTH', 'ECHO', 'BGREWRITEAOF', 'BGSAVE', 'CONFIG',

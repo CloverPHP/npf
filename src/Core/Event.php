@@ -11,14 +11,14 @@ namespace Npf\Core {
      */
     class Event
     {
-        private array $listeners;
-        private array $timerListener;
-        private array $scheduleListener;
-        private array $termListener;
-        private array $eventParams;
-        private int $timerOut;
-        private int $tick;
-        private float $timerLastTimestamp;
+        private array $listeners = [];
+        private array $timerListener = [];
+        private array $scheduleListener = [];
+        private array $termListener = [];
+        private array $eventParams = [];
+        private int $timerOut = 0;
+        private int $tick = 0;
+        private float $timerLastTimestamp = 0;
 
         /**
          * EventEmitter constructor.

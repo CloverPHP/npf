@@ -46,7 +46,7 @@ namespace Npf\Library {
         /**
          * @var string|null
          */
-        private string|null $dbFiles;
+        private string|null $dbFiles = null;
 
         /**
          * Aes constructor.

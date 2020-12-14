@@ -20,15 +20,15 @@ namespace Npf\Core {
         /**
          * @var string
          */
-        protected string $tableName;
+        protected string $tableName = '';
         /**
          * @var string
          */
-        protected string $dbName;
+        protected string $dbName = '';
         /**
          * @var string|null
          */
-        protected ?string $prefix;
+        protected ?string $prefix = '';
 
         /**
          * BankTac constructor.

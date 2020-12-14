@@ -26,10 +26,10 @@ namespace Npf\Core\Db {
         private string $queryMode = 'store';
         private ?mysqli $resLink;
         private ?mysqli_result $resResult;
-        private bool $queryError;
-        private bool $tranEnable;
-        private bool $tranStarted;
-        private bool $persistent;
+        private bool $queryError = false;
+        private bool $tranEnable = false;
+        private bool $tranStarted = false;
+        private bool $persistent = false;
         #----------------------------------------------------------------------#
         # Class Initialize
         #----------------------------------------------------------------------#

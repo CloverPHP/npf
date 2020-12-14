@@ -30,7 +30,7 @@ namespace Npf\Core {
         /**
          * @var array
          */
-        private array $component;
+        private array $component = [];
 
         /**
          * Session constructor.

@@ -18,7 +18,7 @@ namespace Npf\Core\Db {
         /**
          * @var string
          */
-        private string $queryLock;
+        private string $queryLock = '';
         /**
          * @var DbMysqli
          */

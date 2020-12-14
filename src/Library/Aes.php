@@ -19,8 +19,8 @@ namespace Npf\Library {
             'AES-256-CTR',
         ];
         private string $cipherMode = 'AES-256-CTR';
-        private string $secret_key;
-        private string $iv;
+        private string $secret_key = '';
+        private string $iv = '';
 
         /**
          * Aes constructor.

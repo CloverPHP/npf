@@ -15,15 +15,15 @@ final class UserAgent extends MobileDetect
     /**
      * @var string
      */
-    private string $userPlatform;
+    private string $userPlatform = '';
     /**
      * @var string
      */
-    private string $userBrowser;
+    private string $userBrowser = '';
     /**
      * @var string
      */
-    private string $userVersion;
+    private string $userVersion = '';
 
     /**
      * UserAgent constructor.

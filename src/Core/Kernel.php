@@ -16,7 +16,7 @@ namespace Npf\Core {
         /**
          * @var array App Info
          */
-        public static array $appInfo;
+        public static array $appInfo = [];
 
         /**
          * App Object
@@ -30,8 +30,8 @@ namespace Npf\Core {
         final public function __construct()
         {
             //Initial Handling
-            ini_set('display_errors', 1);
-            ini_set('display_startup_errors', 1);
+            ini_set('display_errors', '1');
+            ini_set('display_startup_errors', '1');
             register_shutdown_function([$this, 'handleShutdown']);
             set_exception_handler([$this, 'handleException']);
             set_error_handler([$this, 'handleError'], E_ALL);

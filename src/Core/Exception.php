@@ -13,9 +13,9 @@ namespace Npf\Core {
     class Exception extends \Exception
     {
         protected Response $response;
-        protected string $status;
-        protected string $error;
-        protected bool $sysLog;
+        protected string $status = '';
+        protected string $error = '';
+        protected bool $sysLog = false;
 
         /**
          * ExceptionNormal constructor.

@@ -33,7 +33,7 @@ final class S3Request
      * @var array|bool
      * @access public
      */
-    public bool|array $data = false;
+    public bool|array|string $data = false;
     /**
      * S3 request respone
      *

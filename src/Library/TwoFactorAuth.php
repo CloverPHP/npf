@@ -33,7 +33,7 @@ final class TwoFactorAuth
      * TwoFactorAuth constructor.
      * @param App $app
      */
-    final public function __construct(private App &$app)
+    final public function __construct(private App $app)
     {
     }
 

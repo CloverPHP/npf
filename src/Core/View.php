@@ -32,17 +32,17 @@ class View
     /**
      * @var array
      */
-    private array $twigExtension;
+    private array $twigExtension = [];
 
     /**
      * @var array
      */
-    private array $twigPath;
+    private array $twigPath = [];
 
     /**
      * @var bool
      */
-    private bool $output;
+    private bool $output = false;
 
     /**
      * @var Container
@@ -57,12 +57,12 @@ class View
     /**
      * @var bool Lock Current View
      */
-    private bool $lockView;
+    private bool $lockView = false;
 
     /**
      * @var int Expiry Ttl
      */
-    private int $expiryTtl;
+    private int $expiryTtl = 0;
 
     /**
      * View constructor.

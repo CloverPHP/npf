@@ -14,44 +14,19 @@ namespace Npf\Core {
         /**
          * Data Storage
          */
-        private array $__data;
-
-        /**
-         * @var bool Lock the content
-         */
-        private bool $__lock;
-
-        /**
-         * Container ID (Prevent Clone in same)
-         */
-        private string $__id;
-
-        /**
-         * Container ID (Prevent Clone in same)
-         */
-        private bool $__firstOnly;
+        private array $__data = [];
 
         /**
          * Container constructor.
-         * @param $data
-         * @param bool $lock
-         * @param bool $firstOnly
+         * @param array|null $data
+         * @param bool $__lock
+         * @param bool $__firstOnly
          */
-        public function __construct(array $data = NULL, bool $lock = FALSE, bool $firstOnly = false)
+        public function __construct(array $data = NULL,
+                                    private bool $__lock = FALSE,
+                                    private bool $__firstOnly = false)
         {
-            $this->__firstOnly = (bool)$firstOnly;
-            $this->__uniqueId();
             $this->__import($data);
-            $this->__lock = (bool)$lock;
-        }
-
-        /**
-         * Generate Unique ID
-         * @return string
-         */
-        private function __uniqueId(): string
-        {
-            return $this->__id = uniqid(uniqid('', TRUE), TRUE);
         }
 
         /**
@@ -226,14 +201,6 @@ namespace Npf\Core {
         public function __toString(): string
         {
             return json_encode($this->__dump());
-        }
-
-        /**
-         * Clone new object
-         */
-        public function __clone(): void
-        {
-            $this->__uniqueId();
         }
 
         /**

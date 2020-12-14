@@ -11,7 +11,7 @@ namespace Npf\Core {
         /**
          * @var array
          */
-        private array $headers;
+        private array $headers = [];
         /**
          * @var bool|int Response Http Status Code
          */

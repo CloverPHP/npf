@@ -519,7 +519,7 @@ class S3
     /**
      * Create input array info for putObject() with a resource
      *
-     * @param string|resource $resource $resource Input resource to read from
+     * @param string|resource $resource $resource $resource Input resource to read from
      * @param bool $bufferSize Input byte size
      * @param string $md5sum MD5 hash to send (optional)
      * @return array | false
@@ -817,7 +817,7 @@ class S3
                                       string $storageClass = self::STORAGE_CLASS_STANDARD): bool|array
     {
         $rest = new S3Request('PUT', $bucket, $uri, self::$endpoint);
-        $rest->setHeader('Content-Length', 0);
+        $rest->setHeader('Content-Length', '0');
         foreach ($requestHeaders as $h => $v)
             str_starts_with($h, 'x-amz-') ? $rest->setAmzHeader($h, $v) : $rest->setHeader($h, $v);
         foreach ($metaHeaders as $h => $v) $rest->setAmzHeader('x-amz-meta-' . $h, $v);
@@ -1347,8 +1347,8 @@ class S3
      * @param string $comment Comment to append
      * @param string $callerReference Caller reference
      * @param array $cnames Array of CNAME aliases
-     * @param mixed $defaultRootObject Default root object
-     * @param mixed $originAccessIdentity Origin access identity
+     * @param ?string $defaultRootObject Default root object
+     * @param ?string $originAccessIdentity Origin access identity
      * @param array $trustedSigners Array of trusted signers
      * @return string
      * @internal Used to create XML in createDistribution() and updateDistribution()
@@ -1358,8 +1358,8 @@ class S3
                                                                  string $comment,
                                                                  string $callerReference = '0',
                                                                  array $cnames = [],
-                                                                 $defaultRootObject = null,
-                                                                 $originAccessIdentity = null,
+                                                                 ?string $defaultRootObject = null,
+                                                                 ?string $originAccessIdentity = null,
                                                                  array $trustedSigners = []): string
     {
         $dom = new DOMDocument('1.0', 'UTF-8');
@@ -1676,7 +1676,8 @@ class S3
      * @return string
      * @internal Used to create XML in invalidateDistribution()
      */
-    private static function __getCloudFrontInvalidationBatchXML(array $paths, $callerReference = '0')
+    private static function __getCloudFrontInvalidationBatchXML(array $paths,
+                                                                string $callerReference = '0'): string
     {
         $dom = new DOMDocument('1.0', 'UTF-8');
         $dom->formatOutput = true;

@@ -35,22 +35,22 @@ namespace Npf\Core {
         /**
          * @var array
          */
-        private array $models;
+        private array $models = [];
 
         /**
          * @var array
          */
-        private array $modules;
+        private array $modules = [];
 
         /**
          * @var array
          */
-        private array $config;
+        private array $config = [];
 
         /**
          * @var array
          */
-        private array $components;
+        private array $components = [];
 
         /**
          * @var Request
@@ -75,7 +75,7 @@ namespace Npf\Core {
         /**
          * @var string Root Path
          */
-        private string $rootPath;
+        private string $rootPath = '';
 
         /**
          * @var string Base Path
@@ -85,12 +85,12 @@ namespace Npf\Core {
         /**
          * @var bool Ignore Error
          */
-        private bool $ignoreError;
+        private bool $ignoreError = false;
 
         /**
          * @var bool Ignore Error
          */
-        private bool $ignoreException;
+        private bool $ignoreException = false;
 
         /**
          * App constructor.

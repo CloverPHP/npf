@@ -14,11 +14,11 @@ namespace Npf\Core {
         /**
          * @var string
          */
-        private string $uniqueValue;
+        private string $uniqueValue = '';
         /**
          * @var string
          */
-        private string $prefix;
+        private string $prefix = '';
 
         /**
          * Consistent Lock Constructor
