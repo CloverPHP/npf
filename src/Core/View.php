@@ -529,7 +529,8 @@ class View
         if ($syntaxStyle = $this->app->config('Twig')->get('syntaxStyle'))
             $twig->setLexer(new Lexer($twig, $syntaxStyle));
         $appendHeader = $this->app->config('Twig')->get('appendHeader');
-        $this->app->response->setHeaders($appendHeader);
+        if (!empty($appendHeader) && is_array($appendHeader))
+            $this->app->response->setHeaders($appendHeader);
         $this->app->response->header('Content-Type', 'text/html; charset=utf-8', $headerOverWrite);
         $this->output($twig->render($this->data, $data), $statusCode);
     }

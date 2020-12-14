@@ -84,7 +84,7 @@ namespace Npf\Core {
          * @param bool $overwrite
          * @return self
          */
-        public function setHeaders(array $array, bool $overwrite = false): self
+        public function setHeaders(?array $array, bool $overwrite = false): self
         {
             if (!empty($array) && is_array($array)) {
                 if (!is_array($this->headers))
