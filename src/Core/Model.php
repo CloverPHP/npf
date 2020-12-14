@@ -189,9 +189,9 @@ namespace Npf\Core {
         /**
          * @param $value
          * @param bool $prefix
-         * @return null|int|float|string
+         * @return null|int|float|string|array
          */
-        private function buildCmd(mixed $value, bool $prefix = true): null|int|float|string
+        private function buildCmd(mixed $value, bool $prefix = true): null|int|float|string|array
         {
             $matches = [];
             if (is_string($value) && !is_numeric($value)) {
@@ -244,6 +244,7 @@ namespace Npf\Core {
 
         /**
          * @param array|string|null $groupBy
+         * @return array|string|null
          */
         private function buildGroup(array|string|null $groupBy): array|null|string
         {
@@ -260,9 +261,9 @@ namespace Npf\Core {
 
         /**
          * @param mixed $cond
-         * @return mixed
+         * @return null|int|float|string|array
          */
-        private function buildCond(mixed $cond): mixed
+        private function buildCond(mixed $cond): null|int|float|string|array
         {
             if (is_array($cond) && !empty($cond)) {
                 $data = [];
