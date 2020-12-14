@@ -477,7 +477,7 @@ namespace Npf\Core {
             } catch (\Exception $ex) {
                 if (!$this->ignoreException) {
                     $this->ignoreException = true;
-                    $this->handleException($this->trace(), $ex);
+                    $this->handleException($this->trace($ex), $ex);
                 } else {
                     if ($ex instanceof Exception) {
                         $profiler = $this->response->get('profiler');

@@ -88,7 +88,7 @@ namespace Npf\Core {
         {
             if (!isset($this->app))
                 $this->app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
-            $trace = $this->app->trace();
+            $trace = $this->app->trace($exception);
             $this->app->handleException($trace, $exception, true);
         }
 
