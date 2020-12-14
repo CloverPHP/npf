@@ -213,14 +213,14 @@ namespace Npf\Core\Redis {
          */
         public function ping(): bool
         {
-            return $this->__exeCmd('ping') === 'PONG';
+            return $this->__execmd('ping') === 'PONG';
         }
 
         /**
          * @return mixed
          * @throws InternalError
          */
-        private function __exeCmd(): mixed
+        private function __execmd(): mixed
         {
             $args = func_get_args();
             $masterOnly = !in_array(strtoupper($args[0]), $this->readFnc, true);
@@ -231,16 +231,19 @@ namespace Npf\Core\Redis {
                 elseif ($masterOnly && $this->mode !== 'master')
                     throw new InternalError("need connect to master for write permission");
                 $args[0] = strtoupper($args[0]);
-                if ($this->__write($args))
-                    return $this->__read();
-                else
+                if ($this->__write($args)) {
+                    $data = $this->__read();
+                    return $data;
+                } else
                     $this->__errorHandle('Unable write to redis');
             } catch (InternalError) {
                 if ($this->lastError !== '')
                     $this->__errorHandle($this->lastError);
-                else
-                    return $this->reconnect($masterOnly) === false ? false : call_user_func_array(
-                        [$this, '__exeCmd'], $args);
+                else {
+                    $data = $this->reconnect($masterOnly) === false ? false : call_user_func_array(
+                        [$this, '__execmd'], $args);
+                    return $data;
+                }
             }
             return false;
         }
@@ -594,7 +597,7 @@ namespace Npf\Core\Redis {
         public function multi(): mixed
         {
             if (!$this->trans) {
-                $this->trans = $this->__exeCmd('multi');
+                $this->trans = $this->__execmd('multi');
                 return $this->trans;
             } else
                 return true;
@@ -609,7 +612,7 @@ namespace Npf\Core\Redis {
         {
             $results = null;
             if (!$this->transError)
-                if (!$results = $this->__exeCmd('exec'))
+                if (!$results = $this->__execmd('exec'))
                     return false;
             $this->trans = false;
             $success = true;
@@ -633,7 +636,7 @@ namespace Npf\Core\Redis {
         public function discard(): bool
         {
             if ($this->trans) {
-                if ($this->__exeCmd('discard')) {
+                if ($this->__execmd('discard')) {
                     $this->trans = false;
                     $this->transError = false;
                     return true;
@@ -670,7 +673,7 @@ namespace Npf\Core\Redis {
          */
         public function get(string $name): mixed
         {
-            return $this->__exeCmd('get', $name);
+            return $this->__execmd('get', $name);
         }
 
         /**
@@ -683,7 +686,7 @@ namespace Npf\Core\Redis {
         public function setEx(string $name, string $value, int $expired): bool
         {
             $expired = (int)$expired;
-            return (boolean)$this->__exeCmd('setex', $name, $expired, $value);
+            return (boolean)$this->__execmd('setex', $name, $expired, $value);
         }
 
         /**
@@ -724,7 +727,7 @@ namespace Npf\Core\Redis {
                 $noExists = (boolean)$noExists;
                 $param[] = $noExists ? 'NX' : 'XX';
             }
-            $result = call_user_func_array([$this, '__exeCmd'], $param);
+            $result = call_user_func_array([$this, '__execmd'], $param);
             return $result;
         }
 
@@ -740,7 +743,7 @@ namespace Npf\Core\Redis {
             )
                 $args = [];
             array_unshift($args, $name);
-            return call_user_func_array([$this, '__exeCmd'], $args);
+            return call_user_func_array([$this, '__execmd'], $args);
         }
 
         /**
@@ -774,7 +777,7 @@ namespace Npf\Core\Redis {
          */
         public function hGetAll(string $name): array
         {
-            $data = (array)$this->__exeCmd('hgetall', $name);
+            $data = (array)$this->__execmd('hgetall', $name);
             $result = [];
             $key = "";
             foreach ($data as $index => $value)

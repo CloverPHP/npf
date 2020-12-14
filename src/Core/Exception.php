@@ -20,13 +20,13 @@ namespace Npf\Core {
         /**
          * ExceptionNormal constructor.
          * @param null|string $desc
-         * @param int|string $code
+         * @param string $code
          * @param string $status
          * @param array $extra
          * @internal param string $error
          */
         public function __construct(?string $desc = '',
-                                    int|string $code = '',
+                                    string $code = '',
                                     string $status = 'error',
                                     array $extra = [])
         {

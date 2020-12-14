@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Npf\Core {
 
-    use JetBrains\PhpStorm\Pure;
 
     /**
      * Class EventEmitter
