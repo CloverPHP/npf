@@ -113,7 +113,7 @@ namespace Npf\Core {
         final public function __invoke(array $appInfo = []): void
         {
             try {
-                $timezone = $this->app->config('General')->get('timezone');
+                $timezone = $this->app->config('General')->get('timezone', 'UTC');
             } catch (\Exception) {
                 $timezone = 'UTC';
             }

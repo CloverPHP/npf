@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Npf\Core {
 
     use JetBrains\PhpStorm\Pure;
+    use stdClass;
 
     /**
      * Class Container
@@ -18,11 +19,11 @@ namespace Npf\Core {
 
         /**
          * Container constructor.
-         * @param array|null $data
+         * @param object|array|null $data
          * @param bool $__lock
          * @param bool $__firstOnly
          */
-        public function __construct(array $data = NULL,
+        public function __construct(object|array|null $data = NULL,
                                     private bool $__lock = FALSE,
                                     private bool $__firstOnly = false)
         {
@@ -31,11 +32,12 @@ namespace Npf\Core {
 
         /**
          * Import data from a object/array/json
-         * @param mixed $data
+         * @param object|array|null $data
          * @param bool $notExistsOnly
          * @return Container
          */
-        final public function import(mixed $data, bool $notExistsOnly = false): self
+        final public function import(object|array|null $data,
+                                     bool $notExistsOnly = false): self
         {
             return $this->__import($data, $notExistsOnly);
         }
@@ -46,7 +48,8 @@ namespace Npf\Core {
          * @param bool $notExistsOnly
          * @return Container
          */
-        final public function __import(mixed $data, $notExistsOnly = false): self
+        final public function __import(object|array|null $data,
+                                       $notExistsOnly = false): self
         {
             if ($this->__lock || NULL === $data)
                 return $this;

@@ -1156,9 +1156,9 @@ namespace Npf\Core {
 
         /**
          * Delay the timestamp
-         * @param int $second
+         * @param float|string $second
          */
-        public static function delay(int $second = 0): void
+        public static function delay(float|string $second = 0): void
         {
             sleep($second);
             self::initial(self::$timezone);
