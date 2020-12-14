@@ -19,9 +19,9 @@ namespace Npf\Core\Session {
         private int $lockAttempt = 3;
         private int $lockTime = 60;
         private bool $lockStatus = false;
-        private string $lockKey;
-        private string $sessionId;
-        private string $fingerprint;
+        private string $lockKey = '';
+        private string $sessionId = '';
+        private ?string $fingerprint = null;
 
         // ------------------------------------------------------------------------
 
@@ -58,9 +58,10 @@ namespace Npf\Core\Session {
         {
             if ($this->_acquire_lock($session_id)) {
                 $this->sessionId = $session_id;
-                $data = (string)$this->app->redis->get($this->keyPrefix . $session_id);
-                $this->fingerprint = sha1($data);
-                return $data;
+                $data = $this->app->redis->get($this->keyPrefix . $session_id);
+                if ($data !== null)
+                    $this->fingerprint = ($data !== null) ? sha1($data) : null;
+                return (string)$data;
             } else
                 throw new InternalError("Unable to read session");
         }
@@ -81,7 +82,7 @@ namespace Npf\Core\Session {
             $attempt = 0;
             do {
                 if (($ttl = $this->app->redis->ttl($lockKey)) > 0) {
-                    usleep(mt_rand(100000, 300000));
+                    usleep(mt_rand(1000000, 2000000));
                 }
 
                 $ret = $this->app->redis->setnx($lockKey, time(), $this->config->get('lockTime', 600));
@@ -122,14 +123,15 @@ namespace Npf\Core\Session {
             if (!empty($this->lockKey)) {
                 $this->app->redis->expire($this->lockKey, $this->lockTime);
                 $fingerprint = sha1($data);
-                if ($this->fingerprint !== $fingerprint) {
+                if ($this->fingerprint === null || $this->fingerprint !== $fingerprint) {
                     if ($this->app->redis->set($this->keyPrefix . $sessionId, $data, $this->config->get('sessionTtl', 10800))) {
                         $this->fingerprint = $fingerprint;
                         return true;
                     }
                     return false;
-                }
-                return $this->app->redis->expire($this->keyPrefix . $sessionId, $this->config->get('sessionTtl', 10800));
+                } else
+                    $this->app->redis->expire($this->keyPrefix . $sessionId, $this->config->get('sessionTtl', 10800));
+                return true;
             }
             return false;
         }

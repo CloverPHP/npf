@@ -24,8 +24,8 @@ namespace Npf\Core\Db {
         public bool $connected = false;
 
         private string $queryMode = 'store';
-        private ?mysqli $resLink;
-        private ?mysqli_result $resResult;
+        private null|bool|mysqli $resLink;
+        private null|bool|mysqli_result $resResult;
         private bool $queryError = false;
         private bool $tranEnable = false;
         private bool $tranStarted = false;

@@ -103,7 +103,7 @@ namespace Npf\Core {
             // This error code is not included in error_reporting
             if (!(error_reporting() & $severity))
                 return;
-            throw new ErrorException($message, $severity);
+            throw new ErrorException($message, "error_exception", "error", $severity);
         }
 
         /**

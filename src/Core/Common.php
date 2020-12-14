@@ -369,7 +369,7 @@ namespace Npf\Core {
                     $type = $key;
                     $extend = $validate;
                 } else {
-                    if (str_contains($validate, ":"))
+                    if (!str_contains($validate, ":"))
                         $type = $validate;
                     else
                         list($type, $extend) = explode(":", $validate, 2);

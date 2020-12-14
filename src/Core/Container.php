@@ -84,12 +84,12 @@ namespace Npf\Core {
 
         /**
          * Set data value
-         * @param string $name Name
+         * @param int|string $name Name
          * @param null $value Value to set
          * @param bool $notExistsOnly set only not exists
          * @return Container
          */
-        public function set(string $name, mixed $value = NULL, bool $notExistsOnly = false): self
+        public function set(int|string $name, mixed $value = NULL, bool $notExistsOnly = false): self
         {
             if (($notExistsOnly && !isset($this->data[$name])) || !$notExistsOnly)
                 $this->__set($name, $value);
@@ -165,10 +165,10 @@ namespace Npf\Core {
 
         /**
          * Set a value
-         * @param $name
-         * @param $value
+         * @param int|string $name
+         * @param mixed $value
          */
-        public function __set(string $name, mixed $value)
+        public function __set(int|string $name, mixed $value)
         {
             if ($this->lock || NULL === $value)
                 return;

@@ -28,7 +28,7 @@ namespace Npf\Core {
         /**
          * @var string|null
          */
-        protected ?string $prefix = '';
+        protected ?string $prefix = null;
 
         /**
          * Model constructor.
@@ -189,9 +189,9 @@ namespace Npf\Core {
         /**
          * @param $value
          * @param bool $prefix
-         * @return mixed
+         * @return null|int|float|string
          */
-        private function buildCmd(mixed $value, bool $prefix = true): string
+        private function buildCmd(mixed $value, bool $prefix = true): null|int|float|string
         {
             $matches = [];
             if (is_string($value) && !is_numeric($value)) {
@@ -230,7 +230,7 @@ namespace Npf\Core {
                         else
                             $data[$this->buildCmd($v)] = 'ASC';
                     } else {
-                        $v = strtoupper($v);
+                        $v = strtoupper((string)$v);
                         if ($v != "DESC")
                             $v = "ASC";
                         $data[$this->buildCmd($k)] = $v;
@@ -243,10 +243,9 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $groupBy
-         * @return mixed
+         * @param array|string|null $groupBy
          */
-        private function buildGroup(array|string $groupBy): mixed
+        private function buildGroup(array|string|null $groupBy): array|null|string
         {
             if (is_array($groupBy) && !empty($groupBy)) {
                 $data = [];
@@ -277,10 +276,10 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $param
+         * @param ?array $param
          * @return array
          */
-        #[Pure] private function formatOne(array $param): array
+        #[Pure] private function formatOne(?array $param): array
         {
             $data = [];
             if ($param) {

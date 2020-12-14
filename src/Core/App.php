@@ -543,9 +543,9 @@ namespace Npf\Core {
             if (!$e instanceof Throwable)
                 $e = new Exception();
             $trace = explode("\n", $e->getTraceAsString());
-            $trace = array_reverse($trace);
-            array_shift($trace); // remove {main}
-            array_pop($trace); // remove call to this method
+            //remove {main} and caller
+            array_shift($trace);
+            array_pop($trace);
             $length = count($trace);
             $result = [];
 

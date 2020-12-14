@@ -2,6 +2,9 @@
 declare(strict_types=1);
 
 namespace Npf\Core {
+
+    use JetBrains\PhpStorm\ArrayShape;
+
     /**
      * Class Response
      * @package Core
@@ -59,7 +62,7 @@ namespace Npf\Core {
         public function success(array $data = []): self
         {
             $this->set('status', 'ok');
-            $this->set('error', null);
+            $this->set('error');
             $this->__import($data);
             return $this;
         }
@@ -67,7 +70,7 @@ namespace Npf\Core {
         /**
          * Response constructor
          * @param null $statusCode
-         * @return int
+         * @return bool|int
          */
         public function statusCode($statusCode = null): bool|int
         {
@@ -130,6 +133,7 @@ namespace Npf\Core {
         /**
          * @return array
          */
+        #[ArrayShape(['statusCode' => "bool|int", 'body' => "array"])]
         public function fetch(): array
         {
             return [

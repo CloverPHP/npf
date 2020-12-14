@@ -213,14 +213,14 @@ namespace Npf\Core\Redis {
          */
         public function ping(): bool
         {
-            return $this->__execmd('ping') === 'PONG';
+            return $this->__exeCmd('ping') === 'PONG';
         }
 
         /**
          * @return mixed
          * @throws InternalError
          */
-        private function __execmd(): mixed
+        private function __exeCmd(): mixed
         {
             $args = func_get_args();
             $masterOnly = !in_array(strtoupper($args[0]), $this->readFnc, true);
@@ -231,16 +231,16 @@ namespace Npf\Core\Redis {
                 elseif ($masterOnly && $this->mode !== 'master')
                     throw new InternalError("need connect to master for write permission");
                 $args[0] = strtoupper($args[0]);
-                if ($this->__write($args)) {
+                if ($this->__write($args))
                     return $this->__read();
-                } else
+                else
                     $this->__errorHandle('Unable write to redis');
             } catch (InternalError) {
                 if ($this->lastError !== '')
                     $this->__errorHandle($this->lastError);
                 else
                     return $this->reconnect($masterOnly) === false ? false : call_user_func_array(
-                        [$this, '__execmd'], $args);
+                        [$this, '__exeCmd'], $args);
             }
             return false;
         }
@@ -331,7 +331,6 @@ namespace Npf\Core\Redis {
         private function __read(int $times = 0): null|int|bool|array|string
         {
             $response = $this->__receive($this->bufferSize);
-
             if (FALSE === $response || $response === '') {
                 if (FALSE === $response) {
                     $this->lastError = 'Error while reading line from the server.';
@@ -367,7 +366,16 @@ namespace Npf\Core\Redis {
                     $len = intval($payload);
                     if ($len === -1)
                         return null;
-                    return $this->__receive($len + 3);
+                    $bulkData = '';
+                    $bytesLeft = ($len += 2);
+                    do {
+                        $chunk = fread($this->socket, min($bytesLeft, 4096));
+                        if ($chunk === false || $chunk === '')
+                            $this->lastError = 'Error while reading bytes from the server.';
+                        $bulkData .= $chunk;
+                        $bytesLeft = $len - strlen($bulkData);
+                    } while ($bytesLeft > 0);
+                    return substr($bulkData, 0, -2);
 
                 case '*':
                     $count = intval($payload);
@@ -379,7 +387,7 @@ namespace Npf\Core\Redis {
                     return $multiResult;
 
                 default:
-                    $this->lastError = "Unknown response prefix: '$prefix'.'";
+                    $this->lastError = "Unknown response prefix: '$prefix'.";
                     $this->__errorHandle($this->lastError);
                     return null;
             }
@@ -586,7 +594,7 @@ namespace Npf\Core\Redis {
         public function multi(): mixed
         {
             if (!$this->trans) {
-                $this->trans = $this->__execmd('multi');
+                $this->trans = $this->__exeCmd('multi');
                 return $this->trans;
             } else
                 return true;
@@ -601,7 +609,7 @@ namespace Npf\Core\Redis {
         {
             $results = null;
             if (!$this->transError)
-                if (!$results = $this->__execmd('exec'))
+                if (!$results = $this->__exeCmd('exec'))
                     return false;
             $this->trans = false;
             $success = true;
@@ -625,7 +633,7 @@ namespace Npf\Core\Redis {
         public function discard(): bool
         {
             if ($this->trans) {
-                if ($this->__execmd('discard')) {
+                if ($this->__exeCmd('discard')) {
                     $this->trans = false;
                     $this->transError = false;
                     return true;
@@ -662,7 +670,7 @@ namespace Npf\Core\Redis {
          */
         public function get(string $name): mixed
         {
-            return $this->__execmd('get', $name);
+            return $this->__exeCmd('get', $name);
         }
 
         /**
@@ -675,7 +683,7 @@ namespace Npf\Core\Redis {
         public function setEx(string $name, string $value, int $expired): bool
         {
             $expired = (int)$expired;
-            return (boolean)$this->__execmd('setex', $name, $expired, $value);
+            return (boolean)$this->__exeCmd('setex', $name, $expired, $value);
         }
 
         /**
@@ -716,7 +724,7 @@ namespace Npf\Core\Redis {
                 $noExists = (boolean)$noExists;
                 $param[] = $noExists ? 'NX' : 'XX';
             }
-            $result = call_user_func_array([$this, '__execmd'], $param);
+            $result = call_user_func_array([$this, '__exeCmd'], $param);
             return $result;
         }
 
@@ -732,7 +740,7 @@ namespace Npf\Core\Redis {
             )
                 $args = [];
             array_unshift($args, $name);
-            return call_user_func_array([$this, '__execmd'], $args);
+            return call_user_func_array([$this, '__exeCmd'], $args);
         }
 
         /**
@@ -753,7 +761,7 @@ namespace Npf\Core\Redis {
          * @param int|null $expired
          * @return bool
          */
-        public function setNx(string $name, string $value, ?int $expired = null): bool
+        public function setNx(string $name, string $value, ?int $expired = null): mixed
         {
             $expired = (int)$expired;
             return $this->set($name, $value, $expired, true);
@@ -766,7 +774,7 @@ namespace Npf\Core\Redis {
          */
         public function hGetAll(string $name): array
         {
-            $data = (array)$this->__execmd('hgetall', $name);
+            $data = (array)$this->__exeCmd('hgetall', $name);
             $result = [];
             $key = "";
             foreach ($data as $index => $value)

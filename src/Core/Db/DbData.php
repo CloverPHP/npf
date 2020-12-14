@@ -331,11 +331,11 @@ namespace Npf\Core\Db {
 
         /**
          * Get column sql
-         * @param $column
+         * @param null|string|array $column
          * @param bool $alias
          * @return string
          */
-        private function getColSQL(string|array $column, bool $alias = true): string
+        private function getColSQL(null|string|array $column, bool $alias = true): string
         {
             $columnStr = "";
             if (!empty($column)) {
@@ -615,11 +615,11 @@ namespace Npf\Core\Db {
                 case "string":
                 case 'boolean';
                     $pattern = "/^\\{DB_([A-Z]+)\\}/";
-                    $Operator = " = ";
+                    $operator = " = ";
                     if (is_bool($colValue))
                         $colValue = '';
-                    if (preg_match($pattern, $colValue, $matches)) {
-                        $Operator = match (strtoupper($matches[1])) {
+                    if (is_string($colValue) && preg_match($pattern, $colValue, $matches)) {
+                        $operator = match (strtoupper($matches[1])) {
                             "NE" => " != ",
                             "GE" => " >= ",
                             "GT" => " > ",
@@ -631,11 +631,11 @@ namespace Npf\Core\Db {
                             "INULL" => " IS NULL",
                             "XINULL" => " IS NOT NULL",
                         };
-                        if ($Operator !== " = ")
+                        if ($operator !== " = ")
                             $colValue = str_replace($matches[0], "", $colValue);
                     }
-                    $condStr = $this->getColNm($colName) . "{$Operator}";
-                    $condStr .= substr($Operator, -1) === " " ? $this->getColVal($colValue, $colName) :
+                    $condStr = $this->getColNm($colName) . "{$operator}";
+                    $condStr .= substr($operator, -1) === " " ? $this->getColVal($colValue, $colName) :
                         "";
                     break;
 
@@ -649,9 +649,9 @@ namespace Npf\Core\Db {
          * Get column value
          * @param string|int|float|array|null $colValue
          * @param string|int|null $colName
-         * @return bool|string
+         * @return bool|string|int|float
          */
-        private function getColVal(string|int|float|array|null $colValue, string|int|null $colName = null): bool|string
+        private function getColVal(string|int|float|array|null $colValue, string|int|null $colName = null): bool|string|int|float
         {
             if ($colValue === null)
                 return "NULL";
@@ -659,7 +659,7 @@ namespace Npf\Core\Db {
                 $pattern = "/^\\{DB_([A-Z_]+)\\}/";
                 if (is_array($colValue) || is_object($colValue))
                     $colValue = json_encode($colValue);
-                if (preg_match($pattern, $colValue, $matches)) {
+                if (is_string($colValue) && preg_match($pattern, $colValue, $matches)) {
                     $colValue = $this->driver->escapeStr(str_replace($matches[0], "", $colValue));
                     switch (strtoupper($matches[1])) {
                         case "YEAR":
@@ -919,13 +919,13 @@ namespace Npf\Core\Db {
          * @param array $fields
          * @param array $values
          * @param bool $ignore
-         * @return bool|mysqli_result
+         * @return bool|int|mysqli_result
          * @throws DBQueryError
          */
         final public function inserts(string $table,
                                       array $fields,
                                       array $values,
-                                      bool $ignore = false): bool|mysqli_result
+                                      bool $ignore = false): bool|int|mysqli_result
         {
             if (!is_array($fields) || !is_array($values) || empty($fields) || empty($values))
                 return false;
@@ -1025,7 +1025,7 @@ namespace Npf\Core\Db {
                                      array|null $cond = null,
                                      string|array|null $order = null,
                                      int|float|string|array|null $limit = null,
-                                     bool $ignore = false): mysqli_result|bool
+                                     bool $ignore = false): mysqli_result|int|bool
         {
             if (!empty($table) && is_array($colDatas) && !empty($colDatas)) {
                 $this->queryLock = '';
@@ -1051,7 +1051,7 @@ namespace Npf\Core\Db {
          */
         final public function insert(string $table,
                                      array $colDatas,
-                                     bool $ignore = false): mysqli_result|bool
+                                     bool $ignore = false): mysqli_result|int|bool
         {
             if (!empty($table) && is_array($colDatas) && !empty($colDatas)) {
                 $this->queryLock = '';
@@ -1073,7 +1073,7 @@ namespace Npf\Core\Db {
          * Insert/Update via sql
          * @param string $table
          * @param array $colDatas
-         * @return bool|mysqli_result
+         * @return bool|int|mysqli_result
          * @throws DBQueryError
          */
         final public function insertUpdate(string $table, array $colDatas): mysqli_result|bool
@@ -1098,7 +1098,7 @@ namespace Npf\Core\Db {
          * @param string $table
          * @param array $fields
          * @param array $values
-         * @return bool|mysqli_result
+         * @return bool|int|mysqli_result
          * @throws DBQueryError
          */
         final public function insertsUpdate(string $table,
