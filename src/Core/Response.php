@@ -31,7 +31,8 @@ namespace Npf\Core {
          */
         public function __construct(array $data = NULL)
         {
-            $data += $this->initial;
+            if (is_array($data))
+                $data += $this->initial;
             parent::__construct($data, false, true);
         }
 
