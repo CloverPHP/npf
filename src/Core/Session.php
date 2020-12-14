@@ -111,6 +111,7 @@ namespace Npf\Core {
             if (!$this->status)
                 $this->start();
 
+            global $_SESSION;
             $data = $_SESSION;
             if ($name === null || $name === '*')
                 return $data;

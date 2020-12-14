@@ -31,11 +31,11 @@ namespace Npf\Core {
         protected ?string $prefix = '';
 
         /**
-         * BankTac constructor.
+         * Model constructor.
          * @param App $app
-         * @param Db $db
+         * @param Db|null $db
          */
-        public function __construct(protected App $app, Db &$db)
+        public function __construct(protected App $app, ?Db &$db = null)
         {
             if ($this->prefix === null)
                 $this->prefix = $this->tableName . "_";

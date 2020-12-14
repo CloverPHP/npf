@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Npf\Core {
 
     use JetBrains\PhpStorm\Pure;
-    use stdClass;
 
     /**
      * Class Container
@@ -15,19 +14,22 @@ namespace Npf\Core {
         /**
          * Data Storage
          */
-        private array $__data = [];
+        private array $data = [];
+
+        private bool $lock = false;
 
         /**
          * Container constructor.
          * @param object|array|null $data
-         * @param bool $__lock
+         * @param bool $lock
          * @param bool $__firstOnly
          */
         public function __construct(object|array|null $data = NULL,
-                                    private bool $__lock = FALSE,
+                                    bool $lock = FALSE,
                                     private bool $__firstOnly = false)
         {
             $this->__import($data);
+            $this->lock = (bool)$lock;
         }
 
         /**
@@ -51,7 +53,7 @@ namespace Npf\Core {
         final public function __import(object|array|null $data,
                                        $notExistsOnly = false): self
         {
-            if ($this->__lock || NULL === $data)
+            if ($this->lock || NULL === $data)
                 return $this;
             if (!empty($data)) {
 
@@ -89,7 +91,7 @@ namespace Npf\Core {
          */
         public function set(string $name, mixed $value = NULL, bool $notExistsOnly = false): self
         {
-            if (($notExistsOnly && !isset($this->__data[$name])) || !$notExistsOnly)
+            if (($notExistsOnly && !isset($this->data[$name])) || !$notExistsOnly)
                 $this->__set($name, $value);
             return $this;
         }
@@ -106,7 +108,7 @@ namespace Npf\Core {
 
         public function __destruct()
         {
-            $this->__data = [];
+            $this->data = [];
         }
 
         /**
@@ -116,7 +118,7 @@ namespace Npf\Core {
          */
         public function __isset(string $name): bool
         {
-            return isset($this->__data[$name]);
+            return isset($this->data[$name]);
         }
 
         /**
@@ -125,8 +127,8 @@ namespace Npf\Core {
          */
         public function __unset(string $name): void
         {
-            if (!$this->__lock && isset($this->__data[$name]))
-                unset($this->__data[$name]);
+            if (!$this->lock && isset($this->data[$name]))
+                unset($this->data[$name]);
         }
 
         /**
@@ -146,7 +148,7 @@ namespace Npf\Core {
         final protected function __dump(): array
         {
             $entire = [];
-            foreach ($this->__data as $key => $data)
+            foreach ($this->data as $key => $data)
                 $entire[$key] = $data instanceof Container ? $data->__dump() : $data;
             return $entire;
         }
@@ -168,12 +170,12 @@ namespace Npf\Core {
          */
         public function __set(string $name, mixed $value)
         {
-            if ($this->__lock || NULL === $value)
+            if ($this->lock || NULL === $value)
                 return;
             if (!$this->__firstOnly && is_array($value) && $this->__isAssoc($value))
-                $this->__data[$name] = new Container($value);
+                $this->data[$name] = new Container($value);
             else
-                $this->__data[$name] = $value;
+                $this->data[$name] = $value;
         }
 
         /**
@@ -184,7 +186,7 @@ namespace Npf\Core {
          */
         public function get(string $name, mixed $default = NULL): mixed
         {
-            return $name === '*' ? $this->__data : (isset($this->__data[$name]) ? $this->__data[$name] : $default);
+            return $name === '*' ? $this->data : (isset($this->data[$name]) ? $this->data[$name] : $default);
         }
 
         /**
@@ -214,8 +216,8 @@ namespace Npf\Core {
          */
         final public function __call(string $method, array $arguments): mixed
         {
-            if (isset($this->__data[$method]) && is_callable($this->__data[$method]))
-                return call_user_func_array($this->__data[$method], $arguments);
+            if (isset($this->data[$method]) && is_callable($this->data[$method]))
+                return call_user_func_array($this->data[$method], $arguments);
             else
                 return FALSE;
         }
@@ -228,7 +230,7 @@ namespace Npf\Core {
          */
         final public function flattenData(string $prefix = '', string $postfix = ''): array
         {
-            return $this->__flattenData($this->__data, $prefix, $postfix);
+            return $this->__flattenData($this->data, $prefix, $postfix);
         }
 
         /**
@@ -261,8 +263,8 @@ namespace Npf\Core {
          */
         public function del(string $name): self
         {
-            if (isset($this->__data[$name]))
-                unset($this->__data[$name]);
+            if (isset($this->data[$name]))
+                unset($this->data[$name]);
             return $this;
         }
 
@@ -271,7 +273,7 @@ namespace Npf\Core {
          */
         public function clear(): self
         {
-            $this->__data = [];
+            $this->data = [];
             return $this;
         }
 
@@ -282,7 +284,7 @@ namespace Npf\Core {
          */
         protected function lock(bool $lock = true): self
         {
-            $this->__lock = (boolean)$lock;
+            $this->lock = (boolean)$lock;
             return $this;
         }
     }

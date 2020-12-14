@@ -337,7 +337,7 @@ namespace Npf\Core {
             $hash = $this->getHash($key . $this->postHash . $this->tempHash);
             $this->tempHash = '';
             $index = empty($hash) || empty($this->size) ? 0 : (int)bcmod(sprintf("%u", crc32
-            ($hash)), $this->size);
+            ($hash)), (string)$this->size);
             if (!isset($this->redis[$index])) {
                 if (isset($this->instance[$index]))
                     $this->redis[$index] = new RedisBase($this->app, $this->instance[$index], $this->authPass, $this->

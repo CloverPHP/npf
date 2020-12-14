@@ -29,12 +29,14 @@ namespace Npf\Core {
         {
             if ($config === null)
                 $this->config = $app->config('Db');
+            else
+                $this->config = $config;
 
-            parent::__construct($app, $config);
+            parent::__construct($app, $this->config);
 
             $this->connect();
 
-            if ($config->get('tran'))
+            if ($this->config->get('tran'))
                 $this->tranStart();
         }
 

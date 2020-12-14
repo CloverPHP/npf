@@ -131,8 +131,8 @@ namespace Npf\Core\Redis {
      */
     class RedisBase
     {
-        private array $hosts;
-        private bool $connected;
+        private array $hosts = [];
+        private bool $connected = false;
         private mixed $socket = null;
         private string $mode = '';
         private int $db = 0;
@@ -274,8 +274,9 @@ namespace Npf\Core\Redis {
                     $count += $this->__request($raw, $argument);
                 } else {
                     $count++;
-                    $arglen = strlen($argument);
-                    $raw .= "\${$arglen}\r\n{$argument}\r\n";
+                    $argument = (string)$argument;
+                    $argLen = strlen($argument);
+                    $raw .= "\${$argLen}\r\n{$argument}\r\n";
                 }
             }
             return $count;

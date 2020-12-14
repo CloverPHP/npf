@@ -321,7 +321,7 @@ namespace Npf\Core {
          * @return mixed
          * @throws InternalError
          */
-        final public function model($modelName, array $params): mixed
+        final public function model(string $modelName, array $params = []): mixed
         {
             $className = "\\Model\\" . $modelName;
 
@@ -534,25 +534,24 @@ namespace Npf\Core {
 
         /**
          * Return Debug Trace
+         * @param Throwable $e
          * @param int $seek
          * @return array
          */
-        final public function trace(int $seek = 1): array
+        final public function trace(Throwable $e, int $seek = 0): array
         {
-            $stack = debug_backtrace(0);
-            $trace = [];
-            $iPos = 0;
-            for ($i = $seek; $i < count($stack); $i++) {
-                $iPos++;
-                $trace[] = isset($stack[$i]['file']) ?
-                    "#{$iPos}. {$stack[$i]['file']}:{$stack[$i]['line']}" :
-                    (
-                    !empty($stack[$i]['class']) ?
-                        "#{$iPos}. {$stack[$i]['class']}->{$stack[$i]['function']}" :
-                        "#{$iPos}. Closure"
-                    );
-            }
-            return $trace;
+            if (!$e instanceof Throwable)
+                $e = new Exception();
+            $trace = explode("\n", $e->getTraceAsString());
+            $trace = array_reverse($trace);
+            array_shift($trace); // remove {main}
+            array_pop($trace); // remove call to this method
+            $length = count($trace);
+            $result = [];
+
+            for ($i = $seek; $i < $length; $i++)
+                $result[] = ($i + 1) . '.' . substr($trace[$i], strpos($trace[$i], ' ')); // replace '#someNum' with '$i)', set the right ordering
+            return $result;
         }
 
         /**
