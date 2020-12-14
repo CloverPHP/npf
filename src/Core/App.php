@@ -665,7 +665,7 @@ namespace Npf\Core {
             if (!empty($this->components[$name])) {
                 return $this->components[$name];
             } elseif (class_exists(($class = "\\Npf\\Core\\" . ucfirst($name)))) {
-                $this->components[$name] = ($name === 'container') ? new $class([], false, true) : new $class($this);
+                $this->components[$name] = (in_array($name, ['container', 'request', 'response'], true)) ? new $class([], false, true) : new $class($this);
                 return $this->components[$name];
             } else
                 throw new InternalError("Component Not Found: {$name}");
