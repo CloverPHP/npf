@@ -21,7 +21,7 @@ namespace Npf\Core\Db {
      */
     class DbMysqli extends DbDriver
     {
-        public bool $connected;
+        public bool $connected = false;
 
         private string $queryMode = 'store';
         private ?mysqli $resLink;
