@@ -34,9 +34,10 @@ namespace Npf\Core {
          */
         public function __construct(?array $data = NULL)
         {
+            $initial = $this->initial;
             if (is_array($data))
-                $data += $this->initial;
-            parent::__construct($data, false, true);
+                $initial = array_merge($this->initial, $data);
+            parent::__construct($initial, false, true);
         }
 
         /**
@@ -62,7 +63,7 @@ namespace Npf\Core {
         public function success(array $data = []): self
         {
             $this->set('status', 'ok');
-            $this->set('error');
+            $this->set('error', '');
             $this->__import($data);
             return $this;
         }
