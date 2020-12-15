@@ -178,8 +178,9 @@ namespace Npf\Core\Db {
          * @param $queryStr
          * @return ?string
          */
-        final public function escapeStr(string $queryStr): ?string
+        final public function escapeStr(int|float|string $queryStr): ?string
         {
+            $queryStr = (string)$queryStr;
             if (!$this->connected)
                 return str_replace(["'", '`'], ["\\'", '\\`'], $queryStr);
             return mysqli_real_escape_string($this->resLink, $queryStr);
