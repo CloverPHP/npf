@@ -487,7 +487,7 @@ namespace Npf\Core {
             } catch (\Exception $ex) {
                 if (!$this->ignoreException) {
                     $this->ignoreException = true;
-                    $this->handleException($this->trace(), $ex, false);
+                    $this->handleException($this->trace($ex), $ex, false);
                 } else {
                     if ($ex instanceof Exception) {
                         $profiler = $this->response->get('profiler');
@@ -541,15 +541,15 @@ namespace Npf\Core {
 
         /**
          * Return Debug Trace
-         * @param Exception|null $e
+         * @param \Exception|null $ex
          * @param int $seek
          * @return array
          */
-        final public function trace(Exception $e = null, $seek = 0)
+        final public function trace(\Exception $ex = null, $seek = 0)
         {
-            if (!$e instanceof Exception)
-                $e = new Exception();
-            $trace = explode("\n", $e->getTraceAsString());
+            if (!$ex instanceof \Exception)
+                $ex = new \Exception();
+            $trace = explode("\n", $ex->getTraceAsString());
             //remove {main} and caller
             array_shift($trace);
             array_pop($trace);
