@@ -534,11 +534,11 @@ namespace Npf\Core {
 
         /**
          * Return Debug Trace
-         * @param Throwable $e
+         * @param Throwable|null $e
          * @param int $seek
          * @return array
          */
-        final public function trace(Throwable $e, int $seek = 0): array
+        final public function trace(Throwable $e = null, int $seek = 0): array
         {
             if (!$e instanceof Throwable)
                 $e = new Exception();
