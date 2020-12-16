@@ -368,7 +368,16 @@ namespace Npf\Core\Redis {
                     $len = intval($payload);
                     if ($len === -1)
                         return null;
-                    return $this->__receive($len + 3);
+                    $bulkData = '';
+                    $bytesLeft = ($len += 2);
+                    do {
+                        $chunk = fread($this->socket, min($bytesLeft, 4096));
+                        if ($chunk === false || $chunk === '')
+                            $this->lastError = 'Error while reading bytes from the server.';
+                        $bulkData .= $chunk;
+                        $bytesLeft = $len - strlen($bulkData);
+                    } while ($bytesLeft > 0);
+                    return substr($bulkData, 0, -2);
 
                 case '*':
                     $count = intval($payload);

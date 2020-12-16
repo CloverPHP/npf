@@ -140,7 +140,6 @@ namespace Npf\Core {
                             if (!is_array($params))
                                 $params = [];
                             return array_merge($_GET, $params);
-                            break;
 
                         case 'application/xml':
                         case 'text/xml':
@@ -161,7 +160,6 @@ namespace Npf\Core {
                             if (!is_array($params))
                                 $params = [];
                             return array_merge($_GET, $params);
-                            break;
 
                         default:
                             return $_GET;

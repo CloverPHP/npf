@@ -189,7 +189,7 @@ namespace Npf\Core {
                 $range = range(0, $size - 1);
                 $this->allowReconnect = (bool)$config->get('allowReconnect');
                 if (array_keys($config->instance) === $range) {
-                    $this->persistent = (isset($config->persistent) && $config->persistent) ? true : false;
+                    $this->persistent = isset($config->persistent) && $config->persistent;
                     $this->instance = $config->instance;
                     $this->size = $size;
                     $this->db = (int)$config->db;
@@ -294,7 +294,7 @@ namespace Npf\Core {
             if (empty($key))
                 return false;
             preg_match($this->hashRegex, $key, $matches);
-            return !empty($matches) && !empty($matches['key']) ? true : false;
+            return !empty($matches) && !empty($matches['key']);
         }
 
         /**
