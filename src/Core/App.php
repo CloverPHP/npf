@@ -540,24 +540,22 @@ namespace Npf\Core {
         }
 
         /**
-         * Return Debug Trace
+         * Return Trace
          * @param \Exception|null $ex
          * @param int $seek
          * @return array
          */
-        final public function trace(\Exception $ex = null, $seek = 0)
+        final public function trace($ex = null, $seek = 0)
         {
             if (!$ex instanceof \Exception)
                 $ex = new \Exception();
             $trace = explode("\n", $ex->getTraceAsString());
-            //remove {main} and caller
             array_shift($trace);
             array_pop($trace);
             $length = count($trace);
             $result = [];
-
             for ($i = $seek; $i < $length; $i++)
-                $result[] = ($i + 1) . '.' . substr($trace[$i], strpos($trace[$i], ' ')); // replace '#someNum' with '$i)', set the right ordering
+                $result[] = ($i + 1) . '.' . substr($trace[$i], strpos($trace[$i], ' '));
             return $result;
         }
 
