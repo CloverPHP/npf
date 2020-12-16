@@ -541,25 +541,24 @@ namespace Npf\Core {
 
         /**
          * Return Debug Trace
+         * @param Exception|null $e
          * @param int $seek
          * @return array
          */
-        final public function trace($seek = 1)
+        final public function trace(Exception $e = null, $seek = 0)
         {
-            $stack = debug_backtrace(0);
-            $trace = [];
-            $iPos = 0;
-            for ($i = $seek; $i < count($stack); $i++) {
-                $iPos++;
-                $trace[] = isset($stack[$i]['file']) ?
-                    "#{$iPos}. {$stack[$i]['file']}:{$stack[$i]['line']}" :
-                    (
-                    !empty($stack[$i]['class']) ?
-                        "#{$iPos}. {$stack[$i]['class']}->{$stack[$i]['function']}" :
-                        "#{$iPos}. Closure"
-                    );
-            }
-            return $trace;
+            if (!$e instanceof Exception)
+                $e = new Exception();
+            $trace = explode("\n", $e->getTraceAsString());
+            //remove {main} and caller
+            array_shift($trace);
+            array_pop($trace);
+            $length = count($trace);
+            $result = [];
+
+            for ($i = $seek; $i < $length; $i++)
+                $result[] = ($i + 1) . '.' . substr($trace[$i], strpos($trace[$i], ' ')); // replace '#someNum' with '$i)', set the right ordering
+            return $result;
         }
 
         /**

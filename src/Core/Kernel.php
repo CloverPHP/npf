@@ -42,14 +42,14 @@ namespace Npf\Core {
          */
         final public function createApp(array $appInfo)
         {
-            static::$appInfo = array_intersect_key($appInfo, array_fill_keys(['role', 'env', 'name'], true));
-            if (empty(static::$appInfo['role']))
-                static::$appInfo['roles'] = 'web';
-            if (empty(static::$appInfo['env']))
-                static::$appInfo['env'] = 'local';
-            if (empty(static::$appInfo['name']))
-                static::$appInfo['name'] = 'defaultApp';
-            $app = new App(static::$appInfo['role'], static::$appInfo['env'], static::$appInfo['name']);
+            self::$appInfo = array_intersect_key($appInfo, array_fill_keys(['role', 'env', 'name'], true));
+            if (empty(self::$appInfo['role']))
+                self::$appInfo['roles'] = 'web';
+            if (empty(self::$appInfo['env']))
+                self::$appInfo['env'] = 'local';
+            if (empty(self::$appInfo['name']))
+                self::$appInfo['name'] = 'defaultApp';
+            $app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
             $this->app = &$app;
             return $this->app;
         }
@@ -60,7 +60,7 @@ namespace Npf\Core {
         final public function handleShutdown()
         {
             if (!isset($this->app))
-                $this->app = new App(static::$appInfo['role'], static::$appInfo['env'], static::$appInfo['name']);
+                $this->app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
             $this->app->emit('shutdown', [&$this->app]);
             $this->handleCritical();
         }
@@ -73,7 +73,7 @@ namespace Npf\Core {
             $error = error_get_last();
             if (!empty($error) && is_array($error)) {
                 if (!isset($this->app))
-                    $this->app = new App(static::$appInfo['role'], static::$appInfo['env'], static::$appInfo['name']);
+                    $this->app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
                 $this->app->handleCritical($error);
             }
         }
@@ -85,7 +85,7 @@ namespace Npf\Core {
         final public function handleException($exception)
         {
             if (!isset($this->app))
-                $this->app = new App(static::$appInfo['role'], static::$appInfo['env'], static::$appInfo['name']);
+                $this->app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
             $trace = $this->app->trace();
             $this->app->handleException($trace, $exception, true);
         }
