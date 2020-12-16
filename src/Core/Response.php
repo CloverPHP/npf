@@ -146,22 +146,23 @@ namespace Npf\Core {
          */
         public function add($name, $value)
         {
-            $data = $this->{$name};
+            $data = $this->get($name, $value);
             switch (gettype($data)) {
                 case 'integer':
                 case 'double':
-                    $data += $value;
+                case 'float':
+                    $data += (float)$value;
                     break;
                 case 'string':
-                    $data .= $value;
+                    $data .= (string)$value;
                     break;
                 case 'array':
-                    $data = array_merge($data, $value);
+                    $data = array_merge($data, (array)$value);
                     break;
                 default:
                     $data = $value;
             }
-            $this->{$name} = $data;
+            $this->set($name, $data);
             return $this;
         }
 
@@ -173,9 +174,7 @@ namespace Npf\Core {
          */
         final public function chg($name, $data)
         {
-            if (!empty($name)) {
-                $this->{$name} = $data;
-            }
+            $this->set($name, $data);
             return $this;
         }
 

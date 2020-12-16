@@ -86,22 +86,22 @@ namespace Npf\Core {
         {
             if (!isset($this->app))
                 $this->app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
-            $trace = $this->app->trace($exception);
-            $this->app->handleException($trace, $exception, true);
+            $this->app->handleException($exception, true);
         }
 
         /**
          * Error Handle
          * @param $severity
          * @param $message
-         * @throws ErrorException
+         * @param $file
+         * @param $line
          */
-        final public function handleError($severity, $message)
+        final public function handleError($severity, $message, $file, $line)
         {
             // This error code is not included in error_reporting
             if (!(error_reporting() & $severity))
                 return;
-            throw new ErrorException($message, $severity);
+            $this->app->handleException(new \ErrorException($message, 0, $severity, $file, $line), true);
         }
 
         /**

@@ -428,11 +428,10 @@ namespace Npf\Core {
         }
 
         /**
-         * @param array $trace
          * @param \Exception $exception
          * @param bool $event
          */
-        final public function handleException(array $trace, $exception, $event = false)
+        final public function handleException(\Exception $exception, $event = false)
         {
             try {
                 if ($exception instanceof Exception) {
@@ -454,6 +453,7 @@ namespace Npf\Core {
                     $exitCode = 2;
                 } else {
                     $message = '';
+                    $trace = $this->trace($exception);
                     if (method_exists($exception, 'getMessage'))
                         $message = $exception->getMessage();
                     $profiler = [
@@ -487,7 +487,7 @@ namespace Npf\Core {
             } catch (\Exception $ex) {
                 if (!$this->ignoreException) {
                     $this->ignoreException = true;
-                    $this->handleException($this->trace($ex), $ex, false);
+                    $this->handleException($ex);
                 } else {
                     if ($ex instanceof Exception) {
                         $profiler = $this->response->get('profiler');
@@ -500,6 +500,7 @@ namespace Npf\Core {
                         $exitCode = 3;
                     }
                     echo($message);
+                    echo($ex->getTraceAsString());
                     exit($exitCode);
                 }
             }
