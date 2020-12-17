@@ -146,7 +146,7 @@ namespace Npf\Core {
          */
         public function add($name, $value)
         {
-            $data = $this->get($name, $value);
+            $data = $this->get($name);
             switch (gettype($data)) {
                 case 'integer':
                 case 'double':
