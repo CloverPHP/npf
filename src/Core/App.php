@@ -551,7 +551,6 @@ namespace Npf\Core {
             if (!$ex instanceof \Exception)
                 $ex = new \Exception();
             $trace = explode("\n", $ex->getTraceAsString());
-            array_shift($trace);
             array_pop($trace);
             $length = count($trace);
             $result = [];

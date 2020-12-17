@@ -81,7 +81,6 @@ namespace Npf\Core {
         private function trace()
         {
             $trace = explode("\n", $this->getTraceAsString());
-            array_shift($trace);
             array_pop($trace);
             $length = count($trace);
             $result = [];
