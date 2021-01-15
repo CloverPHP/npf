@@ -175,9 +175,7 @@ namespace Npf\Core {
         {
             $this->emit('appStart', [&$this]);
             $route = new Route($this);
-            $corsSupport = $this->config('General')->get('corsSupport', false);
-            if ($corsSupport !== false)
-                $this->corsSupport($corsSupport);
+            $this->corsSupport();
             $route();
             $this->finishingApp();
         }
@@ -229,17 +227,19 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $origin
          * @throws InternalError
          */
-        private function corsSupport($origin)
+        final public function corsSupport()
         {
-            $origin = $this->request->header('origin', $origin);
-            $this->response->header('Access-Control-Allow-Origin', $origin, true);
-            $this->response->header('Access-Control-Allow-Credentials', $this->config('General')->get('corsAllowCredentials', 'true'), true);
-            $this->response->header('Access-Control-Allow-Methods', $this->config('General')->get('corsAllowMethod', 'POST,GET,OPTIONS'), true);
-            $this->response->header('Access-Control-Allow-Headers', $this->request->header('access_control_request_headers', $origin), true);
-            $this->response->header('Access-Control-Max-Age', $this->config('General')->get('corsAge', 3600), true);
+            $corsSupport = $this->config('General')->get('corsSupport', false);
+            if ($corsSupport !== false) {
+                $origin = $this->request->header('origin', $corsSupport);
+                $this->response->header('Access-Control-Allow-Origin', $origin, true);
+                $this->response->header('Access-Control-Allow-Credentials', $this->config('General')->get('corsAllowCredentials', 'true'), true);
+                $this->response->header('Access-Control-Allow-Methods', $this->config('General')->get('corsAllowMethod', 'POST,GET,OPTIONS'), true);
+                $this->response->header('Access-Control-Allow-Headers', $this->request->header('access_control_request_headers', $origin), true);
+                $this->response->header('Access-Control-Max-Age', $this->config('General')->get('corsAge', 3600), true);
+            }
         }
 
         /**
@@ -436,6 +436,7 @@ namespace Npf\Core {
             try {
                 if ($exception instanceof Exception) {
                     $this->response = $exception->response();
+                    $this->corsSupport();
                     $this->rollback();
                     $this->view->error();
                     $this->response->add('profiler', $this->profiler->fetch());
@@ -469,6 +470,7 @@ namespace Npf\Core {
                         'profiler' => $profiler,
                     ];
                     $this->response = new Response($output);
+                    $this->corsSupport();
                     $this->rollback();
                     $this->view->error();
                     $this->profiler->logError('PHP Exception', "Message: " . implode("\n", $trace));
@@ -579,6 +581,7 @@ namespace Npf\Core {
                     'code' => 'FATAL',
                     'profiler' => $profiler,
                 ]);
+                $this->corsSupport();
                 $this->rollback();
                 $this->view->error();
                 $this->emit('sysReport', [&$this, $profiler]);
