@@ -317,27 +317,29 @@ class Gd
         return $this;
     }
 
+
     /**
-     * Image Process - Merge Image from Load from file and memory with percentage override.
+     * Image Process - Copy file image to Image
      * @param $file
      * @param array $rect
-     * @param int $percent
-     * @return Gd
+     * @return bool
      */
-    public function copyImageFromFile($file, array $rect = null, $percent = 100)
+    public function copyImageFromFile($file, $rect = NULL)
     {
-        $percent = (int)$percent;
         if (!is_array($rect)) $rect = [];
         if (!isset($rect['X'])) $rect['X'] = (int)0;
         if (!isset($rect['Y'])) $rect['Y'] = (int)0;
+        if (!isset($rect['L'])) $rect['L'] = (int)0;
+        if (!isset($rect['T'])) $rect['T'] = (int)0;
         $imgSrc = $this->getImgResFromFile($file);
+
         if ($this->isGDResource($imgSrc)) {
 
             $imgWidth = (int)imagesx($imgSrc);
             $imgHeight = (int)imagesy($imgSrc);
-            if (!empty($rect['W']) && empty($rect['H']))
+            if(!empty($rect['W']) && empty($rect['H']))
                 $rect['H'] = $this->getNewHeight($rect['W'], $imgWidth, $imgHeight);
-            elseif (empty($rect['W']) && !empty($rect['H']))
+            elseif(empty($rect['W']) && !empty($rect['H']))
                 $rect['W'] = $this->getNewWidth($rect['H'], $imgWidth, $imgHeight);
             elseif (empty($rect['H']) && empty($rect['H'])) {
                 $rect['W'] = $imgWidth;
@@ -347,11 +349,14 @@ class Gd
             $rect['Y'] = (int)$rect['Y'];
             $rect['W'] = (int)$rect['W'];
             $rect['H'] = (int)$rect['H'];
+            $rect['L'] = (int)$rect['L'];
+            $rect['T'] = (int)$rect['T'];
 
-            imagecopymerge($this->imgResource, $imgSrc, $rect['X'], $rect['Y'], 0, 0, $rect['W'], $rect['H'], $percent);
+            imagecopyresampled($this->imgResource, $imgSrc, $rect['X'], $rect['Y'], $rect['L'], $rect['T'], $rect['W'], $rect['H'],
+                $imgWidth, $imgHeight);
             imagedestroy($imgSrc);
-        }
-        return $this;
+            return TRUE;
+        } else  return FALSE;
     }
 
     public function autoCrop($mode = IMG_CROP_DEFAULT, $threshold = .5, $color = -1)
