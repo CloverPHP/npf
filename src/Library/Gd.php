@@ -322,7 +322,7 @@ class Gd
      * Image Process - Copy file image to Image
      * @param $file
      * @param array $rect
-     * @return bool
+     * @return Gd
      */
     public function copyImageFromFile($file, $rect = NULL)
     {
@@ -355,8 +355,8 @@ class Gd
             imagecopyresampled($this->imgResource, $imgSrc, $rect['X'], $rect['Y'], $rect['L'], $rect['T'], $rect['W'], $rect['H'],
                 $imgWidth, $imgHeight);
             imagedestroy($imgSrc);
-            return TRUE;
-        } else  return FALSE;
+        }
+        return $this;
     }
 
     public function autoCrop($mode = IMG_CROP_DEFAULT, $threshold = .5, $color = -1)
