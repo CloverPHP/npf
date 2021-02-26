@@ -432,6 +432,7 @@ class View
      * @param $data
      * @param bool $headerOverWrite
      * @param bool $statusCode
+     * @throws \Exception
      */
     private function renderXml($data, $headerOverWrite = false, $statusCode = false)
     {
@@ -620,6 +621,7 @@ class View
                     $this->app->response->header("ETag", $eTag, true);
                     $requestETag = !empty($this->app->request->header("if_none_match")) ? trim($this->app->request->header("if_none_match")) : false;
                     if ($requestETag === $eTag && $this->cache && $statusCode === false) {
+                        $this->app->response->header("X-Caching", "Yes", true);
                         $statusCode = 304;
                         $needOutput = false;
                     }
