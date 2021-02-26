@@ -624,7 +624,8 @@ class View
                         $this->app->response->header("X-Caching", "Yes", true);
                         $statusCode = 304;
                         $needOutput = false;
-                    }
+                    }else
+                        $this->app->response->header("X-Caching", "No", true);
                 }
 
                 //Send Http Status
