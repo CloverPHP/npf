@@ -1,7 +1,7 @@
 {
     "name": "php-nf/npf",
     "description": "New PHP Framework",
-    "version": "1.4.13",
+    "version": "1.4.12",
     "keywords": ["php", "framework", "library"],
     "type": "package",
     "license": "MIT",
