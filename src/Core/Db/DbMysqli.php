@@ -495,21 +495,21 @@ namespace Npf\Core\Db {
          */
         final public function numFields($resResult = null)
         {
-            //$resResult = $this->getResResult($resResult);
+            $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_num_fields($resResult) : false;
         }
 
         /**
          * Fetch the Field from the current result set, return object
-         * @param $SColumn
+         * @param $column
          * @param null $resResult
          * @return bool|object
          */
-        final public function fetchField($SColumn, $resResult = null)
+        final public function fetchField($column, $resResult = null)
         {
-            //$resResult = $this->getResResult($resResult);
+            $resResult = $this->getResResult($resResult);
             if ($this->isResResult($resResult)) {
-                mysqli_field_seek($resResult, $SColumn);
+                mysqli_field_seek($resResult, $column);
                 $FInfo = mysqli_fetch_field($resResult);
                 return $FInfo;
             } else
@@ -518,18 +518,18 @@ namespace Npf\Core\Db {
 
         /**
          * Fetch one of cell from the current result set, default is first row, first field.
-         * @param int $Cols
-         * @param int $Rows
+         * @param int $column
+         * @param int $row
          * @param null $resResult
          * @return bool
          */
-        final public function fetchCell($Cols = 0, $Rows = 0, $resResult = null)
+        final public function fetchCell($column = 0, $row = 0, $resResult = null)
         {
             $resResult = $this->getResResult($resResult);
             if ($this->isResResult($resResult)) {
-                mysqli_data_seek($resResult, $Rows);
-                $Result = mysqli_fetch_row($resResult);
-                return $Result[$Cols];
+                mysqli_data_seek($resResult, $row);
+                $result = mysqli_fetch_row($resResult);
+                return is_array($result) ? $result[$column] : $result;
             } else
                 return false;
         }
@@ -541,6 +541,7 @@ namespace Npf\Core\Db {
          */
         final public function fetchRow($resResult = null)
         {
+            $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_fetch_row($resResult) : null;
         }
         #----------------------------------------------------------------------#
@@ -554,7 +555,7 @@ namespace Npf\Core\Db {
          */
         final public function fetchAssoc($resResult = null)
         {
-            //$resResult = $this->getResResult($resResult);
+            $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_fetch_assoc($resResult) : null;
         }
 
@@ -569,7 +570,7 @@ namespace Npf\Core\Db {
          */
         final public function numRows($resResult = null)
         {
-            //$resResult = $this->getResResult($resResult);
+            $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_num_rows($resResult) : false;
         }
 
@@ -581,7 +582,7 @@ namespace Npf\Core\Db {
          */
         final public function seek($Row, $resResult = null)
         {
-            //$resResult = $this->getResResult($resResult);
+            $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_data_seek($resResult, $Row) : false;
         }
         #----------------------------------------------------------------------#
