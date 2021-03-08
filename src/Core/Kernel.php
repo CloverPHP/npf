@@ -82,7 +82,7 @@ namespace Npf\Core {
          * Exception Handle
          * @param \Exception $exception
          */
-        final public function handleException(\Exception $exception)
+        final public function handleException($exception)
         {
             if (!isset($this->app))
                 $this->app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
