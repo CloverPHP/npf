@@ -431,7 +431,7 @@ namespace Npf\Core {
          * @param \Exception $exception
          * @param bool $event
          */
-        final public function handleException(\Exception $exception, $event = false)
+        final public function handleException($exception, $event = false)
         {
             try {
                 if ($exception instanceof Exception) {
@@ -486,6 +486,25 @@ namespace Npf\Core {
                 $this->clean();
                 $this->view->render();
                 exit($exitCode);
+            } catch (\Throwable $ex) {
+                if (!$this->ignoreException) {
+                    $this->ignoreException = true;
+                    $this->handleException($ex);
+                } else {
+                    if ($ex instanceof Exception) {
+                        $profiler = $this->response->get('profiler');
+                        $message = $profiler['desc'];
+                        $exitCode = 2;
+                    } else {
+                        $message = '';
+                        if (method_exists($ex, 'getMessage'))
+                            $message = $ex->getMessage();
+                        $exitCode = 3;
+                    }
+                    echo($message);
+                    echo($ex->getTraceAsString());
+                    exit($exitCode);
+                }
             } catch (\Exception $ex) {
                 if (!$this->ignoreException) {
                     $this->ignoreException = true;
