@@ -43,7 +43,7 @@ final class StartUp
             'name' => $name,
         ];
         $this->instance = new Kernel();
-        $this->app = $this->instance->createApp($this->appInfo);
+        $this->app = $this->instance->buildApp($this->appInfo);
     }
 
     /**

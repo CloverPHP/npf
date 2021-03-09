@@ -72,8 +72,8 @@ namespace Npf\Core\Session {
                 $data = $this->app->redis->get($this->keyPrefix . $session_id);
                 if ($data === null) {
                     $this->fingerprint = null;
-                    $this->app->redis->set($this->keyPrefix . $session_id,'', $this->config->get('sessionTtl', 10800));
-                }else
+                    $this->app->redis->set($this->keyPrefix . $session_id, '', $this->config->get('sessionTtl', 10800));
+                } else
                     $this->fingerprint = sha1($data);
                 return $data;
             } else
@@ -175,10 +175,11 @@ namespace Npf\Core\Session {
             try {
                 if ($this->lockStatus === true)
                     $this->_release_lock();
+                return true;
             } catch (Exception $e) {
                 $this->app->profiler->logInfo('Session', 'Session: Got Exception on close(): ' . $e->getMessage());
             }
-            return true;
+            return false;
         }
 
         /**
@@ -194,7 +195,7 @@ namespace Npf\Core\Session {
                     $this->app->profiler->logInfo('Session', 'Session: Redis::del() expected to return 1, got ' . var_export($result, true) . ' instead.');
                 }
             }
-            return false;
+            return true;
         }
 
         /**
@@ -215,6 +216,7 @@ namespace Npf\Core\Session {
         {
             if ($this->lockStatus === true)
                 $this->_release_lock();
+            return true;
         }
     }
 }
