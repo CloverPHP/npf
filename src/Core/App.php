@@ -568,7 +568,7 @@ namespace Npf\Core {
          * @return array
          */
         final public function trace($ex = null, $seek = 0)
-        {/*
+        {
             if (!$ex instanceof \Exception)
                 $ex = new \Exception();
             $trace = explode("\n", $ex->getTraceAsString());
@@ -578,22 +578,6 @@ namespace Npf\Core {
             for ($i = $seek; $i < $length; $i++)
                 $result[] = ($i + 1) . '.' . substr($trace[$i], strpos($trace[$i], ' '));
             return $result;
-        */
-
-            $stack = debug_backtrace(0);
-            $trace = [];
-            $iPos = 0;
-            for ($i = $seek; $i < count($stack); $i++) {
-                $iPos++;
-                $trace[] = isset($stack[$i]['file']) ?
-                    "#{$iPos}. {$stack[$i]['file']}:{$stack[$i]['line']}" :
-                    (
-                    !empty($stack[$i]['class']) ?
-                        "#{$iPos}. {$stack[$i]['class']}->{$stack[$i]['function']}" :
-                        "#{$iPos}. Closure"
-                    );
-            }
-            return $trace;
         }
 
         /**
