@@ -50,21 +50,6 @@ namespace Npf\Core {
         private $components = [];
 
         /**
-         * @var Request
-         */
-        private $request;
-
-        /**
-         * @var Response
-         */
-        private $response;
-
-        /**
-         * @var View
-         */
-        private $view;
-
-        /**
          * @var string Config Path
          */
         private $configPath;
@@ -97,11 +82,6 @@ namespace Npf\Core {
         /**
          * @var bool Ignore Error
          */
-        private $ignoreError = false;
-
-        /**
-         * @var bool Ignore Error
-         */
         private $ignoreException = false;
 
         /**
@@ -121,9 +101,11 @@ namespace Npf\Core {
             $this->request = new Request($this);
             $this->response = new Response(null);
             $this->view = new View($this);
-            $this->components['request'] = &$this->request;
-            $this->components['response'] = &$this->response;
-            $this->components['view'] = &$this->view;
+            $this->components = [
+                'request' => &$this->request,
+                'response' => &$this->response,
+                'view' => $this->view,
+            ];
         }
 
         /**
@@ -164,7 +146,7 @@ namespace Npf\Core {
                     $this->view->lock();
                 }
             }
-            $this->finishingApp();
+            $this->end();
         }
 
         /**
@@ -177,11 +159,11 @@ namespace Npf\Core {
             $route = new Route($this);
             $this->corsSupport();
             $route();
-            $this->finishingApp();
+            $this->end();
         }
 
         /**
-         * @return mixed
+         * @return void
          * @throws DBQueryError
          * @throws InternalError
          * @throws LoaderError
@@ -189,7 +171,7 @@ namespace Npf\Core {
          * @throws RuntimeError
          * @throws SyntaxError
          */
-        private function finishingApp()
+        final public function end()
         {
             $profiler = $this->profiler->fetch();
             $this->response->add('profiler', $profiler);
@@ -222,7 +204,7 @@ namespace Npf\Core {
                     }
                     return $this->config[$name];
                 } else
-                    throw new InternalError("Config Not Found: '{$name}''");
+                    throw new InternalError("Config Not Found: '{$name}'");
             }
         }
 
@@ -273,11 +255,10 @@ namespace Npf\Core {
             if (isset($db) && $db instanceof Db && $db->isConnected()) {
                 if ($db->commit()) {
                     $this->emit('commitDone', [&$this]);
-                    return true;
                 } else {
                     $this->emit('commitFailed', [&$this]);
-                    return true;
                 }
+                return true;
             }
             return true;
         }
@@ -287,7 +268,7 @@ namespace Npf\Core {
          */
         final public function clean()
         {
-            foreach ($this->components as $name => &$component) {
+            foreach ($this->components as $name => $component) {
                 if (!in_array($name, ['request', 'response', 'profiler'], true)) {
                     if (method_exists($component, '__destruct'))
                         $component->__destruct();
@@ -298,7 +279,6 @@ namespace Npf\Core {
 
         /**
          * @return string
-         * @throws ReflectionException
          */
         final public function getRootPath()
         {
@@ -354,15 +334,11 @@ namespace Npf\Core {
                         if ($object instanceof Model) {
                             $this->models[$className] = $object;
                             return $object;
-                        } else {
-                            throw new InternalError("Model Invalid:{$className}");
-                        }
+                        } else throw new InternalError("Model Invalid: {$className}");
                     } catch (ReflectionException $ex) {
                         throw new InternalError($ex->getMessage());
                     }
-                } else {
-                    throw new InternalError("Model Not Found:{$className}");
-                }
+                } else throw new InternalError("Model Not Found: {$className}");
             }
         }
 
@@ -486,7 +462,7 @@ namespace Npf\Core {
                 $this->clean();
                 $this->view->render();
                 exit($exitCode);
-            } catch (\Throwable $ex) {
+            } catch (\Exception $ex) {
                 if (!$this->ignoreException) {
                     $this->ignoreException = true;
                     $this->handleException($ex);
@@ -620,7 +596,7 @@ namespace Npf\Core {
          */
         final public function ignoreError()
         {
-            $this->ignoreError = (boolean)true;
+            return true;
         }
 
         /**
@@ -628,7 +604,7 @@ namespace Npf\Core {
          */
         final public function noticeError()
         {
-            $this->ignoreError = (boolean)false;
+            return true;
         }
 
         /**
@@ -643,7 +619,7 @@ namespace Npf\Core {
          * @param string $characterSet
          * @param string $collate
          * @param bool $persistent
-         * @return mixed
+         * @return Db
          * @throws DBQueryError
          * @throws InternalError
          * @throws UnknownClass
