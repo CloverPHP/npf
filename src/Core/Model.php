@@ -196,6 +196,8 @@ namespace Npf\Core {
             $matches = [];
             if (is_string($value) && !is_numeric($value)) {
                 if (preg_match("/^({DB_([A-Z]|FNC|SUM|COL|COUNT|DISTINCT|MIN|MAX|RAND|DATE|DAY|MONTH|YEAR)})(.*)/", $value, $matches)) {
+                    if (strtoupper($matches[2]) === 'FNC')
+                        $prefix = false;
                     $value = (strtoupper($matches[2]) === 'RAND') ? "{DB_RAND}" : "{$matches[1]}" . ($prefix ? $this->prefix : "") . "{$matches[3]}";
                 } elseif ($prefix)
                     $value = "{$this->prefix}{$value}";
@@ -580,7 +582,7 @@ namespace Npf\Core {
                                      ?array $cond = null,
                                      string|array|null $orderBy = null,
                                      int|float|string|array|null $limit = null,
-                                     bool $ignore = false):bool|mysqli_result
+                                     bool $ignore = false): bool|mysqli_result
         {
             return $this->db->update($this->getTableName(), $this->buildOne($data), $this->buildCond($cond), $this->buildOrder($orderBy), $limit, $ignore);
         }
@@ -596,7 +598,7 @@ namespace Npf\Core {
         protected function addUpdate(array $data,
                                      ?array $cond = null,
                                      bool $check = false,
-                                     bool $ignore = false):bool|mysqli_result
+                                     bool $ignore = false): bool|mysqli_result
         {
             return $this->db->action($this->getTableName(), $this->buildOne($data), $this->buildCond($cond), $check, $ignore);
         }
@@ -608,7 +610,7 @@ namespace Npf\Core {
          * @throws DBQueryError
          */
         protected function query(string $queryStr,
-                                 int $resultMode = 0):bool|int|array|mysqli_result
+                                 int $resultMode = 0): bool|int|array|mysqli_result
         {
             return $this->db->query($queryStr, $resultMode);
         }

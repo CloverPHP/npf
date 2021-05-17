@@ -50,22 +50,7 @@ namespace Npf\Core {
         /**
          * @var array
          */
-        private array $components = [];
-
-        /**
-         * @var Request
-         */
-        private Request $request;
-
-        /**
-         * @var Response
-         */
-        private Response $response;
-
-        /**
-         * @var View
-         */
-        private View $view;
+        private array $components;
 
         /**
          * @var string Config Path
@@ -81,11 +66,6 @@ namespace Npf\Core {
          * @var string Base Path
          */
         private string $basePath;
-
-        /**
-         * @var bool Ignore Error
-         */
-        private bool $ignoreError = false;
 
         /**
          * @var bool Ignore Error
@@ -108,12 +88,11 @@ namespace Npf\Core {
             $this->roles = !empty($roles) ? $roles : 'web';
             $this->basePath = getcwd();
             $this->configPath = sprintf("Config\\%s\\%s\\", ucfirst($this->appEnv), ucfirst($this->appName));
-            $this->request = new Request($this);
-            $this->response = new Response(null);
-            $this->view = new View($this);
-            $this->components['request'] = &$this->request;
-            $this->components['response'] = &$this->response;
-            $this->components['view'] = &$this->view;
+            $this->components = [
+                'request' => new Request($this),
+                'response' => new Response(null),
+                'view' => new View($this),
+            ];
         }
 
         /**
@@ -133,7 +112,7 @@ namespace Npf\Core {
 
         /**
          * Force redirect https if not secure connection
-         * @param $url
+         * @param string $url
          * @param int $statsCode
          * @throws DBQueryError
          * @throws InternalError
@@ -164,9 +143,7 @@ namespace Npf\Core {
         {
             $this->emit('appStart', [&$this]);
             $route = new Route($this);
-            $corsSupport = $this->config('General')->get('corsSupport', false);
-            if ($corsSupport !== false)
-                $this->corsSupport($corsSupport);
+            $this->corsSupport();
             $route();
             $this->finishingApp();
         }
@@ -191,7 +168,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @param bool $ignoreError
          * @return Container
          * @throws InternalError
@@ -216,17 +193,19 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $origin
          * @throws InternalError
          */
-        private function corsSupport(string $origin): void
+        private function corsSupport(): void
         {
-            $origin = $this->request->header('origin', $origin);
-            $this->response->header('Access-Control-Allow-Origin', $origin, true);
-            $this->response->header('Access-Control-Allow-Credentials', $this->config('General')->get('corsAllowCredentials', 'true'), true);
-            $this->response->header('Access-Control-Allow-Methods', $this->config('General')->get('corsAllowMethod', 'POST,GET,OPTIONS'), true);
-            $this->response->header('Access-Control-Allow-Headers', $this->request->header('access_control_request_headers', $origin), true);
-            $this->response->header('Access-Control-Max-Age', $this->config('General')->get('corsAge', 3600), true);
+            $corsSupport = $this->config('General')->get('corsSupport', false);
+            if ($corsSupport !== false) {
+                $origin = $this->request->header('origin', $corsSupport);
+                $this->response->header('Access-Control-Allow-Origin', $origin, true);
+                $this->response->header('Access-Control-Allow-Credentials', $this->config('General')->get('corsAllowCredentials', 'true'), true);
+                $this->response->header('Access-Control-Allow-Methods', $this->config('General')->get('corsAllowMethod', 'POST,GET,OPTIONS'), true);
+                $this->response->header('Access-Control-Allow-Headers', $this->request->header('access_control_request_headers', $origin), true);
+                $this->response->header('Access-Control-Max-Age', $this->config('General')->get('corsAge', 3600), true);
+            }
         }
 
         /**
@@ -261,11 +240,10 @@ namespace Npf\Core {
             if (isset($db) && $db instanceof Db && $db->isConnected()) {
                 if ($db->commit()) {
                     $this->emit('commitDone', [&$this]);
-                    return true;
                 } else {
                     $this->emit('commitFailed', [&$this]);
-                    return true;
                 }
+                return true;
             }
             return true;
         }
@@ -316,7 +294,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $modelName
+         * @param string $modelName
          * @param array $params
          * @return mixed
          * @throws InternalError
@@ -355,7 +333,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $moduleName
+         * @param string $moduleName
          * @param array $params
          * @return mixed
          * @throws InternalError
@@ -414,7 +392,7 @@ namespace Npf\Core {
         public final function getCallerInfo(int $seek = 1): array|null
         {
             $bt = debug_backtrace();
-            return !isset($bt[$seek]['file']) ? null : ['file' => str_replace('\\', '/', $bt[$seek]['file']), 'line' => $bt[$seek]['line'], 'class' => isset($bt[$seek]['class']) ? $bt[$seek]['class'] : null, 'function' => isset($bt[$seek]['function']) ? $bt[$seek]['function'] : null];
+            return !isset($bt[$seek]['file']) ? null : ['file' => str_replace('\\', '/', $bt[$seek]['file']), 'line' => $bt[$seek]['line'], 'class' => $bt[$seek]['class'] ?? null, 'function' => $bt[$seek]['function'] ?? null];
         }
 
         /**
@@ -474,7 +452,7 @@ namespace Npf\Core {
                 $this->clean();
                 $this->view->render();
                 exit($exitCode);
-            } catch (\Exception $ex) {
+            } catch (Throwable $ex) {
                 if (!$this->ignoreException) {
                     $this->ignoreException = true;
                     $this->handleException($this->trace($ex), $ex);
@@ -589,24 +567,6 @@ namespace Npf\Core {
         }
 
         /**
-         * Ignore Error Report
-         */
-        final public function ignoreError(): self
-        {
-            $this->ignoreError = (boolean)true;
-            return $this;
-        }
-
-        /**
-         * Attention Error
-         */
-        final public function noticeError(): self
-        {
-            $this->ignoreError = (boolean)false;
-            return $this;
-        }
-
-        /**
          * Create a new DB Component
          * @param Container|string $host
          * @param int $port
@@ -654,7 +614,7 @@ namespace Npf\Core {
 
         /**
          * Magic function Get Lazy Load Component
-         * @param $name
+         * @param string $name
          * @return mixed
          * @throws InternalError
          */
@@ -671,7 +631,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @return bool
          */
         final public function __isset(string $name): bool
@@ -680,7 +640,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $name
+         * @param string $name
          */
         final public function __unset(string $name): void
         {

@@ -23,7 +23,7 @@ namespace Npf\Core {
 
         /**
          * Check is Utf8
-         * @param $content
+         * @param string $content
          * @return bool
          */
         public static function isUtf8(string $content): bool
@@ -40,7 +40,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $content
+         * @param string $content
          * @param int $minSize
          * @return string
          */
@@ -53,7 +53,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $compressed
+         * @param string $compressed
          * @return string
          */
         public static function unCompressContent(string $compressed): string
@@ -107,8 +107,8 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $min
-         * @param $max
+         * @param int $min
+         * @param int $max
          * @return int
          */
         public static function randomInt(int $min, int $max): int
@@ -141,7 +141,7 @@ namespace Npf\Core {
                 foreach ($items as $value)
                     $weightAry[$value] = $Base + (isset($weightedArray[$value]) ? (double)$weightedArray[$value] :
                             0);
-                foreach ($weightAry as $key => $value) {
+                foreach ($weightAry as $value) {
                     $rKey = self::weightRndKey($weightAry);
                     unset($weightAry[$rKey]);
                     array_push($rndAry, $rKey);
@@ -150,7 +150,7 @@ namespace Npf\Core {
                 if (count($items) !== count($weightedArray))
                     return false;
                 else {
-                    foreach ($weightedArray as $key => $value) {
+                    foreach ($weightedArray as $value) {
                         $rKey = self::weightRndKey($weightedArray);
                         unset($weightedArray[$rKey]);
                         array_push($rndAry, $items[$rKey]);
@@ -188,10 +188,10 @@ namespace Npf\Core {
         public static function getRateWeight(float $rate): bool
         {
             $rate = round($rate, 7);
-            if ((double)$rate > 1)
+            if ($rate > 1)
                 return true;
-            $decimalLenght = strlen(substr(strrchr((string)$rate, "."), 1));
-            $power = pow(10, empty($decimalLenght) ? 1 : (int)$decimalLenght);
+            $decimalLength = strlen(substr(strrchr((string)$rate, "."), 1));
+            $power = pow(10, empty($decimalLength) ? 1 : $decimalLength);
             $rate *= $power;
             return (boolean)self::weightRndKey([$power - $rate, $rate]);
         }
@@ -228,8 +228,8 @@ namespace Npf\Core {
             foreach ($oddItems as $key => $item) {
                 $commission = isset($item['commission']) ? (double)$item['commission'] : (double)$defaultCommission;
                 $commission = !empty($commission) ? $commission / 100 : 0;
-                $factor = (double)(isset($item['factor']) ? $item['factor'] : $defaultFactor);
-                $oddNow = (double)(isset($item['odd']) ? $item['odd'] : $item);
+                $factor = (double)($item['factor'] ?? $defaultFactor);
+                $oddNow = (double)($item['odd'] ?? $item);
                 $rate = empty($oddNow) ? 1 : round((1 / $oddNow) * (1 - $commission) * $factor, 7);
                 $decimalLengths[] = strlen(substr(strrchr((string)$rate, "."), 1));
                 $rates[$key] = $rate;
@@ -281,7 +281,7 @@ namespace Npf\Core {
 
         /**
          * Convert from string to array, all array value is string, and also decoration is upper string
-         * @param $content
+         * @param string $content
          * @param string $decoration
          * @param string $delimiter
          * @return array
@@ -313,8 +313,8 @@ namespace Npf\Core {
 
         /**
          * Convert from string to array, all array value is string, and also decoration is upper string
-         * @param $glue
-         * @param $content
+         * @param string $glue
+         * @param string $content
          * @return string
          */
         public static function strPop(string $glue, string $content): string
@@ -329,8 +329,8 @@ namespace Npf\Core {
 
         /**
          * Validate Array Data with the given validate pattern
-         * @param $patterns
-         * @param $data
+         * @param string|array $patterns
+         * @param array $data
          * @return array
          */
         public static function validator(string|array $patterns, array $data): array
@@ -343,7 +343,7 @@ namespace Npf\Core {
                     $key = $validate;
                     $validate = 'must';
                 }
-                $value = isset($data[$key]) ? $data[$key] : null;
+                $value = $data[$key] ?? null;
                 if (!empty($validate) && !self::validateValue($value, $validate))
                     $needed[$key] = ['validate' => $validate, 'given' => $value];
             }
@@ -423,19 +423,11 @@ namespace Npf\Core {
                         break;
 
                     case 'alphabet':
-                        switch ($extend) {
-
-                            case 'upper':
-                                $pass = ctype_upper($value);
-                                break;
-
-                            case 'lower':
-                                $pass = ctype_lower($value);
-                                break;
-
-                            default:
-                                $pass = ctype_alpha($value);
-                        }
+                        $pass = match ($extend) {
+                            'upper' => ctype_upper($value),
+                            'lower' => ctype_lower($value),
+                            default => ctype_alpha($value),
+                        };
                         break;
 
                     case 'alphanumber':
@@ -443,18 +435,11 @@ namespace Npf\Core {
                         break;
 
                     case 'ip':
-                        switch ($extend) {
-                            case 'v4':
-                                $pass = (boolean)filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
-                                break;
-
-                            case 'v6':
-                                $pass = (boolean)filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
-                                break;
-
-                            default:
-                                $pass = (boolean)filter_var($value, FILTER_VALIDATE_IP);
-                        }
+                        $pass = match ($extend) {
+                            'v4' => (boolean)filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4),
+                            'v6' => (boolean)filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6),
+                            default => (boolean)filter_var($value, FILTER_VALIDATE_IP),
+                        };
                         break;
 
                     case 'email':
@@ -466,7 +451,7 @@ namespace Npf\Core {
                         break;
 
                     case 'must':
-                        $pass = $value === null ? false : true;
+                        $pass = !($value === null);
                         break;
 
                     case 'must+':
@@ -544,7 +529,7 @@ namespace Npf\Core {
                     case 'content':
                         $extend = (string)$extend;
                         $extend = preg_match("/^\s+$/", $extend) ? $extend : '';
-                        $pass = (boolean)static::safeUtf8($value, $extend);
+                        $pass = static::safeUtf8($value, $extend);
                         break;
 
                     case 'amount':
@@ -568,7 +553,7 @@ namespace Npf\Core {
                             $pass = (boolean)preg_match($extend, $value);
                 }
                 if (!$pass)
-                    return false || $optional;
+                    return $optional;
             }
             return true;
         }
@@ -637,15 +622,15 @@ namespace Npf\Core {
 
         /**
          * Same as array_search, but will search entire array return those found keys.
-         * @param $needle
-         * @param $arrayHaystack
+         * @param mixed $needle
+         * @param array $arrayHaystack
          * @return array
          */
         public static function arraySearchAll(mixed $needle, array $arrayHaystack): mixed
         {
             $result = [];
             foreach ($arrayHaystack as $key => $value)
-                if ($arrayHaystack[$key] === $needle)
+                if ($value === $needle)
                     $result[] = $key;
             return (count($result) > 1 ? $result : $result[0]);
         }
@@ -673,7 +658,7 @@ namespace Npf\Core {
          * Generate UUID of version 4
          * @return string
          */
-        #[Pure] public static function genUuidV4(): string
+        public static function genUuidV4(): string
         {
             return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
                 mt_rand(0, 0xffff), mt_rand(0, 0xffff),
@@ -803,7 +788,7 @@ namespace Npf\Core {
                 $xForward = explode(",", $_SERVER['HTTP_X_FORWARDED_FOR']);
                 return $xForward[0];
             } else
-                return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+                return $_SERVER['REMOTE_ADDR'] ?? '';
         }
 
         /**
@@ -833,7 +818,6 @@ namespace Npf\Core {
         public static function arrayRandom(array $array, int $picked = 1): mixed
         {
             shuffle($array);
-            $picked = (int)$picked;
             $picked = $picked > count($array) ? count($array) : $picked;
             $result = [];
             for ($i = 0; $i < $picked; $i++)
@@ -872,8 +856,6 @@ namespace Npf\Core {
             if (!is_array($array) || empty($array))
                 return $array;
 
-            $number = (float)$number;
-
             foreach ($array as $key => $value) {
                 switch (gettype($value)) {
 
@@ -883,7 +865,6 @@ namespace Npf\Core {
 
                     case 'integer':
                     case 'double':
-                    case 'float':
                         switch ($operate) {
                             case '+':
                                 $array[$key] += $number;
@@ -898,16 +879,16 @@ namespace Npf\Core {
                                 $array[$key] /= $number;
                                 break;
                             case '\\':
-                                $array[$key] = round($array[$key] / $number);
+                                $array[$key] = round($value / $number);
                                 break;
                             case '^':
-                                $array[$key] = pow($array[$key], $number);
+                                $array[$key] = pow($value, $number);
                                 break;
                             case '%':
                                 $array[$key] %= $number;
                                 break;
                             case '`':
-                                $array[$key] = pow($array[$key], 1 / $number);
+                                $array[$key] = pow($value, 1 / $number);
                                 break;
                             case '<<':
                                 $array[$key] <<= $number;
@@ -1028,12 +1009,10 @@ namespace Npf\Core {
                                                  int $length = 0,
                                                  string $toReplace = 'x'): string
         {
-            $content = (string)$content;
             $subLength = strlen(substr($content, $start, $end));
             $strLength = $length !== 0 ? $length - (strlen($content) - $subLength) : $subLength;
             $strLength = $strLength <= 0 ? 1 : $strLength;
-            $content = substr_replace($content, str_repeat($toReplace, $strLength), $start, $end);
-            return $content;
+            return substr_replace($content, str_repeat($toReplace, $strLength), $start, $end);
         }
 
         /**
@@ -1042,7 +1021,6 @@ namespace Npf\Core {
          */
         public static function processCPUTime(int $processId): array|bool
         {
-            $processId = (int)$processId;
             if (!$processId)
                 return false;
             $path = "/proc/{$processId}/stat";
@@ -1061,7 +1039,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $array
+         * @param array $array
          */
         public static function arrayValNum(array &$array): void
         {
@@ -1166,7 +1144,7 @@ namespace Npf\Core {
 
         /**
          * Initialize Date Time
-         * @param $timezone
+         * @param string $timezone
          */
         public static function initial(string $timezone): void
         {
@@ -1251,12 +1229,9 @@ namespace Npf\Core {
                         $orderBy[] = $orderMethod;
                 if (!empty($orderBy)) {
                     $sortCol = [];
-                    foreach ($array as $key => $row) {
+                    foreach ($array as $key => $row)
                         if (isset($row[$field]))
                             $sortCol[$key] = $row[$field];
-                        else
-                            continue(2);
-                    }
                     $args[] = $sortCol;
                     foreach ($orderBy as $flag)
                         $args[] = $flag;
@@ -1282,7 +1257,7 @@ namespace Npf\Core {
          */
         #[Pure] public static function leaveDecimal(float $number, int $decimal = 2): float
         {
-            $decimal = (int)$decimal + 1;
+            $decimal = $decimal + 1;
             $string = strval($number);
             $point = strpos($string, ".");
             $number = $point !== false ? (double)substr($string, 0, $point + $decimal) : $number;
@@ -1297,7 +1272,6 @@ namespace Npf\Core {
          */
         #[Pure] public static function calDiv(float|int $amount, float|int $divNum, int $decimal = 2): float|int
         {
-            $decimal = (int)$decimal;
             $base = pow(10, $decimal);
             $module = (($amount * $base) % $divNum) / $base;
             return $amount - $module;
@@ -1365,11 +1339,11 @@ namespace Npf\Core {
          * @param string $dateTime
          * @return bool|string
          */
-        public static function offsetDate(string $offset, string $dateTime = ''): bool|string
+        public static function offsetDate(string $offset = '+1 day', string $dateTime = ''): bool|string
         {
             try {
                 $date = new DateTime($dateTime);
-                $date->modify('+1 day');
+                $date->modify($offset);
                 return $date->format('Y-m-d');
             } catch (\Exception) {
                 return false;
@@ -1437,7 +1411,7 @@ namespace Npf\Core {
         {
             switch (gettype($append)) {
                 case 'integer':
-                case 'float':
+                case 'double':
                     $data = (double)$data;
                     $data += (double)$append;
                     break;
@@ -1502,7 +1476,7 @@ namespace Npf\Core {
                 $fullAngle = $fullAngle['alphanumeric'];
                 $semiAngle = $semiAngle['alphanumeric'];
             }
-            if ((boolean)$toFullAngle === false)
+            if ($toFullAngle === false)
                 return str_replace($fullAngle, $semiAngle, $content);  //全角到半角
             else
                 return str_replace($semiAngle, $fullAngle, $content);  //半角到全角

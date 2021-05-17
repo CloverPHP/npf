@@ -26,7 +26,6 @@ namespace Npf\Core\Db {
         private string $queryMode = 'store';
         private null|bool|mysqli $resLink;
         private null|bool|mysqli_result $resResult;
-        private bool $queryError = false;
         private bool $tranEnable = false;
         private bool $tranStarted = false;
         private bool $persistent = false;
@@ -44,7 +43,7 @@ namespace Npf\Core\Db {
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @return mixed
          */
         final public function __get(string $name): mixed
@@ -161,8 +160,8 @@ namespace Npf\Core\Db {
         }
 
         /**
-         * @param $option
-         * @param $value
+         * @param string|int $option
+         * @param string|int|float|bool $value
          * @return bool
          */
         final public function option(string|int $option, string|int|float|bool $value): bool
@@ -175,7 +174,7 @@ namespace Npf\Core\Db {
 
         /**
          * Return escaped string with the mysqli
-         * @param $queryStr
+         * @param int|float|string $queryStr
          * @return ?string
          */
         final public function escapeStr(int|float|string $queryStr): ?string
@@ -223,7 +222,7 @@ namespace Npf\Core\Db {
 
         /**
          * Select Database by the function : RETURN BOOLEAN
-         * @param $name
+         * @param string $name
          * @return bool
          */
         final public function selectDB(string $name): bool
@@ -283,7 +282,7 @@ namespace Npf\Core\Db {
 
         /**
          * Db Query
-         * @param $queryStr
+         * @param string $queryStr
          * @return bool|mysqli_result
          * @throws DBQueryError
          */
@@ -318,7 +317,6 @@ namespace Npf\Core\Db {
                         (substr($query, -10)) === 'FOR UPDATE'
                     ) {
                         $this->tranStarted = $this->realQuery("begin");
-                        $this->queryError = !$this->tranStarted;
                         return $this->tranStarted;
                     }
                 return true;
@@ -344,7 +342,7 @@ namespace Npf\Core\Db {
         }
 
         /**
-         * @param $queryStr
+         * @param string $queryStr
          * @return bool|mysqli_result
          * @throws DBQueryError
          */
@@ -357,14 +355,13 @@ namespace Npf\Core\Db {
             $result = mysqli_real_query($this->resLink, $queryStr);
             $this->resResult = $this->queryMode === 'use' ? mysqli_use_result($this->resLink) : mysqli_store_result($this->resLink);
             $this->resResult = (mysqli_field_count($this->resLink)) ? $this->resResult : $result;
-            $errNo = (int)mysqli_errno($this->resLink);
+            $errNo = mysqli_errno($this->resLink);
 
             if ($errNo !== 0) {
-                $this->queryError = true;
                 $errorMsg = mysqli_error($this->resLink);
                 $queryStr = "Query error: {$errorMsg} - {$queryStr}";
                 $profiler->saveQuery($queryStr, $sTime, "db");
-                throw new DBQueryError($queryStr, $errNo);
+                throw new DBQueryError($queryStr, (string)$errNo);
             } else
                 $profiler->saveQuery($queryStr, $sTime, "db");
             $this->lastQuery = $queryStr;
@@ -457,7 +454,7 @@ namespace Npf\Core\Db {
 
         /**
          * Get the current result set resource object
-         * @param $resResult
+         * @param mysqli_result|null $resResult
          * @return mysqli_result|null
          */
         private function getResResult(?mysqli_result $resResult): ?mysqli_result
@@ -482,18 +479,19 @@ namespace Npf\Core\Db {
          */
         final public function numFields(?mysqli_result $resResult = null): bool|int
         {
-            //$resResult = $this->getResResult($resResult);
+            $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_num_fields($resResult) : false;
         }
 
         /**
          * Fetch the Field from the current result set, return object
-         * @param $column
+         * @param int $column
          * @param ?mysqli_result $resResult
          * @return bool|object
          */
         final public function fetchField(int $column, ?mysqli_result $resResult = null): object|bool
         {
+            $resResult = $this->getResResult($resResult);
             if ($this->isResResult($resResult)) {
                 mysqli_field_seek($resResult, $column);
                 return mysqli_fetch_field($resResult);
@@ -526,6 +524,7 @@ namespace Npf\Core\Db {
          */
         final public function fetchRow(?mysqli_result $resResult = null): bool|array|null
         {
+            $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_fetch_row($resResult) : null;
         }
         #----------------------------------------------------------------------#
@@ -539,7 +538,7 @@ namespace Npf\Core\Db {
          */
         final public function fetchAssoc(?mysqli_result $resResult = null): ?array
         {
-            //$resResult = $this->getResResult($resResult);
+            $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_fetch_assoc($resResult) : null;
         }
 
@@ -554,7 +553,7 @@ namespace Npf\Core\Db {
          */
         final public function numRows(?mysqli_result $resResult = null): bool|int
         {
-            //$resResult = $this->getResResult($resResult);
+            $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_num_rows($resResult) : false;
         }
 
@@ -566,8 +565,8 @@ namespace Npf\Core\Db {
          */
         final public function seek(int $row, ?mysqli_result $resResult = null): bool
         {
-            //$resResult = $this->getResResult($resResult);
-            return $this->isResResult($resResult) ? mysqli_data_seek($resResult, $row) : false;
+            $resResult = $this->getResResult($resResult);
+            return $this->isResResult($resResult) && mysqli_data_seek($resResult, $row);
         }
         #----------------------------------------------------------------------#
         #Session of the Error handling

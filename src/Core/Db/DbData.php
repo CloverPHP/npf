@@ -6,6 +6,7 @@ namespace Npf\Core\Db {
     use mysqli_result;
     use Npf\Core\App;
     use Npf\Core\Container;
+    use Npf\Core\Exception;
     use Npf\Exception\DBQueryError;
     use Npf\Exception\UnknownClass;
 
@@ -145,7 +146,6 @@ namespace Npf\Core\Db {
         final public function query(string $queryStr, int $resultMode = 0): array|float|int|bool|null
         {
             $results = null;
-            $resultMode = (int)$resultMode;
             if (!empty($queryStr)) {
                 $resResult = $this->driver->query($queryStr);
                 if (NULL === $resResult || is_bool($resResult))
@@ -168,7 +168,7 @@ namespace Npf\Core\Db {
                                     break;
 
                                 default:
-                                    if ($this->driver->numFields($resResult) === 0 && $resultMode = 0)
+                                    if ($this->driver->numFields($resResult) === 0)
                                         $results = $this->driver->fetchCell(0, 0, $resResult);
                                     else
                                         $results = $this->driver->fetchAssoc($resResult);
@@ -239,6 +239,8 @@ namespace Npf\Core\Db {
          * @param string|int|float|array|null $having
          * @return array
          * @throws DBQueryError
+         * @throws Exception
+         * @throws Exception
          */
         final public function all(string $table,
                                   string|array $column = "*",
@@ -276,6 +278,7 @@ namespace Npf\Core\Db {
          * @param string|int|float|array|null $having
          * @return bool|mysqli_result
          * @throws DBQueryError
+         * @throws Exception
          */
         final public function select(string $table,
                                      string|array $column = "*",
@@ -300,6 +303,7 @@ namespace Npf\Core\Db {
          * @param string|int|float|array|null $group
          * @param string|int|float|array|null $having
          * @return string
+         * @throws Exception
          */
         final public function getSelectSQL(string $table,
                                            string|array $column = "*",
@@ -366,7 +370,7 @@ namespace Npf\Core\Db {
                                   bool $fnc = false): string
         {
             $result = '';
-            $pattern = "/^\\{DB_([A-Z_]+)\\}/";
+            $pattern = "/^{DB_([A-Z_]+)}/";
             if (preg_match("/^{$this->valLiteral}(.+){$this->valLiteral}$/", $colName, $matches))
                 $result = $this->valLiteral . $this->driver->escapeStr($matches[1]) . $this->
                     valLiteral;
@@ -458,10 +462,6 @@ namespace Npf\Core\Db {
                                 ")");
                             break;
 
-                        case in_array($match, range('A', 'Z')):
-                            $result = $this->getColNm(str_replace($matches[0], "", $colName), null, false);
-                            break;
-
                         case "FROM_UNIXTIME":
                             $colName = str_replace($matches[0], "", $colName);
                             $result = "FROM_UNIXTIME(" . $this->getColNm($colName, null, false) . ")";
@@ -470,6 +470,10 @@ namespace Npf\Core\Db {
                         case "FROM_UNIXTIME_DATE":
                             $colName = str_replace($matches[0], "", $colName);
                             $result = "FROM_UNIXTIME(" . $this->getColNm($colName, null, false) . ", \"%Y-%m-%d\")";
+                            break;
+
+                        case in_array($match, range('A', 'Z')):
+                            $result = $this->getColNm(str_replace($matches[0], "", $colName), null, false);
                             break;
                     }
                 } elseif ($fnc === false && !str_contains($colName, $this->colLiteral) && $colName !== '*') {
@@ -496,7 +500,7 @@ namespace Npf\Core\Db {
             $matches = [];
             if (!empty($cond)) {
                 if (is_array($cond)) {
-                    $pattern = "/^\{DB_(OR|XOR|LB|RB|AND)\}$/i";
+                    $pattern = "/^{DB_(OR|XOR|LB|RB|AND)}$/i";
                     $logic = true;
                     $bracket = 0;
                     $matches = [];
@@ -552,8 +556,8 @@ namespace Npf\Core\Db {
 
         /**
          * Get one of the condition
-         * @param $colName
-         * @param $colValue
+         * @param string|array $colName
+         * @param mixed $colValue
          * @return string
          */
         private function getCond(string|array $colName, mixed $colValue): string
@@ -571,7 +575,7 @@ namespace Npf\Core\Db {
                             if (!is_array($value))
                                 $value = [];
                             if (!empty($value))
-                                foreach ($value as $k => $v)
+                                foreach ($value as $v)
                                     $result[] = $this->driver->escapeStr($v);
                             $condStr .= " IN ({$this->valLiteral}" . implode("{$this->valLiteral},{$this->valLiteral}", $result) .
                                 "{$this->valLiteral})";
@@ -582,7 +586,7 @@ namespace Npf\Core\Db {
                             if (!is_array($value))
                                 $value = [];
                             if (!empty($value))
-                                foreach ($value as $k => $v)
+                                foreach ($value as $v)
                                     $result[] = $this->driver->escapeStr($v);
                             $condStr .= " NOT IN ({$this->valLiteral}" . implode("{$this->valLiteral},{$this->valLiteral}", $result) .
                                 "{$this->valLiteral})";
@@ -614,7 +618,7 @@ namespace Npf\Core\Db {
                 case 'integer':
                 case "string":
                 case 'boolean';
-                    $pattern = "/^\\{DB_([A-Z]+)\\}/";
+                    $pattern = "/^{DB_([A-Z]+)}/";
                     $operator = " = ";
                     if (is_bool($colValue))
                         $colValue = '';
@@ -656,7 +660,7 @@ namespace Npf\Core\Db {
             if ($colValue === null)
                 return "NULL";
             else {
-                $pattern = "/^\\{DB_([A-Z_]+)\\}/";
+                $pattern = "/^{DB_([A-Z_]+)}/";
                 if (is_array($colValue) || is_object($colValue))
                     $colValue = json_encode($colValue);
                 if (is_string($colValue) && preg_match($pattern, $colValue, $matches)) {
@@ -774,6 +778,7 @@ namespace Npf\Core\Db {
          * get limit sql
          * @param array|string|float|int|null $limit
          * @return string
+         * @throws Exception
          */
         private function getLimit(array|string|float|int $limit = null): string
         {
@@ -789,10 +794,11 @@ namespace Npf\Core\Db {
 
                     case "string":
                     case "double":
-                    case "float":
                     case "integer":
                         $limitStr = (int)$limit;
                         break;
+                    default:
+                        throw new DBQueryError('Unexpected value');
                 }
             }
             return !empty($limitStr) ? " LIMIT {$limitStr}" : "";
@@ -809,6 +815,8 @@ namespace Npf\Core\Db {
          * @param string|array|null $having
          * @return array|bool
          * @throws DBQueryError
+         * @throws Exception
+         * @throws Exception
          */
         final public function column(string $table,
                                      string|array $column,
@@ -849,6 +857,8 @@ namespace Npf\Core\Db {
          * @param string|array|null $having
          * @return array|null
          * @throws DBQueryError
+         * @throws Exception
+         * @throws Exception
          */
         final public function one(string $table,
                                   string|array $column = "*",
@@ -874,6 +884,8 @@ namespace Npf\Core\Db {
          * @param int $seek
          * @return mixed
          * @throws DBQueryError
+         * @throws Exception
+         * @throws Exception
          */
         final public function cell(string $table,
                                    string|array $column,
@@ -897,6 +909,8 @@ namespace Npf\Core\Db {
          * @param string|array|null $having
          * @return bool|float
          * @throws DBQueryError
+         * @throws Exception
+         * @throws Exception
          */
         final public function sum(string $table,
                                   string|array $column,
@@ -950,7 +964,7 @@ namespace Npf\Core\Db {
                         $insertValues .= (!empty($insertValues) ? ", " : "") . "({$insertValue})";
                     }
                 }
-                return (!empty($insertValues)) ? $this->driver->query("INSERT" . ((boolean)$ignore ? " IGNORE" : "") . " INTO {$this->colLiteral}{$tableStr}{$this->colLiteral} ({$iColField}) VALUES {$insertValues}")
+                return (!empty($insertValues)) ? $this->driver->query("INSERT" . ($ignore ? " IGNORE" : "") . " INTO {$this->colLiteral}{$tableStr}{$this->colLiteral} ({$iColField}) VALUES {$insertValues}")
                     : false;
             } else
                 return false;
@@ -965,6 +979,7 @@ namespace Npf\Core\Db {
          * @param bool $ignore
          * @return bool|mysqli_result
          * @throws DBQueryError
+         * @throws Exception
          */
         final public function action(string $table,
                                      array $colData,
@@ -972,7 +987,7 @@ namespace Npf\Core\Db {
                                      bool $check = false,
                                      bool $ignore = false): mysqli_result|bool
         {
-            if (!empty($cond) && $check === (boolean)true)
+            if (!empty($cond) && $check === true)
                 if ($this->count($table, $cond) === 0)
                     $cond = null;
             $this->queryLock = '';
@@ -991,6 +1006,8 @@ namespace Npf\Core\Db {
          * @param string|array|null $having
          * @return bool|int
          * @throws DBQueryError
+         * @throws Exception
+         * @throws Exception
          */
         final public function count(string $table,
                                     array|null $cond = null,
@@ -1017,8 +1034,9 @@ namespace Npf\Core\Db {
          * @param string|array|null $order
          * @param int|float|string|array|null $limit
          * @param bool $ignore
-         * @return bool|mysqli_result
+         * @return mysqli_result|int|bool
          * @throws DBQueryError
+         * @throws Exception
          */
         final public function update(string $table,
                                      array $colDatas,
@@ -1035,7 +1053,7 @@ namespace Npf\Core\Db {
                     $setCol .= (!empty($setCol) ? ", " : "") . $this->getColNm($colName) . " = " . $this->
                         getColVal($colData, $colName);
 
-                return $this->driver->query("UPDATE" . ((boolean)$ignore ? " IGNORE" : "") . " {$this->colLiteral}{$tableStr}{$this->colLiteral} SET {$setCol}" .
+                return $this->driver->query("UPDATE" . ($ignore ? " IGNORE" : "") . " {$this->colLiteral}{$tableStr}{$this->colLiteral} SET {$setCol}" .
                     $this->getCondition($cond) . $this->getOrder($order) . $this->getLimit($limit));
             } else
                 return false;
@@ -1046,7 +1064,7 @@ namespace Npf\Core\Db {
          * @param string $table
          * @param array $colDatas
          * @param bool $ignore
-         * @return bool|mysqli_result
+         * @return mysqli_result|int|bool
          * @throws DBQueryError
          */
         final public function insert(string $table,
@@ -1060,7 +1078,7 @@ namespace Npf\Core\Db {
                 foreach ($colDatas as $colName => $colData)
                     $setCol .= (!empty($setCol) ? ", " : "") . $this->getColNm($colName) . " = " . $this->
                         getColVal($colData, $colName);
-                if ($this->driver->query("INSERT" . ((boolean)$ignore ? " IGNORE" : "") . " INTO {$this->colLiteral}{$tableStr}{$this->colLiteral} SET {$setCol}")) {
+                if ($this->driver->query("INSERT" . ($ignore ? " IGNORE" : "") . " INTO {$this->colLiteral}{$tableStr}{$this->colLiteral} SET {$setCol}")) {
                     return $this->driver->insertId();
                 } else {
                     return false;
@@ -1073,7 +1091,7 @@ namespace Npf\Core\Db {
          * Insert/Update via sql
          * @param string $table
          * @param array $colDatas
-         * @return bool|int|mysqli_result
+         * @return mysqli_result|bool
          * @throws DBQueryError
          */
         final public function insertUpdate(string $table, array $colDatas): mysqli_result|bool
@@ -1098,7 +1116,7 @@ namespace Npf\Core\Db {
          * @param string $table
          * @param array $fields
          * @param array $values
-         * @return bool|int|mysqli_result
+         * @return bool|mysqli_result
          * @throws DBQueryError
          */
         final public function insertsUpdate(string $table,
@@ -1145,6 +1163,7 @@ namespace Npf\Core\Db {
          * @param int|float|string|array|null $limit
          * @return bool|int|mysqli_result
          * @throws DBQueryError
+         * @throws Exception
          */
         final public function delete(string $table,
                                      array|null $cond = null,
@@ -1215,6 +1234,7 @@ namespace Npf\Core\Db {
          * @param bool $ignore
          * @return bool|mysqli_result
          * @throws DBQueryError
+         * @throws Exception
          */
         protected final function copy(string $tableScr,
                                       string $tableDes,
@@ -1237,7 +1257,7 @@ namespace Npf\Core\Db {
                     $colNameDes[] = $_ColNmDes;
                 }
                 $colNameSrc = $this->getColSQL($colNameSrc, false);
-                return $this->driver->query("INSERT" . ((boolean)$ignore ? " IGNORE" : "") . " INTO {$this->colLiteral}{$tableDes}{$this->colLiteral} ({$colNameSrc}) " .
+                return $this->driver->query("INSERT" . ($ignore ? " IGNORE" : "") . " INTO {$this->colLiteral}{$tableDes}{$this->colLiteral} ({$colNameSrc}) " .
                     $this->getSelectSQL($tableScr, $colNameDes, $cond, $order, $limit, $group, $having));
             } else
                 return false;
