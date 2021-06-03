@@ -557,7 +557,7 @@ class View
             else {
                 if ($output) {
                     ignore_user_abort(true);
-                    @set_time_limit(0);
+                    set_time_limit(0);
                     $file = fopen($this->data, 'rb');
                     fseek($file, $range['start'], SEEK_SET);
                     $bufferSize = 4096;

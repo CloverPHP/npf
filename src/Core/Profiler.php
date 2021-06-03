@@ -59,7 +59,7 @@ namespace Npf\Core {
         public function __construct(App &$app)
         {
             $this->app = &$app;
-            $this->initTime = INIT_TIMESTAMP;
+            $this->initTime = round(INIT_TIMESTAMP * 1000, 2);
             try {
                 $this->config = $app->config('Profiler', true);
             } catch (\Exception $exception) {
@@ -132,10 +132,7 @@ namespace Npf\Core {
          */
         public function elapsed($mili = true)
         {
-            if ($mili)
-                return round(microtime(true) * 1000 - $this->initTime, 2);
-            else
-                return floor(microtime(true) - $this->initTime / 1000);
+            return $mili ? round(microtime(true) * 1000 - $this->initTime, 2) : floor(microtime(true) - $this->initTime / 1000);
         }
 
         /**
@@ -146,7 +143,7 @@ namespace Npf\Core {
         public function timerStart($timer = 'default', $continue = false)
         {
             if (!$continue || !isset($this->timer[$timer]))
-                $this->timer[$timer] = -1 * round(microtime(true) * 1000, 2);
+                $this->timer[$timer] = $this->elapsed();
         }
 
         /**
@@ -156,7 +153,7 @@ namespace Npf\Core {
          */
         public function timerRead($timer = 'default')
         {
-            return round(microtime(true) * 1000 + (isset($this->timer[$timer]) ? $this->timer[$timer] : 0), 2);
+            return $this->elapsed() - (isset($this->timer[$timer]) ? $this->timer[$timer] : 0);
         }
 
         /**
