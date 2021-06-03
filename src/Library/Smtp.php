@@ -12,7 +12,6 @@ class Smtp
 {
     private $socket;
     private $logs = [];
-    private $lastResponse = '';
     private $eol = "\n";
     private $error = [];
     private $serverElm = [];
@@ -83,7 +82,7 @@ class Smtp
 
     /**
      * @param $content
-     * @return mixed
+     * @return array|string|string[]
      */
     private function safeText($content)
     {
@@ -102,7 +101,7 @@ class Smtp
             $result = $_SERVER['SERVER_NAME'];
         elseif (function_exists('gethostname') && gethostname() !== false)
             $result = gethostname();
-        elseif (php_uname('n') !== false)
+        elseif (!php_uname('n'))
             $result = php_uname('n');
         if (!$this->isValidHost($result))
             $result = 'localhost.localdomain';
@@ -139,7 +138,7 @@ class Smtp
 
     /**
      * Disconnect from server if connected
-     * @return Smtp
+     * @return void
      */
     private function disconnect()
     {
@@ -152,7 +151,6 @@ class Smtp
                 fclose($this->socket);
             $this->socket = null;
         }
-        return $this;
     }
 
     private function getHost()
@@ -189,7 +187,6 @@ class Smtp
                 STREAM_CLIENT_CONNECT,
                 $socket_context
             );
-            restore_error_handler();
         } else {
             set_error_handler([$this, 'errorHandler']);
             $this->socket = fsockopen(
@@ -199,8 +196,8 @@ class Smtp
                 $errStr,
                 $this->mail['server']['timeout']
             );
-            restore_error_handler();
         }
+        restore_error_handler();
 
         if (!is_resource($this->socket)) {
             $this->socket = null;
@@ -214,7 +211,7 @@ class Smtp
         }
 
         //Server didn't response probably
-        if (!($content = $this->execute('CONNECT', [220, 221]))) {
+        if (!$this->execute('CONNECT', [220, 221])) {
             $this->disconnect();
             return false;
         }
@@ -289,12 +286,12 @@ class Smtp
     private function execute($name, $expect)
     {
         if (is_resource($this->socket)) {
-            $this->lastResponse = $this->readLine();
+            $lastResponse = $this->readLine();
             $code = 0;
             $data = '';
-            if (!empty($this->lastResponse)) {
-                $code = (int)substr($this->lastResponse, 0, 3);
-                $data = substr($this->lastResponse, 4);
+            if (!empty($lastResponse)) {
+                $code = (int)substr($lastResponse, 0, 3);
+                $data = substr($lastResponse, 4);
             }
             $content = [
                 'call' => $name,
@@ -527,9 +524,8 @@ class Smtp
             $this->addHeader("Reply-to", $email);
             $this->addHeader("Return-Path", $email);
         }
-        if (count($this->mail['contact']['to']) > 0) {
+        if (count($this->mail['contact']['to']) > 0)
             $this->addHeader("To", $this->getEmailList($this->mail['contact']['to']));
-        }
         if (count($this->mail['contact']['cc']) > 0)
             $this->addHeader("Cc", $this->getEmailList($this->mail['contact']['cc']));
         if (count($this->mail['contact']['bcc']) > 0)
@@ -537,7 +533,7 @@ class Smtp
 
         //Add Email Subject & Message ID
         $this->addHeader("Subject", "=?UTF-8?B?" . base64_encode($this->mail['subject']) . "?=");
-        $this->addHeader("Message-ID", '<' . sha1($this->mail['content']['text'] . $this->mail['content']['html'] . (string)microtime(true)) . '.' . (string)microtime(true) . '@' . explode('@', $this->mail['contact']['from']['email'], 2)[1] . '>');
+        $this->addHeader("Message-ID", '<' . sha1($this->mail['content']['text'] . $this->mail['content']['html'] . microtime(true)) . '.' . microtime(true) . '@' . explode('@', $this->mail['contact']['from']['email'], 2)[1] . '>');
         $this->addHeader("MIME-Version", "1.0");
         $this->mail['content']['body'] .=
 
@@ -889,7 +885,7 @@ class Smtp
 
     /**
      * @param $contact
-     * @return Smtp
+     * @return string
      */
     public function getEmailList($contact)
     {

@@ -2,6 +2,8 @@
 
 namespace Npf\Core {
 
+    use ErrorException;
+
     /**
      * Kernel, handling error, exception, critical error.
      * Class Core
@@ -103,7 +105,7 @@ namespace Npf\Core {
             // This error code is not included in error_reporting
             if (!(error_reporting() & $severity))
                 return;
-            $this->app->handleException(new \ErrorException($message, 0, $severity, $file, $line), true);
+            $this->app->handleException(new ErrorException($message, 0, $severity, $file, $line), true);
         }
 
         /**

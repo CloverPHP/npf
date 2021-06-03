@@ -308,7 +308,6 @@ namespace Npf\Core {
             $sTime = -$profiler->elapsed();
             if (in_array($name, $this->restrictFnc, true))
                 return false;
-            $redis = null;
             $key = '';
             if (!empty($args))
                 $key = $args[0];

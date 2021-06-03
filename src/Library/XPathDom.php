@@ -26,7 +26,7 @@ final class XPathDom
     /**
      * @var DOMDocument Dom Document Library
      */
-    private $dom = null;
+    private $dom;
 
     /**
      * Doma constructor.
@@ -95,7 +95,7 @@ final class XPathDom
     /**
      * @param null $dom
      * @param DOMNode $contextNode
-     * @return array|mixed|null
+     * @return string|null
      */
     final public function getElementValue($dom, DOMNode $contextNode = null)
     {
@@ -127,7 +127,7 @@ final class XPathDom
      * @param null $dom
      * @param $attr
      * @param DOMNode $contextNode
-     * @return array|mixed|null
+     * @return string|null
      */
     final public function getElementAttr($dom, $attr, DOMNode $contextNode = null)
     {

@@ -50,7 +50,7 @@ namespace Npf\Library {
         public function setIV($iv)
         {
             if (!empty($iv) && is_string($iv)) {
-                if ((int)strlen($iv) !== (int)$this->ivLen())
+                if (strlen($iv) !== $this->ivLen())
                     $this->iv = substr(sha1($iv), -1 * $this->ivLen());
                 else
                     $this->iv = $iv;
@@ -103,7 +103,7 @@ namespace Npf\Library {
         {
             $raw = $this->decrypt($str);
             $data = json_decode($raw, true);
-            return $data ? $data : $raw;
+            return $data ?: $raw;
         }
 
         /**
@@ -114,8 +114,7 @@ namespace Npf\Library {
         {
             $iv = !empty($this->iv) ? $this->iv : $this->genIV();
             $cryptTxt = base64_decode($cryptTxt);
-            $content = openssl_decrypt($cryptTxt, $this->cipherMode, $this->secret_key, OPENSSL_RAW_DATA, $iv);
-            return $content;
+            return openssl_decrypt($cryptTxt, $this->cipherMode, $this->secret_key, OPENSSL_RAW_DATA, $iv);
         }
 
         /**

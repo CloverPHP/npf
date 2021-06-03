@@ -17,19 +17,13 @@ namespace Npf\Core {
         /**
          * @var bool Lock the content
          */
-        private $__lock = FALSE;
+        private $__lock;
 
         /**
          * Container ID (Prevent Clone in same)
          * @var array
          */
-        private $__id = '';
-
-        /**
-         * Container ID (Prevent Clone in same)
-         * @var array
-         */
-        private $__firstOnly = false;
+        private $__firstOnly;
 
         /**
          * Container constructor.
@@ -40,18 +34,8 @@ namespace Npf\Core {
         public function __construct($data = NULL, $lock = FALSE, $firstOnly = false)
         {
             $this->__firstOnly = (bool)$firstOnly;
-            $this->__uniqueId();
             $this->__import($data);
             $this->__lock = (bool)$lock;
-        }
-
-        /**
-         * Generate Unique ID
-         * @return string
-         */
-        private function __uniqueId()
-        {
-            return $this->__id = uniqid(uniqid('', TRUE), TRUE);
         }
 
         /**
@@ -119,12 +103,11 @@ namespace Npf\Core {
         /**
          * Set State
          * @param array $args
-         * @return mixed
+         * @return Container
          */
         public static function __set_state($args)
         {
-            $object = new Container($args['__data'], $args['__lock']);
-            return $object;
+            return new Container($args['__data'], $args['__lock']);
         }
 
         public function __destruct()
@@ -181,7 +164,7 @@ namespace Npf\Core {
          */
         public function __get($name)
         {
-            return $this->get($name, NULL);
+            return $this->get($name);
         }
 
         /**
@@ -241,14 +224,6 @@ namespace Npf\Core {
         }
 
         /**
-         * Clone new object
-         */
-        public function __clone()
-        {
-            $this->__uniqueId();
-        }
-
-        /**
          * To call a class method if exit, else return FALSE
          * @param $method
          * @param $arguments
@@ -266,7 +241,7 @@ namespace Npf\Core {
          * To call a class method if exit, else return FALSE
          * @param string $prefix
          * @param string $postfix
-         * @return bool|mixed
+         * @return array
          */
         final public function flattenData($prefix = '', $postfix = '')
         {

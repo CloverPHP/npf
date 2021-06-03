@@ -169,7 +169,7 @@ namespace Npf\Core {
 
         /**
          * Get Protocol
-         * @return bool
+         * @return string
          */
         final public function getProtocol()
         {
@@ -178,7 +178,7 @@ namespace Npf\Core {
 
         /**
          * Get Protocol
-         * @return bool
+         * @return string
          */
         final public function getSchema()
         {
@@ -205,7 +205,7 @@ namespace Npf\Core {
 
         /**
          * Return Uri
-         * @return mixed|null
+         * @return string
          */
         final public function getFullRequestUri()
         {
@@ -216,7 +216,7 @@ namespace Npf\Core {
 
         /**
          * Return Uri
-         * @return mixed|null
+         * @return string
          */
         final public function getUri()
         {
@@ -236,7 +236,7 @@ namespace Npf\Core {
 
         /**
          * Return Uri
-         * @return mixed|null
+         * @return string
          */
         final public function getPathInfo()
         {

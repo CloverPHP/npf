@@ -60,7 +60,7 @@ namespace Npf\Core {
         public function success(array $data = [])
         {
             $this->set('status', 'ok');
-            $this->set('error', null);
+            $this->set('error');
             $this->__import($data);
             return $this;
         }
@@ -154,7 +154,7 @@ namespace Npf\Core {
                     $data += (float)$value;
                     break;
                 case 'string':
-                    $data .= (string)$value;
+                    $data .= $value;
                     break;
                 case 'array':
                     $data = array_merge($data, (array)$value);

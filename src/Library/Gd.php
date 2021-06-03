@@ -2,6 +2,8 @@
 
 namespace Npf\Library;
 
+use Exception;
+
 class Gd
 {
 
@@ -23,7 +25,7 @@ class Gd
     /**
      * Initial Load and Initial Save and Check Resource
      * @param null $img
-     * @return Gd
+     * @return void
      */
     private function initImage($img = null)
     {
@@ -36,7 +38,6 @@ class Gd
             $this->imgHeight = imagesy($img);
             $this->imgResource = $img;
         }
-        return $this;
     }
 
     /**
@@ -86,7 +87,7 @@ class Gd
 
     /**
      * Get Loaded Image Orientation
-     * @return bool|string
+     * @return string
      */
     public function getOrientation()
     {
@@ -288,7 +289,7 @@ class Gd
     {
         try {
             $img = @imageaffine($this->imgResource, $affine, $rect);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             return $this;
         }
         if ($this->isGDResource($img))
@@ -327,10 +328,10 @@ class Gd
     public function copyImageFromFile($file, $rect = NULL)
     {
         if (!is_array($rect)) $rect = [];
-        if (!isset($rect['X'])) $rect['X'] = (int)0;
-        if (!isset($rect['Y'])) $rect['Y'] = (int)0;
-        if (!isset($rect['L'])) $rect['L'] = (int)0;
-        if (!isset($rect['T'])) $rect['T'] = (int)0;
+        if (!isset($rect['X'])) $rect['X'] = 0;
+        if (!isset($rect['Y'])) $rect['Y'] = 0;
+        if (!isset($rect['L'])) $rect['L'] = 0;
+        if (!isset($rect['T'])) $rect['T'] = 0;
         $imgSrc = $this->getImgResFromFile($file);
 
         if ($this->isGDResource($imgSrc)) {
@@ -341,7 +342,7 @@ class Gd
                 $rect['H'] = $this->getNewHeight($rect['W'], $imgWidth, $imgHeight);
             elseif(empty($rect['W']) && !empty($rect['H']))
                 $rect['W'] = $this->getNewWidth($rect['H'], $imgWidth, $imgHeight);
-            elseif (empty($rect['H']) && empty($rect['H'])) {
+            elseif (empty($rect['W']) && empty($rect['H'])) {
                 $rect['W'] = $imgWidth;
                 $rect['H'] = $imgHeight;
             }
@@ -781,25 +782,6 @@ class Gd
                 }
             }
         }
-    }
-
-    /**
-     * Image Process - Rounded Each Side Corner
-     * @param $imgCorner
-     * @param $img
-     * @param $radius
-     * @param $startX
-     * @param $startY
-     * @param $background
-     */
-    private function cornerFill($imgCorner, $img, $radius, $startX, $startY, $background)
-    {
-        for ($y = $startY; $y < $startY + $radius; $y++)
-            for ($x = $startX; $x < $startX + $radius; $x++) {
-                $color = imagecolorsforindex($img, imagecolorat($imgCorner, $x - $startX, $y - $startY));
-                if ($color['red'] > 230 && $color['green'] > 0 && $color['blue'] > 0) imagesetpixel($img, $x, $y,
-                    $background);
-            }
     }
 
     /**
@@ -1342,7 +1324,7 @@ class Gd
         $angle = (double)$angle;
         $color = (int)$color;
         $tBox = imagettfbbox($size, $angle, $font, $content);
-        $ttfBox = [
+        return [
             'X' => $x,
             'Y' => $y + abs($tBox[5]) - (abs($tBox[1]) / 2),
             'Width' => abs($tBox[4] - $tBox[0]),
@@ -1353,7 +1335,6 @@ class Gd
             'Angle' => $angle,
             'Content' => $content
         ];
-        return $ttfBox;
     }
 
     /**
@@ -1399,7 +1380,7 @@ class Gd
      * @param $font
      * @param $text
      * @param int $blur
-     * @return Gd
+     * @return void
      */
     private function drawTtfText($size, $angle, $x, $y, $color, $font, $text, $blur = 0)
     {
@@ -1422,7 +1403,6 @@ class Gd
             imagedestroy($textImg);
         } else
             imagettftext($this->imgResource, $size, $angle, $x, $y, $color, $font, $text);
-        return $this;
     }
 
     /**
@@ -1441,7 +1421,7 @@ class Gd
         $this->drawTtfText($ttfBox['Size'], $ttfBox['Angle'], $ttfBox['X'], $ttfBox['Y'], $color, $ttfBox['Font'],
             $ttfBox['Content'], $grow);
         $this->drawTtfText($ttfBox['Size'], $ttfBox['Angle'], $ttfBox['X'], $ttfBox['Y'], $ttfBox['Color'], $ttfBox['Font'],
-            $ttfBox['Content'], 0);
+            $ttfBox['Content']);
         return $this;
     }
 
@@ -1499,7 +1479,7 @@ class Gd
         $this->drawTtfText($ttfBox['Size'], $ttfBox['Angle'], $shadowX, $shadowY, $color, $ttfBox['Font'], $ttfBox['Content'],
             $shadow);
         $this->drawTtfText($ttfBox['Size'], $ttfBox['Angle'], $ttfBox['X'], $ttfBox['Y'], $ttfBox['Color'], $ttfBox['Font'],
-            $ttfBox['Content'], 0);
+            $ttfBox['Content']);
         return $this;
     }
 
@@ -1551,7 +1531,7 @@ class Gd
      * @param string $imageType
      * @param string $file
      * @param array $params
-     * @return Gd|string|resource
+     * @return false|Gd|string
      */
     public function output($outputType = 'o', $imageType = 'png', $file = '', $params = [])
     {
@@ -1607,7 +1587,6 @@ class Gd
                     call_user_func_array($imgFuncName, array_merge([$this->imgResource, $tmp], $params));
                     rewind($tmp);
                     return stream_get_contents($tmp);
-                    break;
 
                 case 'r':
                     return $this->imgResource;

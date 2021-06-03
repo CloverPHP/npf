@@ -16,11 +16,6 @@ use Npf\Exception\InternalError;
 final class Xml
 {
     /**
-     * @var string
-     */
-    private static $encoding = 'UTF-8';
-
-    /**
      * @var DOMDocument
      */
     private static $xml = null;
@@ -38,7 +33,6 @@ final class Xml
         self::$xml = new DomDocument($version, $encoding);
         self::$xml->xmlStandalone = $standalone;
         self::$xml->formatOutput = $format_output;
-        self::$encoding = $encoding;
     }
 
     /**
@@ -47,7 +41,7 @@ final class Xml
      * @param array $arr - array to be converted
      * @param array $docType - optional docType
      * @return DomDocument
-     * @throws Exception
+     * @throws InternalError
      */
     public static function createXML($node_name, $arr = [], $docType = [])
     {
@@ -123,7 +117,7 @@ final class Xml
      *
      * @return DOMNode
      *
-     * @throws Exception
+     * @throws InternalError
      */
     private static function convert2Xml($node_name, $arr = [])
     {
@@ -169,7 +163,7 @@ final class Xml
                     // MORE THAN ONE NODE OF ITS KIND;
                     // if the new array is numeric index, means it is array of nodes of the same kind
                     // it should follow the parent key name
-                    foreach ($value as $k => $v) {
+                    foreach ($value as $v) {
                         $node->appendChild(self::convert2Xml($key, $v));
                     }
                 } else {
@@ -222,12 +216,10 @@ final class Xml
                             $output[$t] = [];
                         }
                         $output[$t][] = $v;
-                    } else {
+                    } else
                         //check if it is not an empty node
-                        if (!empty($v) || $v === '0') {
+                        if (!$v)
                             $output = $v;
-                        }
-                    }
                 }
 
                 if (is_array($output)) {
@@ -268,10 +260,8 @@ final class Xml
      */
     private static function getXMLRoot()
     {
-        if (empty(self::$xml)) {
+        if (empty(self::$xml))
             self::init();
-        }
-
         return self::$xml;
     }
 
@@ -286,9 +276,7 @@ final class Xml
     {
         //convert boolean to text value.
         $v = $v === true ? 'true' : $v;
-        $v = $v === false ? 'false' : $v;
-
-        return $v;
+        return $v === false ? 'false' : $v;
     }
 
     /**

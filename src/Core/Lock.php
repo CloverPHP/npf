@@ -21,7 +21,7 @@ namespace Npf\Core {
         /**
          * @var string
          */
-        private $prefix = '';
+        private $prefix;
 
         /**
          * Consistent Lock Constructor
@@ -129,7 +129,7 @@ namespace Npf\Core {
          * Acquire Look
          * @param $name
          * @param int $ttl
-         * @return bool
+         * @return int
          */
         final public function expire($name, $ttl = null)
         {

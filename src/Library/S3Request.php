@@ -80,7 +80,7 @@ final class S3Request
      * @var string
      * @access private
      */
-    private $resource = '';
+    private $resource;
     /**
      * Additional request parameters
      *
@@ -197,7 +197,7 @@ final class S3Request
     /**
      * Get the S3 response
      *
-     * @return object | false
+     * @return object|stdClass
      */
     public function getResponse()
     {
@@ -310,7 +310,7 @@ final class S3Request
             ];
         @curl_close($curl);
         // Parse body into XML
-        if ($this->response->error === false && isset($this->response->headers['type']) &&
+        if (!$this->response->error && isset($this->response->headers['type']) &&
             $this->response->headers['type'] == 'application/xml' && isset($this->response->body)) {
             $this->response->body = simplexml_load_string($this->response->body);
             // Grab S3 errors
@@ -356,7 +356,7 @@ final class S3Request
      * @param string &$data Data
      * @return integer
      */
-    private function __responseWriteCallback(&$curl, &$data)
+    private function __responseWriteCallback(&$curl, $data)
     {
         if (in_array($this->response->code, [200, 206]) && $this->fp)
             return fwrite($this->fp, $data);

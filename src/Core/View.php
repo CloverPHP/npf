@@ -6,7 +6,6 @@ namespace Npf\Core;
 use finfo;
 use Npf\Exception\InternalError;
 use Npf\Library\Xml;
-use ReflectionException;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -295,7 +294,6 @@ class View
      */
     final public function error()
     {
-        $this->app->ignoreError();
         $errorDisplay = $this->app->config('Profiler')->get('errorOutput');
         if ($errorDisplay === 'auto') {
             if (!empty($this->type))
@@ -332,13 +330,11 @@ class View
                 $this->setJson();
                 break;
         }
-        $this->app->noticeError();
     }
 
     /**
      * @throws InternalError
      * @throws LoaderError
-     * @throws ReflectionException
      * @throws RuntimeError
      * @throws SyntaxError
      */
@@ -358,11 +354,11 @@ class View
         switch ($this->type) {
 
             case 'plain':
-                $this->renderPlan(false, $response['statusCode']);
+                $this->renderPlan($response['statusCode']);
                 break;
 
             case 'xml':
-                $this->renderXml($data, false, $response['statusCode']);
+                $this->renderXml($data, $response['statusCode']);
                 break;
 
             case 'none':
@@ -370,7 +366,7 @@ class View
                 break;
 
             case 'static':
-                $this->renderStaticFile($response['statusCode']);
+                $this->renderStatic($response['statusCode']);
                 break;
 
             case 'twig':
@@ -382,14 +378,14 @@ class View
                             $this->addTwigPath($path, is_numeric($name) ? null : $name);
                     }
                     $this->data = $this->data['file'];
-                    $this->renderTwig($data, false, $response['statusCode']);
+                    $this->renderTwig($data, $response['statusCode']);
                 } else
                     throw new InternalError('View Twig info is incomplete on app.view.render');
                 break;
 
             default:
                 $this->type = 'json';
-                $this->renderJson($data, false, $response['statusCode']);
+                $this->renderJson($data, $response['statusCode']);
                 break;
         }
     }
@@ -406,35 +402,32 @@ class View
     /**
      * Render Plan Text
      * @param bool $statusCode
-     * @param bool $headerOverWrite
      */
-    private function renderPlan($headerOverWrite = false, $statusCode = false)
+    private function renderPlan($statusCode = false)
     {
-        $this->app->response->header('Content-Type', 'text/plain; charset=utf-8', $headerOverWrite);
+        $this->app->response->header('Content-Type', 'text/plain; charset=utf-8');
         $this->output($this->data, $statusCode);
     }
 
     /**
      * @param $data
-     * @param bool $headerOverWrite
      * @param bool $statusCode
      */
-    private function renderJson($data, $headerOverWrite = false, $statusCode = false)
+    private function renderJson($data, $statusCode = false)
     {
         $jsonFlag = JSON_UNESCAPED_UNICODE;
         if ($this->generalConfig->get('printPretty', false))
             $jsonFlag |= JSON_PRETTY_PRINT;
-        $this->app->response->header('Content-Type', 'text/json; charset=utf-8', $headerOverWrite);
+        $this->app->response->header('Content-Type', 'text/json; charset=utf-8');
         $this->output(json_encode($data, $jsonFlag), $statusCode);
     }
 
     /**
      * @param $data
-     * @param bool $headerOverWrite
      * @param bool $statusCode
-     * @throws \Exception
+     * @throws InternalError
      */
-    private function renderXml($data, $headerOverWrite = false, $statusCode = false)
+    private function renderXml($data, $statusCode = false)
     {
         if (empty($this->data) || !is_string($this->data))
             $this->data = $this->generalConfig->get('xmlRoot', 'root');
@@ -446,21 +439,19 @@ class View
             $xml->preserveWhiteSpace = true;
             $xml->formatOutput = false;
         }
-        $this->app->response->header('Content-Type', 'text/xml; charset=utf-8', $headerOverWrite);
+        $this->app->response->header('Content-Type', 'text/xml; charset=utf-8');
         $this->output($xml->saveXML($xml->documentElement, LIBXML_NOEMPTYTAG), $statusCode);
     }
 
     /**
      * @param $data
-     * @param bool $headerOverWrite
      * @param bool $statusCode
      * @throws InternalError
      * @throws LoaderError
-     * @throws ReflectionException
      * @throws RuntimeError
      * @throws SyntaxError
      */
-    private function renderTwig($data, $headerOverWrite = false, $statusCode = false)
+    private function renderTwig($data, $statusCode = false)
     {
         $loader = new FilesystemLoader();
         $this->addTwigPath($this->app->getRootPath() . 'Template');
@@ -498,15 +489,16 @@ class View
             $twig->setLexer(new Lexer($twig, $syntaxStyle));
         $appendHeader = $this->app->config('Twig')->get('appendHeader');
         $this->app->response->setHeaders($appendHeader);
-        $this->app->response->header('Content-Type', 'text/html; charset=utf-8', $headerOverWrite);
+        $this->app->response->header('Content-Type', 'text/html; charset=utf-8');
         $this->output($twig->render($this->data, $data), $statusCode);
     }
 
     /**
-     * @param bool $statusCode
+     * @param bool|int $statusCode
+     * @return void
      * @throws InternalError
      */
-    private function renderStaticFile($statusCode = false)
+    private function renderStatic($statusCode = false)
     {
         if (!empty($statusCode) && (int)$statusCode > 0)
             http_response_code($statusCode);
@@ -532,14 +524,20 @@ class View
             if ($expireTime <= 0)
                 $expireTime = 0;
             $cacheControl = "max-age={$expireTime}, must-revalidate";
+            $method = $this->app->request->getMethod();
 
+            $range = $this->staticRange($fileSize);
+            $baseFile = preg_match('/MSIE/', $this->app->request->header('user_agent')) ? str_replace('+', '%20', urlencode(basename($this->data))) : basename($this->data);
             $this->app->response->setHeaders([
+                "Content-Dispositon" => "attachment; filename={$baseFile}",
                 "Content-Type" => $contentType,
                 "Last-Modified" => gmdate("D, d M Y H:i:s", $lastModified) . " GMT",
                 "Cache-Control" => $cacheControl,
                 "Expires" => gmdate("D, d M Y H:i:s", (int)Common::timestamp() + $expireTime) . " GMT",
-                "Content-Length" => $fileSize,
+                'Content-Range', "bytes {$range['start']}-{$range['end']}/{$fileSize}",
+                "Content-Length" => $method === 'OPTIONS' ? 0 : $range['length'],
             ], true);
+            $output = true;
             if ($fileSize > 0)
                 $this->app->response->header("ETag", $eTag, true);
 
@@ -547,18 +545,64 @@ class View
             $headers = $this->app->response->getHeaders();
             foreach ($headers as $headerName => $headerContent)
                 header("{$headerName}: {$headerContent}");
+            if ($method === 'OPTIONS') {
+                $statusCode = 200;
+                $output = false;
+            }
 
             if ($fileSize <= 0 && $statusCode === false)
                 http_response_code(204);
             if ((int)$requestLastModified === (int)$lastModified && $eTag === $requestETag && $this->cache && $statusCode === false)
                 http_response_code(304);
             else {
-                ignore_user_abort(true);
-                readfile($this->data);
+                if ($output) {
+                    ignore_user_abort(true);
+                    @set_time_limit(0);
+                    if (!$range['resume'])
+                        readfile($this->data);
+                    else {
+                        $file = fopen($this->data, 'rb');
+                        fseek($file, $range['start'], SEEK_SET);
+                        $bufferSize = 40096;
+                        $dataSize = $range['end'] - $range['start'];
+                        while (!(connection_aborted() || connection_status() == 1) && $dataSize > 0) {
+                            echo fread($file, $bufferSize);
+                            $dataSize -= $bufferSize;
+                            flush();
+                        }
+                    }
+                }
                 clearstatcache();
             }
         } elseif ($statusCode === false)
             http_response_code(404);
+    }
+
+    /**
+     * @param $fileSize
+     * @return array
+     * @throws InternalError
+     */
+    private function staticRange($fileSize)
+    {
+        $downloadResume = $this->app->config('Route')->get('downloadResume', false);
+        $range = explode('-', substr(preg_replace('/[\s|,].*/', '', $this->app->request->header('range')), 6));
+        if (count($range) < 2)
+            $range[1] = $fileSize;
+        $range = array_combine(['start', 'end'], $range);
+        if ((int)$range['start'] < 0)
+            $range['start'] = 0;
+        if (empty($range['end']) || (int)$range['end'] > $fileSize - 1)
+            $range['end'] = $fileSize - 1;
+        if ($range['start'] >= $range['end']) {
+            $range['start'] = 0;
+            $range['end'] = $fileSize - 1;
+        }
+        $range['length'] = $range['end'] - $range['start'] + 1;
+        if ($downloadResume)
+            $this->app->response->header('Accenpt-Ranges', 'bytes');
+        $range['resume'] = !((int)$range['start'] === 0 && (int)$range['end'] === $fileSize - 1);
+        return $range;
     }
 
     /**
@@ -600,7 +644,7 @@ class View
                 $acceptEncode = !empty($this->app->request->header("accept_encoding")) ? $this->app->request->header("accept_encoding") : '';
                 if (
                     strlen($content) > 1024 &&
-                    strpos($acceptEncode, 'deflate') !== (boolean)false &&
+                    strpos($acceptEncode, 'deflate') !== false &&
                     $this->generalConfig->get('compressOutput', false) === true
                 ) {
                     $content = gzdeflate($content, 9);

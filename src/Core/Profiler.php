@@ -20,7 +20,7 @@ namespace Npf\Core {
          *
          * @var int
          */
-        private $initTime = 0;
+        private $initTime;
 
         /**
          *
@@ -88,7 +88,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @return array|boolean
+         * @return array
          */
         public function fetch()
         {
@@ -97,7 +97,7 @@ namespace Npf\Core {
                 'memusage' => $this->memUsage(),
                 'cpuusage' => file_exists('/proc/loadavg') ? substr(file_get_contents('/proc/loadavg'), 0, 4) : false,
                 'timeusage' => [
-                    'total' => $this->elapsed(true) . "ms",
+                    'total' => $this->elapsed() . "ms",
                 ],
                 'debug' => $this->debug,
                 'query' => $this->query,
@@ -113,7 +113,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @return mixed
+         * @return string
          */
         public function memUsage()
         {
@@ -138,7 +138,7 @@ namespace Npf\Core {
          * Skype-Express Highlight Channel
          * @param $type
          * @param $content
-         * @return bool|mixed
+         * @return bool
          */
         public function logCritical($type, $content)
         {
@@ -170,7 +170,7 @@ namespace Npf\Core {
          * Skype-Express Highlight Channel
          * @param $type
          * @param $content
-         * @return bool|mixed
+         * @return bool
          */
         public function logError($type, $content)
         {
@@ -184,7 +184,7 @@ namespace Npf\Core {
          * Skype-Express Highlight Channel
          * @param $type
          * @param $content
-         * @return bool|mixed
+         * @return bool
          */
         public function logInfo($type, $content)
         {
@@ -197,7 +197,7 @@ namespace Npf\Core {
         /**
          * @param $type
          * @param $content
-         * @return bool|mixed
+         * @return bool
          */
         public function logDebug($type, $content)
         {

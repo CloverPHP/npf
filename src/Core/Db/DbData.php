@@ -174,7 +174,7 @@ namespace Npf\Core\Db {
                                     break;
 
                                 default:
-                                    if ($this->driver->numFields($resResult) === 0 && $resultMode = 0)
+                                    if ($this->driver->numFields($resResult) === 0)
                                         $results = $this->driver->fetchCell(0, 0, $resResult);
                                     else
                                         $results = $this->driver->fetchAssoc($resResult);
@@ -214,7 +214,7 @@ namespace Npf\Core\Db {
 
         /**
          * Get the sql insert id
-         * @return bool|int|string
+         * @return int|string
          */
         final public function getInsertId()
         {
@@ -224,7 +224,7 @@ namespace Npf\Core\Db {
         /**
          * Query Select get result set.
          * @param mysqli_result $resultSet
-         * @return bool|array
+         * @return array|null
          */
         final public function fetchRow(mysqli_result $resultSet)
         {
@@ -296,17 +296,16 @@ namespace Npf\Core\Db {
         {
             if (!empty($table)) {
                 $tableStr = $this->convertSplit($this->driver->escapeStr($table));
-                $result = "SELECT " . $this->getColSQL($column) . " FROM {$this->colLiteral}{$tableStr}{$this->colLiteral}" .
+                return "SELECT " . $this->getColSQL($column) . " FROM {$this->colLiteral}{$tableStr}{$this->colLiteral}" .
                     $this->getCondition($cond) . $this->getGroup($group, $having) . $this->getOrder($order) .
                     $this->getLimit($limit) . " " . self::$queryLock;
-                return $result;
             } else
                 return "";
         }
 
         /**
          * @param $data
-         * @return mixed
+         * @return array|string|string[]
          */
         private function convertSplit($data)
         {
@@ -554,7 +553,7 @@ namespace Npf\Core\Db {
                             if (!is_array($value))
                                 $value = [];
                             if (!empty($value))
-                                foreach ($value as $k => $v)
+                                foreach ($value as $v)
                                     $result[] = $this->driver->escapeStr($v);
                             $condStr .= " IN ({$this->valLiteral}" . implode("{$this->valLiteral},{$this->valLiteral}", $result) .
                                 "{$this->valLiteral})";
@@ -565,7 +564,7 @@ namespace Npf\Core\Db {
                             if (!is_array($value))
                                 $value = [];
                             if (!empty($value))
-                                foreach ($value as $k => $v)
+                                foreach ($value as $v)
                                     $result[] = $this->driver->escapeStr($v);
                             $condStr .= " NOT IN ({$this->valLiteral}" . implode("{$this->valLiteral},{$this->valLiteral}", $result) .
                                 "{$this->valLiteral})";
@@ -685,7 +684,7 @@ namespace Npf\Core\Db {
                         case "INC":
                             $colValue = (double)$colValue;
                             return $this->getColNm($colName) . " + {$colValue}";
-                            break;
+
                         case "DEC":
                             $colValue = (double)$colValue;
                             return $this->getColNm($colName) . " - {$colValue}";
@@ -766,7 +765,7 @@ namespace Npf\Core\Db {
                             $orderStr .= (!empty($orderStr) ? ", " : "") . "{$key} {$orderType}";
                         }
                     }
-                } elseif (!empty($order))
+                } else
                     $orderStr = in_array(strtoupper($order), ["{DB_RAND}", "RAND"]) ? "RAND()" : $this->getColNm($order) .
                         " ASC";
             }
@@ -809,7 +808,7 @@ namespace Npf\Core\Db {
          * @param int $limit
          * @param null $group
          * @param null $having
-         * @return mixed
+         * @return array|false|null
          * @throws DBQueryError
          */
         final public function column($table, $column, $cond = null, $order = null, $limit = 0, $group = null, $having = null)
@@ -843,7 +842,7 @@ namespace Npf\Core\Db {
          * @param int $seek
          * @param null $group
          * @param null $having
-         * @return array|bool|null
+         * @return array|null
          * @throws DBQueryError
          */
         final public function one($table, $column = "*", $cond = null, $order = null, $seek = 0, $group = null, $having = null)
@@ -862,7 +861,7 @@ namespace Npf\Core\Db {
          * @param null $cond
          * @param null $order
          * @param int $seek
-         * @return mixed
+         * @return bool|null
          * @throws DBQueryError
          */
         final public function cell($table, $column, $cond = null, $order = null, $seek = 0)
@@ -929,7 +928,7 @@ namespace Npf\Core\Db {
                         $insertValues .= (!empty($insertValues) ? ", " : "") . "({$insertValue})";
                     }
                 }
-                return (!empty($insertValues)) ? $this->driver->query("INSERT" . ((boolean)$ignore ? " IGNORE" : "") . " INTO {$this->colLiteral}{$tableStr}{$this->colLiteral} ({$iColField}) VALUES {$insertValues}")
+                return (!empty($insertValues)) ? $this->driver->query("INSERT" . ($ignore ? " IGNORE" : "") . " INTO {$this->colLiteral}{$tableStr}{$this->colLiteral} ({$iColField}) VALUES {$insertValues}")
                     : false;
             } else
                 return false;
@@ -947,7 +946,7 @@ namespace Npf\Core\Db {
          */
         final public function action($table, $colData, $cond = null, $Check = false, $ignore = false)
         {
-            if (!empty($cond) && $Check === (boolean)true)
+            if (!empty($cond) && $Check === true)
                 if ($this->count($table, $cond) === 0)
                     $cond = null;
             self::$queryLock = '';
@@ -1001,7 +1000,7 @@ namespace Npf\Core\Db {
                     $setCol .= (!empty($setCol) ? ", " : "") . $this->getColNm($colName) . " = " . $this->
                         getColVal($colData, $colName);
 
-                return $this->driver->query("UPDATE" . ((boolean)$ignore ? " IGNORE" : "") . " {$this->colLiteral}{$tableStr}{$this->colLiteral} SET {$setCol}" .
+                return $this->driver->query("UPDATE" . ($ignore ? " IGNORE" : "") . " {$this->colLiteral}{$tableStr}{$this->colLiteral} SET {$setCol}" .
                     $this->getCondition($cond) . $this->getOrder($order) . $this->getLimit($limit));
             } else
                 return false;
@@ -1012,7 +1011,7 @@ namespace Npf\Core\Db {
          * @param $table
          * @param $colDatas
          * @param bool $ignore
-         * @return bool|mysqli_result
+         * @return false|int|string
          * @throws DBQueryError
          */
         final public function insert($table, $colDatas, $ignore = false)
@@ -1024,7 +1023,7 @@ namespace Npf\Core\Db {
                 foreach ($colDatas as $colName => $colData)
                     $setCol .= (!empty($setCol) ? ", " : "") . $this->getColNm($colName) . " = " . $this->
                         getColVal($colData, $colName);
-                if ($this->driver->query("INSERT" . ((boolean)$ignore ? " IGNORE" : "") . " INTO {$this->colLiteral}{$tableStr}{$this->colLiteral} SET {$setCol}")) {
+                if ($this->driver->query("INSERT" . ($ignore ? " IGNORE" : "") . " INTO {$this->colLiteral}{$tableStr}{$this->colLiteral} SET {$setCol}")) {
                     return $this->driver->insertId();
                 } else {
                     return false;
@@ -1105,7 +1104,7 @@ namespace Npf\Core\Db {
          * @param null $cond
          * @param null $order
          * @param null $limit
-         * @return bool|int|mysqli_result
+         * @return bool|mysqli_result
          * @throws DBQueryError
          */
         final public function delete($table, $cond = null, $order = null, $limit = null)
@@ -1188,7 +1187,7 @@ namespace Npf\Core\Db {
                     $colNameDes[] = $_ColNmDes;
                 }
                 $colNameSrc = $this->getColSQL($colNameSrc, false);
-                return $this->driver->query("INSERT" . ((boolean)$ignore ? " IGNORE" : "") . " INTO {$this->colLiteral}{$tableDes}{$this->colLiteral} ({$colNameSrc}) " .
+                return $this->driver->query("INSERT" . ($ignore ? " IGNORE" : "") . " INTO {$this->colLiteral}{$tableDes}{$this->colLiteral} ({$colNameSrc}) " .
                     $this->getSelectSQL($tableScr, $colNameDes, $cond, $order, $limit, $group, $having));
             } else
                 return false;

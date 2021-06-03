@@ -2,6 +2,8 @@
 
 namespace Npf\Core {
 
+    use DateInterval;
+    use DatePeriod;
     use DateTime;
     use DateTimeZone;
 
@@ -90,7 +92,7 @@ namespace Npf\Core {
         /**
          * Shuffle for associative arrays, preserves key=>value pairs
          * @param $array
-         * @return int
+         * @return bool
          */
         public static function shuffleAssoc(&$array)
         {
@@ -137,7 +139,7 @@ namespace Npf\Core {
                 foreach ($items as $value)
                     $weightAry[$value] = $Base + (isset($weightedArray[$value]) ? (double)$weightedArray[$value] :
                             0);
-                foreach ($weightAry as $key => $value) {
+                for ($i = 0; $i < count($weightAry); $i++) {
                     $rKey = self::weightRndKey($weightAry);
                     unset($weightAry[$rKey]);
                     array_push($rndAry, $rKey);
@@ -146,7 +148,7 @@ namespace Npf\Core {
                 if (count($items) !== count($weightedArray))
                     return false;
                 else {
-                    foreach ($weightedArray as $key => $value) {
+                    for ($i = 0; $i < count($weightedArray); $i++) {
                         $rKey = self::weightRndKey($weightedArray);
                         unset($weightedArray[$rKey]);
                         array_push($rndAry, $items[$rKey]);
@@ -159,7 +161,7 @@ namespace Npf\Core {
         /**
          * Weighted Randomizer, using the assoc probability to pick a key
          * @param $weightedArray
-         * @return bool|int|mixed|string
+         * @return array|false|int|string
          */
         public static function weightRndKey($weightedArray)
         {
@@ -187,7 +189,7 @@ namespace Npf\Core {
             if ((double)$rate > 1)
                 return true;
             $decimalLenght = strlen(substr(strrchr((string)$rate, "."), 1));
-            $power = pow(10, empty($decimalLenght) ? 1 : (int)$decimalLenght);
+            $power = pow(10, empty($decimalLenght) ? 1 : $decimalLenght);
             $rate *= $power;
             return (boolean)self::weightRndKey([$power - $rate, $rate]);
         }
@@ -322,7 +324,7 @@ namespace Npf\Core {
          * Validate Array Data with the given validate pattern
          * @param $patterns
          * @param $data
-         * @return bool|array
+         * @return array
          */
         public static function validator($patterns, $data)
         {
@@ -458,7 +460,7 @@ namespace Npf\Core {
                         break;
 
                     case 'must':
-                        $pass = $value === null ? false : true;
+                        $pass = !($value === null);
                         break;
 
                     case 'must+':
@@ -469,9 +471,9 @@ namespace Npf\Core {
                         $extend = (int)$extend;
                         if (!empty($extend)) {
                             if (is_array($value) || is_object($value))
-                                $pass = count($value) >= $extend ? true : false;
+                                $pass = count($value) >= $extend;
                             else
-                                $pass = strlen($value) >= $extend ? true : false;
+                                $pass = strlen($value) >= $extend;
                         }
                         break;
 
@@ -479,9 +481,9 @@ namespace Npf\Core {
                         $extend = (int)$extend;
                         if (!empty($extend)) {
                             if (is_array($value) || is_object($value))
-                                $pass = count($value) >= $extend ? true : false;
+                                $pass = count($value) >= $extend;
                             else
-                                $pass = mb_strlen($value) >= $extend ? true : false;
+                                $pass = mb_strlen($value) >= $extend;
                         }
                         break;
 
@@ -489,9 +491,9 @@ namespace Npf\Core {
                         $extend = (int)$extend;
                         if (!empty($extend)) {
                             if (is_array($value) || is_object($value))
-                                $pass = count($value) <= $extend ? true : false;
+                                $pass = count($value) <= $extend;
                             else
-                                $pass = strlen($value) <= $extend ? true : false;
+                                $pass = strlen($value) <= $extend;
                         }
                         break;
 
@@ -499,9 +501,9 @@ namespace Npf\Core {
                         $extend = (int)$extend;
                         if (!empty($extend)) {
                             if (is_array($value) || is_object($value))
-                                $pass = count($value) <= $extend ? true : false;
+                                $pass = count($value) <= $extend;
                             else
-                                $pass = mb_strlen($value) <= $extend ? true : false;
+                                $pass = mb_strlen($value) <= $extend;
                         }
                         break;
 
@@ -509,9 +511,9 @@ namespace Npf\Core {
                         $extend = (int)$extend;
                         if (!empty($extend)) {
                             if (is_array($value) || is_object($value))
-                                $pass = count($value) === $extend ? true : false;
+                                $pass = count($value) === $extend;
                             else
-                                $pass = strlen($value) === $extend ? true : false;
+                                $pass = strlen($value) === $extend;
                         }
                         break;
 
@@ -519,9 +521,9 @@ namespace Npf\Core {
                         $extend = (int)$extend;
                         if (!empty($extend)) {
                             if (is_array($value) || is_object($value))
-                                $pass = count($value) === $extend ? true : false;
+                                $pass = count($value) === $extend;
                             else
-                                $pass = mb_strlen($value) === $extend ? true : false;
+                                $pass = mb_strlen($value) === $extend;
                         }
                         break;
 
@@ -560,7 +562,7 @@ namespace Npf\Core {
                             $pass = (boolean)preg_match($extend, $value);
                 }
                 if (!$pass)
-                    return $pass || $optional;
+                    return $optional;
             }
             return true;
         }
@@ -568,9 +570,9 @@ namespace Npf\Core {
         /**
          * Convert File size to File Size Unit.
          * @param $needle
-         * @param $haystack
+         * @param array $haystack
          * @param bool $strict
-         * @return string File Size with Unit
+         * @return bool File Size with Unit
          */
         public static function inArray($needle, array $haystack, $strict = false)
         {
@@ -638,7 +640,7 @@ namespace Npf\Core {
         {
             $Array = [];
             foreach ($arrayHaystack as $key => $value)
-                if ($arrayHaystack[$key] === $needle)
+                if ($value === $needle)
                     $Array[] = $key;
             return (count($Array) > 1 ? $Array : $Array[0]);
         }
@@ -750,7 +752,7 @@ namespace Npf\Core {
          * @param $fileName
          * @param bool $data
          * @param bool $compress
-         * @return mixed
+         * @return int|string|null
          */
         public static function dataToFile($fileName, $data, $compress = true)
         {
@@ -892,16 +894,16 @@ namespace Npf\Core {
                                 $array[$key] /= $number;
                                 break;
                             case '\\':
-                                $array[$key] = round($array[$key] / $number);
+                                $array[$key] = round($value / $number);
                                 break;
                             case '^':
-                                $array[$key] = pow($array[$key], $number);
+                                $array[$key] = pow($value, $number);
                                 break;
                             case '%':
                                 $array[$key] %= $number;
                                 break;
                             case '`':
-                                $array[$key] = pow($array[$key], 1 / $number);
+                                $array[$key] = pow($value, 1 / $number);
                                 break;
                             case '<<':
                                 $array[$key] <<= $number;
@@ -1008,7 +1010,7 @@ namespace Npf\Core {
          * @param int $end
          * @param int $length
          * @param string $toReplace
-         * @return mixed|string
+         * @return array|string|string[]
          */
         public static function strMosaic($string, $start = 0, $end = 6, $length = 0, $toReplace = 'x')
         {
@@ -1016,8 +1018,7 @@ namespace Npf\Core {
             $subLength = strlen(substr($string, $start, $end));
             $strLength = $length !== 0 ? $length - (strlen($string) - $subLength) : $subLength;
             $strLength = $strLength <= 0 ? 1 : $strLength;
-            $string = substr_replace($string, str_repeat($toReplace, $strLength), $start, $end);
-            return $string;
+            return substr_replace($string, str_repeat($toReplace, $strLength), $start, $end);
         }
 
         /**
@@ -1161,7 +1162,7 @@ namespace Npf\Core {
          * Convert Second to Time
          * @param int $seconds
          * @param int $size
-         * @return float
+         * @return string
          */
         public static function secondToTime($seconds = 0, $size = null)
         {
@@ -1228,7 +1229,7 @@ namespace Npf\Core {
                         if (isset($row[$field]))
                             $sortCol[$key] = $row[$field];
                         else
-                            continue(2);
+                            continue 2;
                     }
                     $args[] = $sortCol;
                     foreach ($orderBy as $flag)
@@ -1266,7 +1267,7 @@ namespace Npf\Core {
          * @param $credit
          * @param $divNum
          * @param int $decimal
-         * @return mixed
+         * @return float|int
          */
         public static function calDiv($credit, $divNum, $decimal = 2)
         {
@@ -1362,7 +1363,7 @@ namespace Npf\Core {
         /**
          * @param $fromDate
          * @param $toDate
-         * @return mixed
+         * @return false|int
          */
         public static function dateDiff($fromDate, $toDate)
         {
@@ -1385,8 +1386,8 @@ namespace Npf\Core {
                 $end = new DateTime($end);
                 $end = $end->modify('+1 day');
 
-                $interval = \DateInterval::createFromDateString('1 day');
-                $period = new \DatePeriod($begin, $interval, $end);
+                $interval = DateInterval::createFromDateString('1 day');
+                $period = new DatePeriod($begin, $interval, $end);
 
                 foreach ($period as $dt)
                     /**

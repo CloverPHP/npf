@@ -25,7 +25,7 @@ final class StartUp
     /**
      * @var array App Info
      */
-    private $appInfo = [];
+    private $appInfo;
 
     /**
      * StartUp constructor.

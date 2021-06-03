@@ -23,7 +23,7 @@ namespace Npf\Core {
          */
         public function __construct($desc = '', $code = '', $status = 'error', array $extra = [])
         {
-            parent::__construct($desc, 0);
+            parent::__construct($desc);
             if (empty($status))
                 $status = 'error';
             $output = [

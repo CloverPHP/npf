@@ -59,7 +59,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @return bool|int|string
+         * @return string
          */
         public function getLastQuery()
         {
@@ -67,7 +67,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @return bool|int|string
+         * @return int|string
          */
         protected function getLastInsertId()
         {
@@ -77,7 +77,7 @@ namespace Npf\Core {
         /**
          * @param array $params
          * @param bool $ignore
-         * @return bool|mysqli_result
+         * @return bool|int|string
          * @throws DBQueryError
          */
         protected function addOne(array $params, $ignore = false)
@@ -88,8 +88,7 @@ namespace Npf\Core {
             if (false === $ret) {
                 return false;
             } else {
-                $id = $this->db->getInsertId();
-                return $id;
+                return $this->db->getInsertId();
             }
         }
 
@@ -118,7 +117,7 @@ namespace Npf\Core {
          * @param array $fields
          * @param array $params
          * @param bool $ignore
-         * @return bool|mysqli_result
+         * @return bool|int|string
          * @throws DBQueryError
          */
         protected function addMulti(array $fields, array $params, $ignore = false)
@@ -129,8 +128,7 @@ namespace Npf\Core {
             if (false === $ret) {
                 return false;
             } else {
-                $id = $this->db->getInsertId();
-                return $id;
+                return $this->db->getInsertId();
             }
         }
 
@@ -140,7 +138,7 @@ namespace Npf\Core {
          */
         private function buildField($param)
         {
-            foreach ($param as $k => &$v)
+            foreach ($param as &$v)
                 $v = "{$this->prefix}$v";
             return $param;
         }
@@ -219,7 +217,7 @@ namespace Npf\Core {
          */
         private function buildIdField($id)
         {
-            return $cond = [
+            return [
                 "{$this->prefix}id" => $id,
             ];
         }
@@ -305,19 +303,18 @@ namespace Npf\Core {
          * @param $id
          * @param null $orderBy
          * @param int $seek
-         * @return mixed
+         * @return bool|null
          * @throws DBQueryError
          */
         protected function getCellById($field, $id, $orderBy = null, $seek = 0)
         {
-            $result = $this->db->cell(
+            return $this->db->cell(
                 $this->getTableName(),
                 $this->buildSelCol($field),
                 $this->buildIdField($id),
                 $this->buildOrder($orderBy),
                 $seek
             );
-            return $result;
         }
 
         /**
@@ -325,7 +322,7 @@ namespace Npf\Core {
          * @param array $cond
          * @param null $groupBy
          * @param null $having
-         * @return bool|int
+         * @return bool|float
          * @throws DBQueryError
          */
         protected function getSum($field = '*', array $cond = null, $groupBy = null, $having = null)
@@ -362,7 +359,7 @@ namespace Npf\Core {
          * @param $id
          * @param null $orderBy
          * @param int $limit
-         * @return bool|int|mysqli_result
+         * @return bool|mysqli_result
          * @throws DBQueryError
          */
         protected function deleteOneById($id, $orderBy = null, $limit = 0)
@@ -374,7 +371,7 @@ namespace Npf\Core {
          * @param array $data
          * @param $id
          * @param bool $ignore
-         * @return bool|int|mysqli_result
+         * @return bool|mysqli_result
          * @throws DBQueryError
          */
         protected function updateOneById(array $data, $id, $ignore = false)
@@ -435,19 +432,18 @@ namespace Npf\Core {
          * @param array $cond
          * @param null $orderBy
          * @param int $seek
-         * @return mixed
+         * @return bool|null
          * @throws DBQueryError
          */
         protected function getCellByCond($field, array $cond = null, $orderBy = null, $seek = 0)
         {
-            $result = $this->db->cell(
+            return $this->db->cell(
                 $this->getTableName(),
                 $this->buildSelCol($field),
                 $this->buildCond($cond),
                 $this->buildOrder($orderBy),
                 $seek
             );
-            return $result;
         }
 
         /**
@@ -498,10 +494,10 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $cond
+         * @param array|null $cond
          * @param null $orderBy
          * @param int $limit
-         * @return bool|int|mysqli_result
+         * @return bool|mysqli_result
          * @throws DBQueryError
          */
         protected function deleteOneByCond(array $cond = null, $orderBy = null, $limit = 0)
@@ -510,10 +506,10 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $cond
+         * @param array|null $cond
          * @param null $orderBy
          * @param null $limit
-         * @return bool|int|mysqli_result
+         * @return bool|mysqli_result
          * @throws DBQueryError
          */
         protected function deleteAll(array $cond = null, $orderBy = null, $limit = null)
@@ -526,7 +522,7 @@ namespace Npf\Core {
          * @param array $cond
          * @param $orderBy
          * @param bool $ignore
-         * @return bool|int|mysqli_result
+         * @return bool|mysqli_result
          * @throws DBQueryError
          */
         protected function updateOneByCond(array $data, array $cond = null, $orderBy = null, $ignore = false)
@@ -564,7 +560,7 @@ namespace Npf\Core {
         /**
          * @param $queryStr
          * @param int $resultMode
-         * @return bool|mysqli_result
+         * @return array|bool|null
          * @throws DBQueryError
          */
         protected function query($queryStr, $resultMode = 0)

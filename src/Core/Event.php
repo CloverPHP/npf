@@ -13,7 +13,6 @@ namespace Npf\Core {
         private $scheduleListener = [];
         private $termListener = [];
         private $eventParams = [];
-        private $timeInterval = 0;
         private $timerOut = 0;
         private $tick = 0;
         private $timerLastTimestamp = 0;
@@ -200,13 +199,13 @@ namespace Npf\Core {
         final public function launchTimer($timeout, $interval = 1000)
         {
             $this->timerOut = (int)$timeout;
-            $this->timeInterval = (int)$interval;
+            $timeInterval = (int)$interval;
             $this->timerLastTimestamp = ceil(Common::timestamp(true));
 
             $this->emit('timerStart');
 
             while ($this->timerTick())
-                usleep($this->timeInterval * 1000);
+                usleep($timeInterval * 1000);
 
             $this->emit('timerStop');
             return true;
@@ -236,7 +235,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $callable
+         * @param callable $callable
          * @param mixed $args
          * @return mixed
          */
@@ -258,7 +257,7 @@ namespace Npf\Core {
                 $now = ceil(Common::timestamp(true));
                 $this->emitSchedule();
                 $offset = $now - $this->timerLastTimestamp - 1;
-                $this->timerEmit('timerTick', $now, $offset);
+                $this->timerEmit($now, $offset);
                 $this->timerLastTimestamp = $now;
                 $this->tick++;
                 return true;
@@ -271,7 +270,7 @@ namespace Npf\Core {
          * get elapsed milli seconds
          * @param bool $milliSecond
          * @param bool $current Start Current or initial time
-         * @return int
+         * @return false|float
          */
         final public function elapsed($milliSecond = false, $current = false)
         {
@@ -331,16 +330,16 @@ namespace Npf\Core {
 
         /**
          * Execute/Fire an event
-         * @param $eventName
          * @param int $timestamp
          * @param int $offset
-         * @return bool
+         * @return void
          * @internal param string $event Event Name
          */
-        private function timerEmit($eventName, $timestamp, $offset)
+        private function timerEmit($timestamp, $offset)
         {
-            if (is_string($eventName) && !empty($eventName) && isset($this->timerListener[$eventName])) {
-                foreach ($this->timerListener[$eventName] as $key => $event)
+            $eventName = 'timerTick';
+            if (is_string('timerTick') && !empty($eventName) && isset($this->timerListener['timerTick'])) {
+                foreach ($this->timerListener['timerTick'] as $key => $event)
                     if (isset($event['listener']) && is_callable($event['listener'])) {
                         if (!isset($event['tick']) || (int)$event['tick'] < 1)
                             $emit = true;
@@ -357,21 +356,18 @@ namespace Npf\Core {
                                 break;
                         }
                     }
-                return true;
-            } else
-                return false;
+            }
         }
 
         /**
          * Execute/Fire an terminal Event
-         * @param int $sigNo
          */
-        private function emitTermSignal($sigNo = 0)
+        private function emitTermSignal()
         {
-            $this->eventParams[] = $sigNo;
-            foreach ($this->termListener as $key => &$event)
+            $this->eventParams[] = 0;
+            foreach ($this->termListener as $event)
                 if (isset($event['listener'])) {
-                    $result = $this->eventFire($event['listener'], $sigNo);
+                    $result = $this->eventFire($event['listener'], 0);
                     if ($result === false)
                         break;
                 }

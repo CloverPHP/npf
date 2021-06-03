@@ -117,7 +117,7 @@ namespace Npf\Core {
 
         /**
          * Get last query string
-         * @return mixed
+         * @return string
          */
         public function getLastQuery()
         {

@@ -444,7 +444,7 @@ class S3
                         $results[(string)$c->Prefix] = ['prefix' => (string)$c->Prefix];
                 if (isset($response->body, $response->body->NextMarker))
                     $nextMarker = (string)$response->body->NextMarker;
-            } while ($response !== false && (string)$response->body->IsTruncated == 'true');
+            } while ($response && (string)$response->body->IsTruncated == 'true');
         return $results;
     }
 
@@ -615,9 +615,9 @@ class S3
             $rest->getResponse();
         } else
             $rest->response->error = ['code' => 0, 'message' => 'Missing input parameters'];
-        if ($rest->response->error === false && $rest->response->code !== 200)
+        if (!$rest->response->error && $rest->response->code !== 200)
             $rest->response->error = ['code' => $rest->response->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->response->error !== false) {
+        if (!$rest->response->error) {
             self::__triggerError(sprintf("S3::putObject(): [%s] %s",
                 $rest->response->error['code'], $rest->response->error['message']));
             return false;
@@ -636,7 +636,7 @@ class S3
      * @return string
      * @internal Used to get mime types
      */
-    private static function __getMIMEType(&$file)
+    private static function __getMIMEType($file)
     {
         static $exts = [
             'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'gif' => 'image/gif',
@@ -715,7 +715,7 @@ class S3
      * @param string $bucket Bucket name
      * @param string $uri Object URI
      * @param mixed $saveTo Filename or resource to write to
-     * @return mixed
+     * @return false|object|stdClass
      * @throws InternalError
      */
     public static function getObject($bucket, $uri, $saveTo = false)
@@ -727,10 +727,10 @@ class S3
             elseif (($rest->fp = @fopen($saveTo, 'wb')) === false)
                 $rest->response->error = ['code' => 0, 'message' => 'Unable to open save file for writing: ' . $saveTo];
         }
-        if ($rest->response->error === false) $rest->getResponse();
-        if ($rest->response->error === false && $rest->response->code !== 200)
+        if (!$rest->response->error) $rest->getResponse();
+        if (!$rest->response->error && $rest->response->code !== 200)
             $rest->response->error = ['code' => $rest->response->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->response->error !== false) {
+        if (!$rest->response->error) {
             self::__triggerError(sprintf("S3::getObject({$bucket}, {$uri}): [%s] %s",
                 $rest->response->error['code'], $rest->response->error['message']));
             return false;
@@ -772,7 +772,7 @@ class S3
      * @param array $metaHeaders Optional array of x-amz-meta-* headers
      * @param array $requestHeaders Optional array of request headers (content type, disposition, etc.)
      * @param string $storageClass Storage class constant
-     * @return mixed | false
+     * @return array|false
      * @throws InternalError
      */
     public static function copyObject($srcBucket, $srcUri, $bucket, $uri, $acl = self::ACL_PRIVATE, $metaHeaders = [], $requestHeaders = [], $storageClass = self::STORAGE_CLASS_STANDARD)
@@ -892,7 +892,7 @@ class S3
     public static function setBucketLogging($bucket, $targetBucket, $targetPrefix = null)
     {
         // The S3 log delivery group has to be added to the target bucket's ACP
-        if ($targetBucket !== null && ($acp = self::getAccessControlPolicy($targetBucket, '')) !== false) {
+        if ($targetBucket !== null && ($acp = self::getAccessControlPolicy($targetBucket)) !== false) {
             // Only add permissions to the target bucket when they do not exist
             $aclWriteSet = false;
             $aclReadSet = false;
@@ -942,7 +942,7 @@ class S3
      *
      * @param string $bucket Bucket name
      * @param string $uri Object URI
-     * @return mixed | false
+     * @return array|false
      * @throws InternalError
      */
     public static function getAccessControlPolicy($bucket, $uri = '')
@@ -985,7 +985,7 @@ class S3
                             'uri' => (string)$grantee->URI,
                             'permission' => (string)$grant->Permission
                         ];
-                    else continue;
+                    else
                 }
             }
         }
@@ -1337,7 +1337,7 @@ class S3
      * @return object
      * @internal Used to parse the CloudFront S3Request::getResponse() output
      */
-    private static function __getCloudFrontResponse(&$rest)
+    private static function __getCloudFrontResponse($rest)
     {
         $rest->getResponse();
         if ($rest->response->error === false && isset($rest->response->body) &&
@@ -1365,7 +1365,7 @@ class S3
      * @return array
      * @internal Used to parse the CloudFront DistributionConfig node to an array
      */
-    private static function __parseCloudFrontDistributionConfig(&$node)
+    private static function __parseCloudFrontDistributionConfig($node)
     {
         if (isset($node->DistributionConfig))
             return self::__parseCloudFrontDistributionConfig($node->DistributionConfig);
@@ -1379,7 +1379,7 @@ class S3
         if (isset($node->CallerReference))
             $dist['callerReference'] = (string)$node->CallerReference;
         if (isset($node->Enabled))
-            $dist['enabled'] = (string)$node->Enabled == 'true' ? true : false;
+            $dist['enabled'] = (string)$node->Enabled == 'true';
         if (isset($node->S3Origin)) {
             if (isset($node->S3Origin->DNSName))
                 $dist['origin'] = (string)$node->S3Origin->DNSName;

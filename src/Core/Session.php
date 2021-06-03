@@ -28,7 +28,7 @@ namespace Npf\Core {
         /**
          * @var array
          */
-        private $cookieParams = [];
+        private $cookieParams;
 
         /**
          * Session constructor.
@@ -41,8 +41,8 @@ namespace Npf\Core {
             $this->config = $app->config('Session');
             $this->cookieParams = [
                 'lifeTime' => $this->config->get('cookieLifetime', 0),
-                'urlPath' => $this->config->get('cookiePath', null),
-                'domain' => $this->config->get('cookieDomain', null),
+                'urlPath' => $this->config->get('cookiePath'),
+                'domain' => $this->config->get('cookieDomain'),
                 'security' => $this->config->get('cookieSecurity', false),
                 'httpOnly' => $this->config->get('cookieHttpOnly', true)
             ];

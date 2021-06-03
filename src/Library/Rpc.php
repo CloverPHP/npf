@@ -467,7 +467,7 @@ final class Rpc
 
     /**
      * Get Response Status Code
-     * @return string
+     * @return int
      */
     final public function getResponseStatusCode()
     {
@@ -519,7 +519,7 @@ final class Rpc
 
     /**
      * For public to execute
-     * @return mixed
+     * @return bool|string|null
      */
     final public function execute()
     {
@@ -556,7 +556,7 @@ final class Rpc
                 CURLOPT_HEADERFUNCTION => [$this, 'processResponseHeader'],
                 CURLOPT_HTTPHEADER => $this->processRequestHeader(),
                 CURLOPT_COOKIESESSION => FALSE,
-                CURLOPT_VERBOSE => $this->verboseDebug ? TRUE : FALSE,
+                CURLOPT_VERBOSE => $this->verboseDebug,
             ] + $this->curlOpt;
         if (($this->timeout * 1000) + $this->timeoutMS < 1000)
             $this->curlOpt[CURLOPT_NOSIGNAL] = TRUE;
@@ -595,7 +595,7 @@ final class Rpc
     /**
      * Execute a request, & process response
      * @param null $outputHandle
-     * @return mixed
+     * @return bool|string|null
      */
     private function _execute($outputHandle = null)
     {
@@ -610,7 +610,7 @@ final class Rpc
         $this->curlOpt = [
                 CURLOPT_COOKIEJAR => $tmpCookie,
                 CURLOPT_COOKIEFILE => $tmpCookie,
-                CURLOPT_VERBOSE => $this->verboseDebug ? TRUE : FALSE,
+                CURLOPT_VERBOSE => $this->verboseDebug,
             ] + $this->curlOpt;
 
         //Execute CURL Request & Getting Returning Response
@@ -734,10 +734,6 @@ final class Rpc
             curl_setopt($cHandle, CURLOPT_PROXY, $this->proxy['proxy']);
             if (isset($this->proxy['auth']))
                 curl_setopt($cHandle, CURLOPT_PROXYUSERPWD, $this->proxy['auth']);
-            if (isset($this->proxy['header']))
-                curl_setopt($cHandle, CURLOPT_PROXYHEADER, $this->proxy['header']);
-            if (isset($this->proxy['service']))
-                curl_setopt($cHandle, CURLOPT_PROXY_SERVICE_NAME, $this->proxy['service']);
             if (isset($this->proxy['sockettype']))
                 curl_setopt($cHandle, CURLOPT_PROXYTYPE, $this->proxy['sockettype']);
             $this->proxy = null;
@@ -877,7 +873,7 @@ final class Rpc
      * @param $content
      * @param array $headers
      * @param array $cookies
-     * @return mixed
+     * @return bool|string|null
      */
     final public function __invoke($url, $method = "GET", $content = null, array $headers = [], array $cookies = [])
     {
@@ -890,7 +886,7 @@ final class Rpc
      * @param $content
      * @param array $headers
      * @param array $cookies
-     * @return mixed
+     * @return bool|string|null
      */
     final public function run($url, $method = "GET", $content = null, array $headers = [], array $cookies = [])
     {
@@ -956,7 +952,7 @@ final class Rpc
         $this->addCookies($cookies);
         $result = $this->_execute($fp);
         fclose($fp);
-        return !$result ? FALSE : TRUE;
+        return (bool)$result;
     }
 
     /**
@@ -987,7 +983,7 @@ final class Rpc
     /**
      * @param Rpc $rpcThread
      * @param string $name
-     * @return bool|false|resource
+     * @return false|resource
      */
     final public function addNewThread(Rpc $rpcThread, $name = '')
     {

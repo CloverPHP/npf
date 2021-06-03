@@ -47,7 +47,7 @@ namespace Npf\Core {
         /**
          * @var array
          */
-        private $components = [];
+        private $components;
 
         /**
          * @var string Config Path
@@ -62,22 +62,22 @@ namespace Npf\Core {
         /**
          * @var string Base Path
          */
-        private $basePath = '';
+        private $basePath;
 
         /**
          * @var string Environment Name
          */
-        private $appEnv = 'local';
+        private $appEnv;
 
         /**
          * @var string App Name
          */
-        private $appName = 'defaultApp';
+        private $appName;
 
         /**
          * @var string Roles
          */
-        private $roles = 'web';
+        private $roles;
 
         /**
          * @var bool Ignore Error
@@ -113,7 +113,6 @@ namespace Npf\Core {
          * @throws DBQueryError
          * @throws InternalError
          * @throws LoaderError
-         * @throws ReflectionException
          * @throws RuntimeError
          * @throws SyntaxError
          */
@@ -130,7 +129,6 @@ namespace Npf\Core {
          * @throws DBQueryError
          * @throws InternalError
          * @throws LoaderError
-         * @throws ReflectionException
          * @throws RuntimeError
          * @throws SyntaxError
          */
@@ -167,7 +165,6 @@ namespace Npf\Core {
          * @throws DBQueryError
          * @throws InternalError
          * @throws LoaderError
-         * @throws ReflectionException
          * @throws RuntimeError
          * @throws SyntaxError
          */
@@ -209,18 +206,28 @@ namespace Npf\Core {
         }
 
         /**
+         * Cors Support
          * @throws InternalError
          */
         final public function corsSupport()
         {
-            $corsSupport = $this->config('General')->get('corsSupport', false);
-            if ($corsSupport !== false) {
-                $origin = $this->request->header('origin', $corsSupport);
-                $this->response->header('Access-Control-Allow-Origin', $origin, true);
-                $this->response->header('Access-Control-Allow-Credentials', $this->config('General')->get('corsAllowCredentials', 'true'), true);
-                $this->response->header('Access-Control-Allow-Methods', $this->config('General')->get('corsAllowMethod', 'POST,GET,OPTIONS'), true);
-                $this->response->header('Access-Control-Allow-Headers', $this->request->header('access_control_request_headers', $origin), true);
-                $this->response->header('Access-Control-Max-Age', $this->config('General')->get('corsAge', 3600), true);
+            $origin = $this->request->header('origin', false);
+            $allowCors = $this->config('General')->get('corsSupport', '*');
+            if ($origin && $allowCors) {
+                $pass = false;
+                if ($allowCors === '*')
+                    $pass = true;
+                elseif (!is_array($allowCors))
+                    $allowCors = [$allowCors];
+                if (in_array($origin, $allowCors, true))
+                    $pass = true;
+                if ($pass === true) {
+                    $this->response->header('Access-Control-Allow-Origin', $origin, true);
+                    $this->response->header('Access-Control-Allow-Credentials', $this->config('General')->get('corsAllowCredentials', 'true'), true);
+                    $this->response->header('Access-Control-Allow-Methods', $this->config('General')->get('corsAllowMethod', 'POST,GET,OPTIONS'), true);
+                    $this->response->header('Access-Control-Allow-Headers', $this->request->header('access_control_request_headers', $origin), true);
+                    $this->response->header('Access-Control-Max-Age', $this->config('General')->get('corsAge', 3600), true);
+                }
             }
         }
 
@@ -462,25 +469,6 @@ namespace Npf\Core {
                 $this->clean();
                 $this->view->render();
                 exit($exitCode);
-            } catch (\Exception $ex) {
-                if (!$this->ignoreException) {
-                    $this->ignoreException = true;
-                    $this->handleException($ex);
-                } else {
-                    if ($ex instanceof Exception) {
-                        $profiler = $this->response->get('profiler');
-                        $message = $profiler['desc'];
-                        $exitCode = 2;
-                    } else {
-                        $message = '';
-                        if (method_exists($ex, 'getMessage'))
-                            $message = $ex->getMessage();
-                        $exitCode = 3;
-                    }
-                    echo($message);
-                    echo($ex->getTraceAsString());
-                    exit($exitCode);
-                }
             } catch (\Exception $ex) {
                 if (!$this->ignoreException) {
                     $this->ignoreException = true;

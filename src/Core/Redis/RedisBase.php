@@ -132,23 +132,21 @@ namespace Npf\Core\Redis {
      */
     class RedisBase
     {
-        private $hosts = [];
+        private $hosts;
         private $connected = false;
         private $socket = null;
         private $mode = '';
-        private $db = 0;
-        private $authPass = '';
-        private $timeout = 10;
+        private $db;
+        private $authPass;
+        private $timeout;
         private $rwTimeout = 3;
         private $lastError = '';
-        private $host = '';
-        private $port = '';
         private $retry = 1;
         private $trans = false;
         private $transError = false;
-        private $allowReconnect = true;
+        private $allowReconnect;
         private $bufferSize = 10240;
-        private $persistent = false;
+        private $persistent;
         private $errorSocket = [
             'no' => 0,
             'msg' => '',
@@ -215,7 +213,7 @@ namespace Npf\Core\Redis {
          */
         public function ping()
         {
-            return $this->__execmd('ping') === 'PONG' ? true : false;
+            return $this->__execmd('ping') === 'PONG';
         }
 
         /**
@@ -285,17 +283,14 @@ namespace Npf\Core\Redis {
 
         /**
          * @param $data
-         * @param int $retry
          * @return bool|int
          * @throws InternalError
          */
-        private function __socketWrite($data, $retry = 100)
+        private function __socketWrite($data)
         {
             $bytes_to_write = strlen($data);
             $bytes_written = 0;
-            $retry = (int)$retry;
-            if ($retry <= 0)
-                $retry = 3;
+            $retry = 5;
             while ($bytes_written < $bytes_to_write) {
                 if ($retry <= 0)
                     return false;
@@ -333,7 +328,7 @@ namespace Npf\Core\Redis {
         {
             $response = $this->__receive($this->bufferSize);
 
-            if (FALSE === $response || $response === '') {
+            if (!$response) {
                 if (FALSE === $response) {
                     $this->lastError = 'Error while reading line from the server.';
                     $this->__errorHandle($this->lastError);
@@ -402,8 +397,7 @@ namespace Npf\Core\Redis {
         private function __receive($len = 4096)
         {
             $response = @fgets($this->socket, $len);
-            $response = trim($response);
-            return $response;
+            return trim($response);
         }
 
         /**
@@ -460,7 +454,7 @@ namespace Npf\Core\Redis {
             if (is_array($this->hosts) && !empty($this->hosts)) {
                 $hosts = $this->hosts;
                 shuffle($hosts);
-                foreach ($hosts as $key => $config) {
+                foreach ($hosts as $config) {
 
                     if (is_array($config) && count($config) === 2 && isset($config[0]) && isset($config[1]) &&
                         (int)$config[1] !== 0
@@ -510,13 +504,11 @@ namespace Npf\Core\Redis {
         {
             try {
                 $this->close();
-                $this->app->ignoreError();
                 $this->currentHost = "tcp://{$host}";
                 $sTime = -$this->app->profiler->elapsed();
                 $this->socket = $this->persistent ? @pfsockopen($this->currentHost, $port, $this->errorSocket['no'], $this->errorSocket['msg'],
                     $timeout) : @fsockopen($this->currentHost, $port, $this->errorSocket['no'], $this->errorSocket['msg'], $timeout);
                 $this->app->profiler->saveQuery("connect {$this->currentHost}", $sTime, "redis");
-                $this->app->noticeError();
                 if (!$this->socket || !is_resource($this->socket)) {
                     $this->socket = null;
                     return false;
@@ -526,12 +518,9 @@ namespace Npf\Core\Redis {
                     return false;
                 } else {
                     $this->connected = true;
-                    $this->host = $host;
-                    $this->port = (int)$port;
                     return true;
                 }
             } catch (Exception $e) {
-                $this->app->noticeError();
                 $this->close();
                 return false;
             }
@@ -728,8 +717,7 @@ namespace Npf\Core\Redis {
                 $noExists = (boolean)$noExists;
                 $param[] = $noExists ? 'NX' : 'XX';
             }
-            $result = call_user_func_array([$this, '__execmd'], $param);
-            return $result;
+            return call_user_func_array([$this, '__execmd'], $param);
         }
 
         /**
@@ -739,7 +727,7 @@ namespace Npf\Core\Redis {
          */
         public function __call($name, $args)
         {
-            if (!is_array($args) || (is_array($args) && array_diff_key($args, array_keys(array_keys
+            if (!is_array($args) || (array_diff_key($args, array_keys(array_keys
                     ($args))))
             )
                 $args = [];

@@ -32,9 +32,6 @@ namespace Npf\Core\Db {
         private $queryMode = 'store';
         private $resLink;
         private $resResult;
-        private $queryTime = 0;
-        private $errorMsg = '';
-        private $queryError = false;
         private $tranEnable = false;
         private $tranStarted = false;
         private $persistent = false;
@@ -142,17 +139,14 @@ namespace Npf\Core\Db {
             $this->persistent = (boolean)$this->config->get('persistent', false);
             $user = $this->config->get('user', 'root');
             $name = $this->config->get('name', '');
-            $this->app->ignoreError();
             if (!@mysqli_real_connect($this->resLink, $this->escapeStr($this->persistent ? "p:{$host}" :
                 $host), $this->escapeStr($user), $this->escapeStr($this->config->get('pass', '')), $this->escapeStr($name),
                 $port)
             ) {
                 $this->connected = false;
-                $this->app->noticeError();
                 throw new DBQueryError("DB Connect Failed : mysql://{$user}@{$host}:{$port}/{$name} " . $this->connectError());
             } else
                 $this->connected = true;
-            $this->app->noticeError();
             return $this->resLink;
         }
 
@@ -186,7 +180,7 @@ namespace Npf\Core\Db {
         /**
          * Return escaped string with the mysqli
          * @param $queryStr
-         * @return mixed|string
+         * @return array|string|string[]
          */
         final public function escapeStr($queryStr)
         {
@@ -302,7 +296,7 @@ namespace Npf\Core\Db {
             if (!$this->connected)
                 return false;
             $this->resResult = false;
-            if ($this->tranQuery($queryStr, false))
+            if ($this->tranQuery($queryStr))
                 return $this->realQuery($queryStr);
             else {
                 $this->resResult = false;
@@ -328,7 +322,6 @@ namespace Npf\Core\Db {
                         (substr($query, -10)) === 'FOR UPDATE'
                     ) {
                         $this->tranStarted = $this->realQuery("begin");
-                        $this->queryError = !$this->tranStarted;
                         return $this->tranStarted;
                     }
                 return true;
@@ -364,17 +357,14 @@ namespace Npf\Core\Db {
                 return false;
             $profiler = $this->app->profiler;
             $sTime = -$profiler->elapsed();
-            $this->errorMsg = '';
             $result = mysqli_real_query($this->resLink, $queryStr);
             $this->resResult = $this->queryMode === 'use' ? mysqli_use_result($this->resLink) : mysqli_store_result($this->resLink);
             $this->resResult = (mysqli_field_count($this->resLink)) ? $this->resResult : $result;
-            $this->queryTime = ceil((microtime(true) + $sTime) * 1000);
-            $errNo = (int)mysqli_errno($this->resLink);
+            $errNo = mysqli_errno($this->resLink);
 
             if ($errNo !== 0) {
-                $this->queryError = true;
-                $this->errorMsg = mysqli_error($this->resLink);
-                $queryStr = "Query error: {$this->errorMsg} - {$queryStr}";
+                $errorMsg = mysqli_error($this->resLink);
+                $queryStr = "Query error: {$errorMsg} - {$queryStr}";
                 $profiler->saveQuery($queryStr, $sTime, "db");
                 throw new DBQueryError($queryStr, $errNo);
             } else {
@@ -510,8 +500,7 @@ namespace Npf\Core\Db {
             $resResult = $this->getResResult($resResult);
             if ($this->isResResult($resResult)) {
                 mysqli_field_seek($resResult, $column);
-                $FInfo = mysqli_fetch_field($resResult);
-                return $FInfo;
+                return mysqli_fetch_field($resResult);
             } else
                 return false;
         }
@@ -583,7 +572,7 @@ namespace Npf\Core\Db {
         final public function seek($Row, $resResult = null)
         {
             $resResult = $this->getResResult($resResult);
-            return $this->isResResult($resResult) ? mysqli_data_seek($resResult, $Row) : false;
+            return $this->isResResult($resResult) && mysqli_data_seek($resResult, $Row);
         }
         #----------------------------------------------------------------------#
         #Session of the Error handling
@@ -591,7 +580,7 @@ namespace Npf\Core\Db {
 
         /**
          * Get Db Last Insert Id
-         * @return bool|int|string
+         * @return int|string
          */
         final public function insertId()
         {

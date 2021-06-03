@@ -7,7 +7,7 @@ namespace Npf\Core {
     use Npf\Exception\NextTick;
     use Npf\Exception\UnknownClass;
     use ReflectionClass;
-    use ReflectionException as ReflectionExceptionAlias;
+    use ReflectionException;
     use Twig\Error\LoaderError;
     use Twig\Error\RuntimeError;
     use Twig\Error\SyntaxError;
@@ -41,19 +41,19 @@ namespace Npf\Core {
         /**
          * @var string Root Directory
          */
-        private $indexFile = 'Index';
+        private $indexFile;
         /**
          * @var string Root Directory
          */
-        private $homeDirectory = 'Index';
+        private $homeDirectory;
         /**
          * @var string Root Directory
          */
-        private $rootDirectory = 'App';
+        private $rootDirectory;
         /**
          * @var string Default Web Route
          */
-        private $defaultWebRoute = '';
+        private $defaultWebRoute;
 
         /**
          * @var bool Is Static Route
@@ -66,7 +66,6 @@ namespace Npf\Core {
          * @throws DBQueryError
          * @throws InternalError
          * @throws LoaderError
-         * @throws ReflectionExceptionAlias
          * @throws RuntimeError
          * @throws SyntaxError
          */
@@ -77,7 +76,7 @@ namespace Npf\Core {
             $this->routeConfig = $this->app->config('Route');
             if (
                 !in_array($app->getRoles(), ['cronjob', 'daemon'], true) &&
-                (boolean)$this->routeConfig->get('forceSecure', false)
+                $this->routeConfig->get('forceSecure', false)
             )
                 $app->forceSecure();
             $this->rootDirectory = $this->routeConfig->get('rootDirectory', 'App');
@@ -95,7 +94,6 @@ namespace Npf\Core {
 
         /**
          * @param $pathInfo
-         * @throws ReflectionExceptionAlias
          */
         private function proceedAppPath($pathInfo)
         {
@@ -118,8 +116,7 @@ namespace Npf\Core {
                 if (
                     !$this->isExistsAppClass($this->appFile) &&
                     !$this->isExistsStaticFile($this->appFile) &&
-                    !empty($this->homeDirectory) &&
-                    $addHomeDirectory
+                    !empty($this->homeDirectory)
                 ) {
                     array_shift($this->appPath);
                     $this->appFile = implode("\\", $this->appPath);
@@ -135,7 +132,7 @@ namespace Npf\Core {
 
         /**
          * @throws InternalError
-         * @throws ReflectionExceptionAlias
+         * @throws ReflectionException
          * @throws UnknownClass
          */
         final public function __invoke()
@@ -194,7 +191,6 @@ namespace Npf\Core {
 
         /**
          * @throws InternalError
-         * @throws ReflectionExceptionAlias
          * @throws UnknownClass
          */
         private function routeStatic()
@@ -213,16 +209,13 @@ namespace Npf\Core {
         /**
          * @param array $parameters
          * @throws InternalError
+         * @throws ReflectionException
          * @throws UnknownClass
          */
-        private function launchApp(array &$parameters = [])
+        private function launchApp(array $parameters = [])
         {
-            try {
-                $this->app->request->setUri($this->appFile);
-                $refClass = new ReflectionClass("{$this->rootDirectory}\\{$this->appFile}");
-            } catch (ReflectionExceptionAlias $ex) {
-                throw new UnknownClass($ex->getMessage());
-            }
+            $this->app->request->setUri($this->appFile);
+            $refClass = new ReflectionClass("{$this->rootDirectory}\\{$this->appFile}");
             switch ($this->app->getRoles()) {
 
                 case 'cronjob':
@@ -242,10 +235,11 @@ namespace Npf\Core {
         /**
          * @param ReflectionClass $refClass
          * @param array $parameters
-         * @throws UnknownClass
          * @throws InternalError
+         * @throws ReflectionException
+         * @throws UnknownClass
          */
-        private function launchCronjob(ReflectionClass &$refClass, array &$parameters = [])
+        private function launchCronjob(ReflectionClass $refClass, array $parameters = [])
         {
             $cronLock = $this->app->config('Redis')->get('enable', false) && $this->generalConfig->get('cronLock', false);
             $cronBlock = sha1($this->app->request);
@@ -271,9 +265,10 @@ namespace Npf\Core {
          * @param ReflectionClass $refClass
          * @param array $parameters
          * @throws InternalError
+         * @throws ReflectionException
          * @throws UnknownClass
          */
-        private function launchDaemon(ReflectionClass &$refClass, array &$parameters = [])
+        private function launchDaemon(ReflectionClass $refClass, array $parameters = [])
         {
             set_time_limit(0);
             $daemonBlock = sha1($this->app->request);
@@ -313,9 +308,10 @@ namespace Npf\Core {
         /**
          * @param ReflectionClass $refClass
          * @param array $parameters
+         * @throws ReflectionException
          * @throws UnknownClass
          */
-        private function launchWeb(ReflectionClass &$refClass, array &$parameters = [])
+        private function launchWeb(ReflectionClass $refClass, array $parameters = [])
         {
             $actionObj = $refClass->newInstanceArgs($parameters);
             if (method_exists($actionObj, '__invoke')) {
@@ -327,7 +323,7 @@ namespace Npf\Core {
 
         /**
          * @param $className
-         * @return string
+         * @return bool
          */
         final public function isExistsAppClass($className)
         {
@@ -336,8 +332,7 @@ namespace Npf\Core {
 
         /**
          * @param $fileName
-         * @return string
-         * @throws ReflectionExceptionAlias
+         * @return bool
          */
         final public function isExistsStaticFile($fileName)
         {

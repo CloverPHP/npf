@@ -4,10 +4,8 @@ namespace Npf\Core {
 
     use Npf\Exception\InternalError;
     use Npf\Library\Aes;
-    use Npf\Library\Daemon;
     use Npf\Library\Gd;
     use Npf\Library\GeoIp;
-    use Npf\Library\Monitor;
     use Npf\Library\Rpc;
     use Npf\Library\S3;
     use Npf\Library\TwoFactorAuth;
