@@ -985,7 +985,6 @@ class S3
                             'uri' => (string)$grantee->URI,
                             'permission' => (string)$grant->Permission
                         ];
-                    else
                 }
             }
         }

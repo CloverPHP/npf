@@ -15,6 +15,11 @@ namespace Npf\Core\Db {
     class DbData
     {
         /**
+         * @var App
+         */
+        protected $app;
+
+        /**
          * @var string
          */
         private static $queryLock = '';
@@ -26,10 +31,6 @@ namespace Npf\Core\Db {
          * @var Container
          */
         protected $config;
-        /**
-         * @var App
-         */
-        private $app;
         private $colLiteral = '`';
         private $valLiteral = "'";
 

@@ -13,8 +13,6 @@ namespace Npf\Core {
      */
     final class Db extends DbData
     {
-        protected $app;
-
         /**
          * Db constructor.
          * @param App $app
@@ -25,7 +23,6 @@ namespace Npf\Core {
          */
         public function __construct(App &$app, Container &$config = null)
         {
-            $this->app = &$app;
             if ($config === null)
                 $config = $app->config('Db');
 
@@ -46,9 +43,9 @@ namespace Npf\Core {
             $hosts = $this->config->get('hosts');
             shuffle($hosts);
             foreach ($hosts as $host) {
-                $sTime = -$this->app->profiler->elapsed();
+                $this->app->profiler->timerStart("db");
                 $this->driver->connect($host);
-                $this->app->profiler->saveQuery("connect mysql://{$host}", $sTime, "db");
+                $this->app->profiler->saveQuery("connect mysql://{$host}", "db");
                 if ($this->driver->connectErrorNo())
                     $this->connectError($this->driver->connectError());
                 elseif ($this->driver->connected === true) {
