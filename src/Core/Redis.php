@@ -194,12 +194,11 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $postHash
+         * @param string $postHash
          * @return self
          */
         final public function setPostHash(string $postHash): self
         {
-            $postHash = (string )$postHash;
             if (!empty($postHash))
                 $this->postHash = substr($postHash, 0, 1) === "{" ? $postHash : "{{$postHash}}";
             return $this;
@@ -239,7 +238,6 @@ namespace Npf\Core {
          */
         final public function select(int $db): bool
         {
-            $db = (int)$db;
             $success = true;
             foreach ($this->redis as $redis)
                 if ($redis instanceof RedisBase && !$redis->select($db))
@@ -307,7 +305,6 @@ namespace Npf\Core {
             $sTime = -$profiler->elapsed();
             if (in_array($name, $this->restrictFnc, true))
                 return false;
-            $redis = null;
             $key = '';
             if (!empty($args))
                 $key = $args[0];
@@ -328,7 +325,7 @@ namespace Npf\Core {
         /**
          * Get Shading Index & Load index of redis not loaded
          * @param string $key
-         * @return int
+         * @return int|bool
          */
         private function getIndex(string $key = ''): int|bool
         {

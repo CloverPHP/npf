@@ -173,7 +173,7 @@ final class UserAgent extends MobileDetect
             if ($platform == 'Android') {
                 // $key = 0;
                 $browser = 'Android Browser';
-            } elseif (strpos($platform, 'BB') === 0) {
+            } elseif (str_starts_with($platform, 'BB')) {
                 $browser = 'BlackBerry Browser';
                 $platform = 'BlackBerry';
             } elseif ($platform == 'BlackBerry' || $platform == 'PlayBook') {

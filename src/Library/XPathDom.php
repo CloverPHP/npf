@@ -68,7 +68,7 @@ final class XPathDom
 
     /**
      * Query a html path
-     * @param $queryString
+     * @param string $queryString
      * @param DOMNode|null $contextNode
      * @return DOMNodeList|null
      */
@@ -112,7 +112,7 @@ final class XPathDom
 
     /**
      * Query a first found dom
-     * @param $queryString
+     * @param string $queryString
      * @param string $order
      * @param DOMNode|null $contextNode
      * @return DOMNode|null

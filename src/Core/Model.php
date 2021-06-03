@@ -128,7 +128,7 @@ namespace Npf\Core {
          */
         private function buildField(array $param): array
         {
-            foreach ($param as $k => &$v)
+            foreach ($param as &$v)
                 $v = "{$this->prefix}$v";
             return $param;
         }
@@ -163,7 +163,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $fields
+         * @param array|string $fields
          * @return array|bool|string
          */
         private function buildSelCol(array|string $fields): array|bool|string
@@ -187,7 +187,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $value
+         * @param mixed $value
          * @param bool $prefix
          * @return null|int|float|string|array
          */
@@ -219,9 +219,9 @@ namespace Npf\Core {
 
         /**
          * @param mixed $orders
-         * @return mixed
+         * @return string|array|int|float|null
          */
-        private function buildOrder(mixed $orders): mixed
+        private function buildOrder(mixed $orders): string|array|int|null|float
         {
             if (is_array($orders) && !empty($orders)) {
                 $data = [];
@@ -501,7 +501,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $params
+         * @param array $params
          * @return array
          */
         #[Pure] private function formatAll(array $params): array

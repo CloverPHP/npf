@@ -35,6 +35,7 @@ namespace Npf\Library;
 use DOMDocument;
 use JetBrains\PhpStorm\Pure;
 use Npf\Exception\InternalError;
+use OpenSSLAsymmetricKey;
 use SimpleXMLElement;
 use stdClass;
 
@@ -136,7 +137,7 @@ class S3
     /**
      * The AWS Access key
      *
-     * @var string
+     * @var string|null
      * @access private
      * @static
      */
@@ -171,7 +172,7 @@ class S3
      * @access private
      * @static
      */
-    private static $__signingKeyResource;
+    private static ?OpenSSLAsymmetricKey $__signingKeyResource;
 
     /**
      * Constructor - if you're not using the class statically
@@ -329,17 +330,6 @@ class S3
             throw new InternalError($message);
         else
             trigger_error($message, E_USER_WARNING);
-    }
-
-    /**
-     * Free signing key from memory, MUST be called if you are using setSigningKey()
-     *
-     * @return void
-     */
-    public static function freeSigningKey(): void
-    {
-        if (self::$__signingKeyResource && is_resource(self::$__signingKeyResource))
-            openssl_pkey_free(self::$__signingKeyResource);
     }
 
     /**
@@ -519,15 +509,15 @@ class S3
     /**
      * Create input array info for putObject() with a resource
      *
-     * @param string|resource $resource $resource $resource Input resource to read from
+     * @param mixed $resource $resource $resource Input resource to read from
      * @param bool $bufferSize Input byte size
      * @param string $md5sum MD5 hash to send (optional)
      * @return array | false
      * @throws InternalError
      */
-    public static function inputResource(resource|string &$resource,
+    public static function inputResource(mixed &$resource,
                                          bool $bufferSize = false,
-                                         string $md5sum = '')
+                                         string $md5sum = ''): bool|array
     {
         if (!is_resource($resource) || (int)$bufferSize < 0) {
             self::__triggerError('S3::inputResource(): Invalid resource or buffer size');
@@ -642,9 +632,9 @@ class S3
             $rest->getResponse();
         } else
             $rest->response->error = ['code' => 0, 'message' => 'Missing input parameters'];
-        if ($rest->response->error === false && $rest->response->code !== 200)
+        if (!$rest->response->error && $rest->response->code !== 200)
             $rest->response->error = ['code' => $rest->response->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->response->error !== false) {
+        if ($rest->response->error) {
             self::__triggerError(sprintf("S3::putObject(): [%s] %s",
                 $rest->response->error['code'], $rest->response->error['message']));
             return false;
@@ -663,7 +653,7 @@ class S3
      * @return string
      * @internal Used to get mime types
      */
-    private static function __getMIMEType(string &$file): string
+    private static function __getMIMEType(string $file): string
     {
         static $exts = [
             'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'gif' => 'image/gif',
@@ -747,7 +737,7 @@ class S3
      * @param string $bucket Bucket name
      * @param string $uri Object URI
      * @param mixed $saveTo Filename or resource to write to
-     * @return object|bool|stdClass
+     * @return bool|stdClass
      * @throws InternalError
      */
     public static function getObject(string $bucket, string $uri, bool $saveTo = false): bool|stdClass
@@ -759,10 +749,10 @@ class S3
             elseif (($rest->fp = @fopen($saveTo, 'wb')) === false)
                 $rest->response->error = ['code' => 0, 'message' => 'Unable to open save file for writing: ' . $saveTo];
         }
-        if ($rest->response->error === false) $rest->getResponse();
-        if ($rest->response->error === false && $rest->response->code !== 200)
+        if (!$rest->response->error) $rest->getResponse();
+        if (!$rest->response->error && $rest->response->code !== 200)
             $rest->response->error = ['code' => $rest->response->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->response->error !== false) {
+        if ($rest->response->error) {
             self::__triggerError(sprintf("S3::getObject({$bucket}, {$uri}): [%s] %s",
                 $rest->response->error['code'], $rest->response->error['message']));
             return false;
@@ -779,7 +769,7 @@ class S3
      * @return mixed
      * @throws InternalError
      */
-    public static function getObjectInfo(string $bucket, string $uri, $returnInfo = true): mixed
+    public static function getObjectInfo(string $bucket, string $uri, bool $returnInfo = true): mixed
     {
         $rest = new S3Request('HEAD', $bucket, $uri, self::$endpoint);
         $rest = $rest->getResponse();
@@ -932,26 +922,26 @@ class S3
     public static function setBucketLogging(string $bucket, ?string $targetBucket, ?string $targetPrefix = null): bool
     {
         // The S3 log delivery group has to be added to the target bucket's ACP
-        if ($targetBucket !== null && ($acp = self::getAccessControlPolicy($targetBucket, '')) !== false) {
+        if ($targetBucket !== null && ($acp = self::getAccessControlPolicy($targetBucket)) !== false) {
             // Only add permissions to the target bucket when they do not exist
             $aclWriteSet = false;
             $aclReadSet = false;
             foreach ($acp['acl'] as $acl)
-                if ($acl['type'] == 'Group' && $acl['uri'] == 'http://acs.amazonaws.com/groups/s3/LogDelivery') {
+                if ($acl['type'] == 'Group' && $acl['uri'] == 'https://acs.amazonaws.com/groups/s3/LogDelivery') {
                     if ($acl['permission'] == 'WRITE') $aclWriteSet = true;
                     elseif ($acl['permission'] == 'READ_ACP') $aclReadSet = true;
                 }
             if (!$aclWriteSet) $acp['acl'][] = [
-                'type' => 'Group', 'uri' => 'http://acs.amazonaws.com/groups/s3/LogDelivery', 'permission' => 'WRITE'
+                'type' => 'Group', 'uri' => 'https://acs.amazonaws.com/groups/s3/LogDelivery', 'permission' => 'WRITE'
             ];
             if (!$aclReadSet) $acp['acl'][] = [
-                'type' => 'Group', 'uri' => 'http://acs.amazonaws.com/groups/s3/LogDelivery', 'permission' => 'READ_ACP'
+                'type' => 'Group', 'uri' => 'https://acs.amazonaws.com/groups/s3/LogDelivery', 'permission' => 'READ_ACP'
             ];
             if (!$aclReadSet || !$aclWriteSet) self::setAccessControlPolicy($targetBucket, '', $acp);
         }
         $dom = new DOMDocument;
         $bucketLoggingStatus = $dom->createElement('BucketLoggingStatus');
-        $bucketLoggingStatus->setAttribute('xmlns', 'http://s3.amazonaws.com/doc/2006-03-01/');
+        $bucketLoggingStatus->setAttribute('xmlns', 'https://s3.amazonaws.com/doc/2006-03-01/');
         if ($targetBucket !== null) {
             if ($targetPrefix == null) $targetPrefix = $bucket . '-';
             $loggingEnabled = $dom->createElement('LoggingEnabled');
@@ -1025,7 +1015,6 @@ class S3
                             'uri' => (string)$grantee->URI,
                             'permission' => (string)$grant->Permission
                         ];
-                    else continue;
                 }
             }
         }
@@ -1244,7 +1233,7 @@ class S3
                                                    string $successRedirect = "201",
                                                    array $amzHeaders = [],
                                                    array $headers = [],
-                                                   $flashVars = false): stdClass
+                                                   bool $flashVars = false): stdClass
     { // Create policy object
         $policy = new stdClass;
         $policy->expiration = gmdate('Y-m-d\TH:i:s\Z', (self::__getTime() + $lifetime));
@@ -1392,7 +1381,7 @@ class S3
      * @return object
      * @internal Used to parse the CloudFront S3Request::getResponse() output
      */
-    private static function __getCloudFrontResponse(&$rest)
+    private static function __getCloudFrontResponse(object $rest): object
     {
         $rest->getResponse();
         if ($rest->response->error === false && isset($rest->response->body) &&
@@ -1420,7 +1409,7 @@ class S3
      * @return array
      * @internal Used to parse the CloudFront DistributionConfig node to an array
      */
-    private static function __parseCloudFrontDistributionConfig(&$node)
+    private static function __parseCloudFrontDistributionConfig(object $node): array
     {
         if (isset($node->DistributionConfig))
             return self::__parseCloudFrontDistributionConfig($node->DistributionConfig);
@@ -1434,7 +1423,7 @@ class S3
         if (isset($node->CallerReference))
             $dist['callerReference'] = (string)$node->CallerReference;
         if (isset($node->Enabled))
-            $dist['enabled'] = (string)$node->Enabled == 'true' ? true : false;
+            $dist['enabled'] = (string)$node->Enabled === 'true';
         if (isset($node->S3Origin)) {
             if (isset($node->S3Origin->DNSName))
                 $dist['origin'] = (string)$node->S3Origin->DNSName;

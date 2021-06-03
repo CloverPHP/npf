@@ -131,21 +131,15 @@ namespace Npf\Core\Redis {
      */
     class RedisBase
     {
-        private array $hosts = [];
         private bool $connected = false;
         private mixed $socket = null;
         private string $mode = '';
-        private int $db = 0;
-        private string $authPass = '';
-        private int $timeout = 0;
         private int $rwTimeout = 3;
         private string $lastError = '';
         private int $retry = 1;
         private bool $trans = false;
         private bool $transError = false;
-        private bool $allowReconnect;
         private int $bufferSize = 10240;
-        private bool $persistent;
         private array $errorSocket = [
             'no' => 0,
             'msg' => '',
@@ -170,22 +164,16 @@ namespace Npf\Core\Redis {
          * @param bool $persistent
          */
         final public function __construct(private App $app,
-                                          array $hosts,
-                                          string $authPass,
-                                          int $db,
-                                          int $timeout = 10,
+                                          private array $hosts,
+                                          private string $authPass,
+                                          private int $db,
+                                          private int $timeout = 10,
                                           int $rwTimeout = 0,
-                                          bool $allowReconnect = true,
-                                          bool $persistent = false)
+                                          private bool $allowReconnect = true,
+                                          private bool $persistent = false)
         {
-            $this->hosts = $hosts;
-            $this->authPass = $authPass;
-            $this->timeout = (int)$timeout;
-            $this->db = (int)$db;
-            $this->persistent = (boolean)$persistent;
-            $this->allowReconnect = $allowReconnect;
-            if ((int)$rwTimeout != 0)
-                $this->rwTimeout = (int)$rwTimeout;
+            if ($rwTimeout != 0)
+                $this->rwTimeout = $rwTimeout;
         }
 
         final public function __destruct()
@@ -232,17 +220,15 @@ namespace Npf\Core\Redis {
                     throw new InternalError("need connect to master for write permission");
                 $args[0] = strtoupper($args[0]);
                 if ($this->__write($args)) {
-                    $data = $this->__read();
-                    return $data;
+                    return $this->__read();
                 } else
                     $this->__errorHandle('Unable write to redis');
             } catch (InternalError) {
                 if ($this->lastError !== '')
                     $this->__errorHandle($this->lastError);
                 else {
-                    $data = $this->reconnect($masterOnly) === false ? false : call_user_func_array(
+                    return $this->reconnect($masterOnly) === false ? false : call_user_func_array(
                         [$this, '__execmd'], $args);
-                    return $data;
                 }
             }
             return false;
@@ -291,11 +277,10 @@ namespace Npf\Core\Redis {
          * @return bool|int
          * @throws InternalError
          */
-        private function __socketWrite(string $data, $retry = 100): bool|int
+        private function __socketWrite(string $data, int $retry = 100): bool|int
         {
             $bytes_to_write = strlen($data);
             $bytes_written = 0;
-            $retry = (int)$retry;
             if ($retry <= 0)
                 $retry = 3;
             while ($bytes_written < $bytes_to_write) {
@@ -334,7 +319,7 @@ namespace Npf\Core\Redis {
         private function __read(int $times = 0): null|int|bool|array|string
         {
             $response = $this->__receive($this->bufferSize);
-            if (FALSE === $response || $response === '') {
+            if (!$response) {
                 if (FALSE === $response) {
                     $this->lastError = 'Error while reading line from the server.';
                     $this->__errorHandle($this->lastError);
@@ -403,8 +388,7 @@ namespace Npf\Core\Redis {
         private function __receive(int $len = 4096): string
         {
             $response = @fgets($this->socket, $len);
-            $response = trim($response);
-            return $response;
+            return trim($response);
         }
 
         /**
@@ -461,7 +445,7 @@ namespace Npf\Core\Redis {
             if (is_array($this->hosts) && !empty($this->hosts)) {
                 $hosts = $this->hosts;
                 shuffle($hosts);
-                foreach ($hosts as $key => $config) {
+                foreach ($hosts as $config) {
 
                     if (is_array($config) && count($config) === 2 && isset($config[0]) && isset($config[1]) &&
                         (int)$config[1] !== 0
@@ -493,7 +477,7 @@ namespace Npf\Core\Redis {
                 }
                 if ($retry > 0) {
                     usleep(100000);
-                    return $this->__connect($masterOnly, (int)$retry - 1);
+                    return $this->__connect($masterOnly, $retry - 1);
                 } else
                     return false;
             } else
@@ -511,13 +495,11 @@ namespace Npf\Core\Redis {
         {
             try {
                 $this->close();
-                $this->app->ignoreError();
                 $this->currentHost = "tcp://{$host}";
                 $sTime = -$this->app->profiler->elapsed();
                 $this->socket = $this->persistent ? @pfsockopen($this->currentHost, $port, $this->errorSocket['no'], $this->errorSocket['msg'],
                     $timeout) : @fsockopen($this->currentHost, $port, $this->errorSocket['no'], $this->errorSocket['msg'], $timeout);
                 $this->app->profiler->saveQuery("connect {$this->currentHost}", $sTime, "redis");
-                $this->app->noticeError();
                 if (!$this->socket || !is_resource($this->socket)) {
                     $this->socket = null;
                     return false;
@@ -530,7 +512,6 @@ namespace Npf\Core\Redis {
                     return true;
                 }
             } catch (Exception) {
-                $this->app->noticeError();
                 $this->close();
                 return false;
             }
@@ -575,7 +556,6 @@ namespace Npf\Core\Redis {
          */
         public function select(int $db): array|bool|null|string
         {
-            $db = (int)$db;
             $sTime = -$this->app->profiler->elapsed();
             if (!$this->connected)
                 return false;
@@ -647,7 +627,7 @@ namespace Npf\Core\Redis {
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @return mixed
          * @throws InternalError
          */
@@ -657,7 +637,7 @@ namespace Npf\Core\Redis {
         }
 
         /**
-         * @param $json
+         * @param string $json
          * @return mixed
          */
         private function varUnserialise(string $json): mixed
@@ -667,7 +647,7 @@ namespace Npf\Core\Redis {
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @return mixed
          * @throws InternalError
          */
@@ -677,15 +657,14 @@ namespace Npf\Core\Redis {
         }
 
         /**
-         * @param $name
-         * @param $value
-         * @param $expired
+         * @param string $name
+         * @param string $value
+         * @param int $expired
          * @return bool
          * @throws InternalError
          */
         public function setEx(string $name, string $value, int $expired): bool
         {
-            $expired = (int)$expired;
             return (boolean)$this->__execmd('setex', $name, $expired, $value);
         }
 
@@ -722,13 +701,10 @@ namespace Npf\Core\Redis {
         {
             $param = ['set', $name, $value];
             if (!empty($lifeTime))
-                $param = array_merge($param, ['EX', (int)$lifeTime]);
-            if (null !== $noExists) {
-                $noExists = (boolean)$noExists;
+                $param = array_merge($param, ['EX', $lifeTime]);
+            if (null !== $noExists)
                 $param[] = $noExists ? 'NX' : 'XX';
-            }
-            $result = call_user_func_array([$this, '__execmd'], $param);
-            return $result;
+            return call_user_func_array([$this, '__execmd'], $param);
         }
 
         /**
@@ -771,7 +747,7 @@ namespace Npf\Core\Redis {
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @return array
          * @throws InternalError
          */

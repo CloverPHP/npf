@@ -141,7 +141,8 @@ namespace Npf\Core {
                 foreach ($items as $value)
                     $weightAry[$value] = $Base + (isset($weightedArray[$value]) ? (double)$weightedArray[$value] :
                             0);
-                foreach ($weightAry as $value) {
+                $count = count($weightAry);
+                for ($i = 0; $i < $count; $i++) {
                     $rKey = self::weightRndKey($weightAry);
                     unset($weightAry[$rKey]);
                     array_push($rndAry, $rKey);
@@ -150,7 +151,8 @@ namespace Npf\Core {
                 if (count($items) !== count($weightedArray))
                     return false;
                 else {
-                    foreach ($weightedArray as $value) {
+                    $count = count($weightedArray);
+                    for ($i = 0; $i < $count; $i++) {
                         $rKey = self::weightRndKey($weightedArray);
                         unset($weightedArray[$rKey]);
                         array_push($rndAry, $items[$rKey]);
@@ -565,7 +567,7 @@ namespace Npf\Core {
          * @param bool $strict
          * @return bool is in_array
          */
-        #[Pure] public static function inArray(mixed $needle, array $haystack, $strict = false): bool
+        #[Pure] public static function inArray(mixed $needle, array $haystack, bool $strict = false): bool
         {
             if ($strict)
                 return in_array($needle, $haystack, $strict);
@@ -676,7 +678,7 @@ namespace Npf\Core {
          * @param string $pattern
          * @return string
          */
-        public static function strTemplateApply(string $content, array $data, $default = null, $pattern = '%([\w]+)[^%]*%'): string
+        public static function strTemplateApply(string $content, array $data, $default = null, string $pattern = '%([\w]+)[^%]*%'): string
         {
             $matches = [];
             if (!is_array($data))
@@ -744,7 +746,7 @@ namespace Npf\Core {
          * @param bool $compress
          * @return int|string|null
          */
-        public static function dataToFile(string $fileName, mixed $data, $compress = true): int|string|null
+        public static function dataToFile(string $fileName, mixed $data, bool $compress = true): int|string|null
         {
             if ($compress)
                 $data = @gzcompress(json_encode($data), 9);
@@ -1127,7 +1129,7 @@ namespace Npf\Core {
          * @param bool $current
          * @return float
          */
-        #[Pure] public static function timestamp($current = false): float
+        #[Pure] public static function timestamp(bool $current = false): float
         {
             return $current === true ? microtime(true) : self::$timestamp;
         }
@@ -1433,7 +1435,7 @@ namespace Npf\Core {
          */
         final static public function convertUtfAngle(string $content,
                                                      bool $toFullAngle = false,
-                                                     bool $includeSymbol = false):string
+                                                     bool $includeSymbol = false): string
         {
             $fullAngle = [
                 'alphanumeric' => [

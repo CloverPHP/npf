@@ -108,13 +108,13 @@ namespace Npf\Core {
 
         /**
          * @param array $appInfo
-         * @throws \Exception
+         * @throws Throwable
          */
         final public function __invoke(array $appInfo = []): void
         {
             try {
                 $timezone = $this->app->config('General')->get('timezone', 'UTC');
-            } catch (\Exception) {
+            } catch (Throwable) {
                 $timezone = 'UTC';
             }
             Common::initial($timezone);

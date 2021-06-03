@@ -73,7 +73,7 @@ namespace Npf\Core {
             $this->routeConfig = $this->app->config('Route');
             if (
                 !in_array($app->getRoles(), ['cronjob', 'daemon'], true) &&
-                (boolean)$this->routeConfig->get('forceSecure', false)
+                $this->routeConfig->get('forceSecure', false)
             )
                 $app->forceSecure();
             $this->rootDirectory = $this->routeConfig->get('rootDirectory', 'App');
@@ -133,14 +133,6 @@ namespace Npf\Core {
          */
         final public function __invoke(): void
         {
-            //CORS Support
-            if ($this->app->request->getMethod() === 'OPTIONS') {
-                $this->app->view->setNone();
-                $this->app->response->statusCode(200);
-                $this->app->view->lock();
-                return;
-            }
-
             //App Router
             $routePath = explode("\\", "{$this->rootDirectory}\\{$this->appFile}");
             $routerObj = null;
@@ -236,7 +228,7 @@ namespace Npf\Core {
         private function launchCronjob(ReflectionClass $refClass, array $parameters = [])
         {
             $cronLock = $this->app->config('Redis')->get('enable', false) && $this->generalConfig->get('cronLock', false);
-            $cronBlock = sha1($this->app->request);
+            $cronBlock = sha1(Common::getServerIp());
             $lockName = "cronjob:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$this->rootDirectory}\\{$this->appFile}:{$cronBlock}";
             if ($cronLock && !$this->app->lock->waitAcquireDone($lockName, 60, $this->generalConfig->get('cronMaxWait', 60)))
                 return;
@@ -267,7 +259,7 @@ namespace Npf\Core {
         private function launchDaemon(ReflectionClass $refClass, array $parameters = [])
         {
             set_time_limit(0);
-            $daemonBlock = sha1($this->app->request);
+            $daemonBlock = sha1(Common::getServerIp());
             $lockName = "daemon:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$this->rootDirectory}\\{$this->appFile}:{$daemonBlock}";
             $daemonLock = $this->app->config('Redis')->get('enable', false) && $this->generalConfig->get('daemonLock', false);
             if ($daemonLock && !$this->app->lock->waitAcquireDone($lockName, 60, $this->generalConfig->get('daemonMaxWait', 180)))
@@ -313,6 +305,13 @@ namespace Npf\Core {
         private function launchWeb(ReflectionClass $refClass, array $parameters = [])
         {
             try {
+                //CORS Support
+                if ($this->app->request->getMethod() === 'OPTIONS') {
+                    $this->app->view->setNone();
+                    $this->app->response->statusCode(200);
+                    $this->app->view->lock();
+                    return;
+                }
                 $actionObj = $refClass->newInstanceArgs($parameters);
             } catch (ReflectionException $ex) {
                 throw new UnknownClass($ex->getMessage());

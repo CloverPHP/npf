@@ -5,6 +5,7 @@ namespace Npf\Boot;
 use Exception;
 use Npf\Core\App;
 use Npf\Core\Kernel;
+use Throwable;
 
 /**
  * Class StartUp
@@ -25,7 +26,7 @@ final class StartUp
     /**
      * @var array App Info
      */
-    private array $appInfo = [];
+    private array $appInfo;
 
     /**
      * StartUp constructor.
@@ -60,7 +61,7 @@ final class StartUp
 
     /**
      * Start Up
-     * @throws Exception
+     * @throws Throwable
      */
     final public function start(): void
     {

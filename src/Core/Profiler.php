@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace Npf\Core {
 
+    use JetBrains\PhpStorm\ArrayShape;
     use JetBrains\PhpStorm\Pure;
+    use Throwable;
 
     /**
      * 调试处理类
@@ -19,7 +21,7 @@ namespace Npf\Core {
          *
          * @var float|string
          */
-        private float|string $initTime = '';
+        private float|string $initTime;
 
         /**
          *
@@ -44,7 +46,7 @@ namespace Npf\Core {
         /**
          * @var int
          */
-        private $maxLog = 100;
+        private int $maxLog = 100;
 
         /**
          * Profiler constructor.
@@ -55,7 +57,7 @@ namespace Npf\Core {
             $this->initTime = INIT_TIMESTAMP;
             try {
                 $this->config = $app->config('Profiler', true);
-            } catch (\Exception) {
+            } catch (Throwable) {
                 $this->config = new Container();
             }
             $this->maxLog = $this->config->get('maxLog', 100);
@@ -89,6 +91,7 @@ namespace Npf\Core {
         /**
          * @return array|bool
          */
+        #[ArrayShape(['memusage' => "string", 'cpuusage' => "false|string", 'timeusage' => "string[]", 'debug' => "array", 'query' => "array", 'uri' => "string", 'params' => "mixed", 'headers' => "mixed"])]
         public function fetch(): array|bool
         {
             $Uri = $this->app->request->getUri();
@@ -96,7 +99,7 @@ namespace Npf\Core {
                 'memusage' => $this->memUsage(),
                 'cpuusage' => file_exists('/proc/loadavg') ? substr(file_get_contents('/proc/loadavg'), 0, 4) : false,
                 'timeusage' => [
-                    'total' => $this->elapsed(true) . "ms",
+                    'total' => $this->elapsed() . "ms",
                 ],
                 'debug' => $this->debug,
                 'query' => $this->query,
@@ -114,7 +117,7 @@ namespace Npf\Core {
         /**
          * @return string
          */
-        public function memUsage(): string
+        #[Pure] public function memUsage(): string
         {
             return Common::fileSize2Unit(memory_get_usage());
         }
@@ -177,8 +180,8 @@ namespace Npf\Core {
 
         /**
          * Skype-Express Highlight Channel
-         * @param $type
-         * @param $content
+         * @param string $type
+         * @param mixed $content
          * @return self
          */
         public function logInfo(string $type, mixed $content): self
@@ -189,8 +192,8 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $type
-         * @param $content
+         * @param string $type
+         * @param mixed $content
          * @return self
          */
         public function logDebug(string $type, mixed $content): self
@@ -201,9 +204,9 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $queryStr
-         * @param $sTime
-         * @param $category
+         * @param string $queryStr
+         * @param int|float $sTime
+         * @param string $category
          * @return Profiler
          */
         public function saveQuery(string $queryStr, int|float $sTime, string $category): self
@@ -230,8 +233,8 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $name
-         * @param $arguments
+         * @param string $name
+         * @param array|null $arguments
          * @return null
          */
         public function __call(string $name, ?array $arguments)

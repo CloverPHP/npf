@@ -13,9 +13,8 @@ use JetBrains\PhpStorm\Pure;
  */
 class Smtp
 {
-    private resource|null $socket;
+    private mixed $socket;
     private array $logs = [];
-    private string $lastResponse = '';
     private string $eol = "\n";
     private array $error = [];
     private array $serverElm = [];
@@ -59,7 +58,6 @@ class Smtp
                                 int $timeout = 30)
     {
         //Note the server info.
-        $port = (int)$port;
         $this->mail['server'] = [
             'host' => $server,
             'secure' => $secure,
@@ -108,7 +106,7 @@ class Smtp
             $result = $_SERVER['SERVER_NAME'];
         elseif (function_exists('gethostname') && gethostname() !== false)
             $result = gethostname();
-        elseif (php_uname('n') !== false)
+        elseif (php_uname('n'))
             $result = php_uname('n');
         if (!$this->isValidHost($result))
             $result = 'localhost.localdomain';
@@ -117,7 +115,7 @@ class Smtp
 
     /**
      * Check is email or not
-     * @param $email
+     * @param string $email
      * @return bool
      */
     #[Pure] public function isEmail(string $email): bool
@@ -205,7 +203,6 @@ class Smtp
                 STREAM_CLIENT_CONNECT,
                 $socket_context
             );
-            restore_error_handler();
         } else {
             set_error_handler([$this, 'errorHandler']);
             $this->socket = fsockopen(
@@ -215,8 +212,8 @@ class Smtp
                 $errStr,
                 $this->mail['server']['timeout']
             );
-            restore_error_handler();
         }
+        restore_error_handler();
 
         if (!is_resource($this->socket)) {
             $this->socket = null;
@@ -230,14 +227,14 @@ class Smtp
         }
 
         //Server didn't response probably
-        if (!($content = $this->execute('CONNECT', [220, 221]))) {
+        if (!$this->execute('CONNECT', [220, 221])) {
             $this->disconnect();
             return false;
         }
 
-        if (strpos(PHP_OS, 'WIN') !== 0) {
+        if (!str_starts_with(PHP_OS, 'WIN')) {
             $max = (int)ini_get('max_execution_time');
-            if (0 !== $max && $this->mail['server']['timeout'] > $max && strpos(ini_get('disable_functions'), 'set_time_limit') === false)
+            if (0 !== $max && $this->mail['server']['timeout'] > $max && !str_contains(ini_get('disable_functions'), 'set_time_limit'))
                 @set_time_limit($this->mail['server']['timeout']);
             stream_set_timeout($this->socket, $this->mail['server']['timeout'], 0);
         }
@@ -308,12 +305,12 @@ class Smtp
     private function execute(string $name, bool|int|array $expect): bool|array
     {
         if (is_resource($this->socket)) {
-            $this->lastResponse = $this->readLine();
+            $lastResponse = $this->readLine();
             $code = 0;
             $data = '';
-            if (!empty($this->lastResponse)) {
-                $code = (int)substr($this->lastResponse, 0, 3);
-                $data = substr($this->lastResponse, 4);
+            if (!empty($lastResponse)) {
+                $code = (int)substr($lastResponse, 0, 3);
+                $data = substr($lastResponse, 4);
             }
             $content = [
                 'call' => $name,
@@ -332,10 +329,10 @@ class Smtp
      * Send Content to server
      * @param string $content
      * @param array|int|bool $expect
-     * @param bool $log
+     * @param bool|string $log
      * @return bool|array
      */
-    private function send(string $content, array|int|bool $expect, $log = true): bool|array
+    private function send(string $content, array|int|bool $expect, bool|string $log = true): bool|array
     {
         if ($this->connected()) {
             @fwrite($this->socket, "{$content}{$this->eol}");
@@ -556,7 +553,7 @@ class Smtp
 
         //Add Email Subject & Message ID
         $this->addHeader("Subject", "=?UTF-8?B?" . base64_encode($this->mail['subject']) . "?=");
-        $this->addHeader("Message-ID", '<' . sha1($this->mail['content']['text'] . $this->mail['content']['html'] . (string)microtime(true)) . '.' . (string)microtime(true) . '@' . explode('@', $this->mail['contact']['from']['email'], 2)[1] . '>');
+        $this->addHeader("Message-ID", '<' . sha1($this->mail['content']['text'] . $this->mail['content']['html'] . microtime(true)) . '.' . microtime(true) . '@' . explode('@', $this->mail['contact']['from']['email'], 2)[1] . '>');
         $this->addHeader("MIME-Version", "1.0");
         $this->mail['content']['body'] .=
 

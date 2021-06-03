@@ -89,7 +89,7 @@ namespace Npf\Core {
             $this->basePath = getcwd();
             $this->configPath = sprintf("Config\\%s\\%s\\", ucfirst($this->appEnv), ucfirst($this->appName));
             $this->components = [
-                'request' => new Request($this),
+                'request' => new Request(),
                 'response' => new Response(null),
                 'view' => new View($this),
             ];
@@ -106,7 +106,7 @@ namespace Npf\Core {
         final public function forceSecure(): self
         {
             if (!$this->request->isSecure() && isset($_SERVER["HTTP_HOST"]) && isset($_SERVER["REQUEST_URI"]))
-                $this->redirect("https://{$_SERVER["HTTP_HOST"]}{$_SERVER["REQUEST_URI"]}");
+                $this->redirect(url: "https://{$_SERVER["HTTP_HOST"]}{$_SERVER["REQUEST_URI"]}");
             return $this;
         }
 
@@ -137,7 +137,7 @@ namespace Npf\Core {
 
         /**
          * App Execute
-         * @throws \Exception
+         * @throws Throwable
          */
         #[NoReturn] final public function __invoke(): void
         {
@@ -197,14 +197,23 @@ namespace Npf\Core {
          */
         private function corsSupport(): void
         {
-            $corsSupport = $this->config('General')->get('corsSupport', false);
-            if ($corsSupport !== false) {
-                $origin = $this->request->header('origin', $corsSupport);
-                $this->response->header('Access-Control-Allow-Origin', $origin, true);
-                $this->response->header('Access-Control-Allow-Credentials', $this->config('General')->get('corsAllowCredentials', 'true'), true);
-                $this->response->header('Access-Control-Allow-Methods', $this->config('General')->get('corsAllowMethod', 'POST,GET,OPTIONS'), true);
-                $this->response->header('Access-Control-Allow-Headers', $this->request->header('access_control_request_headers', $origin), true);
-                $this->response->header('Access-Control-Max-Age', $this->config('General')->get('corsAge', 3600), true);
+            $origin = $this->request->header('origin', false);
+            $allowCors = $this->config('General')->get('corsSupport', false);
+            if ($origin && $allowCors) {
+                $pass = false;
+                if ($allowCors === '*')
+                    $pass = true;
+                elseif (!is_array($allowCors))
+                    $allowCors = [$allowCors];
+                if (in_array($origin, $allowCors, true))
+                    $pass = true;
+                if ($pass === true) {
+                    $this->response->header('Access-Control-Allow-Origin', $origin, true);
+                    $this->response->header('Access-Control-Allow-Credentials', $this->config('General')->get('corsAllowCredentials', 'true'), true);
+                    $this->response->header('Access-Control-Allow-Methods', $this->config('General')->get('corsAllowMethod', 'POST,GET,OPTIONS'), true);
+                    $this->response->header('Access-Control-Allow-Headers', $this->request->header('access_control_request_headers', $origin), true);
+                    $this->response->header('Access-Control-Max-Age', $this->config('General')->get('corsAge', 3600), true);
+                }
             }
         }
 
@@ -321,13 +330,13 @@ namespace Npf\Core {
                             $this->models[$className] = $object;
                             return $object;
                         } else {
-                            throw new InternalError("Model Invalid:{$className}");
+                            throw new InternalError("Model Invalid: {$className}");
                         }
                     } catch (ReflectionException $ex) {
                         throw new InternalError($ex->getMessage());
                     }
                 } else {
-                    throw new InternalError("Model Not Found:{$className}");
+                    throw new InternalError("Model Not Found: {$className}");
                 }
             }
         }
@@ -361,7 +370,7 @@ namespace Npf\Core {
                         throw new InternalError($ex->getMessage());
                     }
                 } else {
-                    throw new InternalError("Module Not Found:{$className}");
+                    throw new InternalError("Module Not Found: {$className}");
                 }
             }
         }

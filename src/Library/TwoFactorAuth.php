@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Npf\Library;
 
 use Exception;
-use Npf\Core\App;
 use Npf\Exception\InternalError;
 
 /**
@@ -28,14 +27,6 @@ final class TwoFactorAuth
         'Y', 'Z', '2', '3', '4', '5', '6', '7', // 31
         '=',  // padding char
     ];
-
-    /**
-     * TwoFactorAuth constructor.
-     * @param App $app
-     */
-    final public function __construct(private App $app)
-    {
-    }
 
     /**
      * Create new secret.
@@ -121,12 +112,12 @@ final class TwoFactorAuth
         $value = $value[1];
         $value = $value & 0x7FFFFFFF;
         $modulo = pow(10, $this->_codeLength);
-        return str_pad($value % $modulo, $this->_codeLength, '0', STR_PAD_LEFT);
+        return str_pad((string)($value % $modulo), $this->_codeLength, '0', STR_PAD_LEFT);
     }
 
     /**
      * Helper class to decode base32.
-     * @param $secret
+     * @param string $secret
      * @return bool|string
      */
     private function _base32Decode(string $secret): bool|string
@@ -161,7 +152,7 @@ final class TwoFactorAuth
             }
             $eightBits = str_split($x, 8);
             for ($z = 0; $z < count($eightBits); ++$z) {
-                $binaryString .= (($y = chr(base_convert($eightBits[$z], 2, 10))) || ord($y) == 48) ? $y : '';
+                $binaryString .= (($y = chr((int)base_convert($eightBits[$z], 2, 10))) || ord($y) == 48) ? $y : '';
             }
         }
         return $binaryString;

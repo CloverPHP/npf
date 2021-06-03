@@ -42,7 +42,7 @@ namespace Npf\Core {
 
         /**
          * Session constructor.
-         * @param $name
+         * @param string $name
          * @return mixed
          * @throws InternalError
          */
@@ -56,7 +56,7 @@ namespace Npf\Core {
 
         /**
          * Session constructor.
-         * @param $name
+         * @param string $name
          * @return mixed
          * @throws InternalError
          */

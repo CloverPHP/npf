@@ -41,18 +41,18 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $error
+         * @param string $error
          * @param string $desc
          * @param string $code
          * @return self
          */
         public function error(string $error, string $desc = '', string $code = ''): self
         {
-            $this->set('status', (string)$error);
+            $this->set('status', $error);
             if ($desc)
-                $this->set('profiler', ['desc' => (string)$desc]);
+                $this->set('profiler', ['desc' => $desc]);
             if ($code)
-                $this->set('code', (string)$code);
+                $this->set('code', $code);
             return $this;
         }
 
@@ -64,7 +64,7 @@ namespace Npf\Core {
         {
             $this->set('status', 'ok');
             $this->set('error', '');
-            $this->__import($data);
+            $this->import($data);
             return $this;
         }
 
@@ -84,7 +84,7 @@ namespace Npf\Core {
 
         /**
          * Response constructor
-         * @param $array
+         * @param array|null $array
          * @param bool $overwrite
          * @return self
          */
@@ -128,7 +128,7 @@ namespace Npf\Core {
                     $value = json_encode($value);
                 $this->headers[$name] = (string)$value;
             }
-            return isset($this->headers[$name]) ? $this->headers[$name] : null;
+            return $this->headers[$name] ?? null;
         }
 
         /**

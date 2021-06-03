@@ -10,14 +10,6 @@ namespace Npf\Core {
     class Cookie
     {
         /**
-         * Session constructor.
-         * @param App $app
-         */
-        public function __construct(private App $app)
-        {
-        }
-
-        /**
          * Session Get Data
          * @param string $name
          * @param null $default
@@ -25,14 +17,14 @@ namespace Npf\Core {
          */
         public function get(string $name, mixed $default = null): mixed
         {
-            return isset($_COOKIE[$name]) ? $_COOKIE[$name] : $default;
+            return $_COOKIE[$name] ?? $default;
         }
 
         /**
          * Session Set Data
-         * @param $name
-         * @param $value
-         * @param $expired
+         * @param string $name
+         * @param mixed $value
+         * @param string|int $expired
          * @param string $path
          * @param string $domain
          * @param bool $secure
@@ -53,9 +45,9 @@ namespace Npf\Core {
 
         /**
          * Session Set Data
-         * @param $name
-         * @param $value
-         * @param $expired
+         * @param string $name
+         * @param mixed $value
+         * @param string|int $expired
          * @param string $path
          * @param string $domain
          * @param bool $secure

@@ -43,7 +43,7 @@ final class Xml
      * @param array $content - array to be converted
      * @param array $docType - optional docType
      * @return DomDocument
-     * @throws Exception
+     * @throws InternalError
      */
     public static function createXML(string $rootName, array $content = [], array $docType = []): DOMDocument
     {
@@ -67,7 +67,7 @@ final class Xml
      * Convert an XML to Array.
      * @param string|DOMDocument $inputXml
      * @return array
-     * @throws Exception
+     * @throws InternalError
      */
     public static function createArray(string|DOMDocument $inputXml): array
     {
@@ -106,13 +106,10 @@ final class Xml
 
     /**
      * Convert an Array to XML.
-     *
      * @param string $rootName - name of the root node to be converted
      * @param array $content - array to be converted
-     *
      * @return DOMNode
-     *
-     * @throws Exception
+     * @throws InternalError
      */
     private static function convert2Xml(string $rootName, array $content = []): DOMNode
     {
@@ -127,7 +124,7 @@ final class Xml
                     if (!self::isValidTagName($key)) {
                         throw new InternalError('[Array2XML] Illegal character in attribute name. attribute: ' . $key . ' in node: ' . $rootName);
                     }
-                    $node->setAttribute($key, self::bool2str($value));
+                    $node->setAttribute($key, self::bool2str((bool)$value));
                 }
                 unset($content['@attributes']); //remove the key from the array once done.
             }
@@ -135,12 +132,12 @@ final class Xml
             // check if it has a value stored in @value, if yes store the value and return
             // else check if its directly stored as string
             if (array_key_exists('@value', $content)) {
-                $node->appendChild($xml->createTextNode(self::bool2str($content['@value'])));
+                $node->appendChild($xml->createTextNode(self::bool2str((bool)$content['@value'])));
                 unset($content['@value']);    //remove the key from the array once done.
                 //return from recursion, as a note with value cannot have child nodes.
                 return $node;
             } elseif (array_key_exists('@cdata', $content)) {
-                $node->appendChild($xml->createCDATASection(self::bool2str($content['@cdata'])));
+                $node->appendChild($xml->createCDATASection(self::bool2str((bool)$content['@cdata'])));
                 unset($content['@cdata']);    //remove the key from the array once done.
                 //return from recursion, as a note with cdata cannot have child nodes.
                 return $node;
@@ -158,13 +155,11 @@ final class Xml
                     // MORE THAN ONE NODE OF ITS KIND;
                     // if the new array is numeric index, means it is array of nodes of the same kind
                     // it should follow the parent key name
-                    foreach ($value as $k => $v) {
+                    foreach ($value as $v)
                         $node->appendChild(self::convert2Xml($key, $v));
-                    }
-                } else {
+                } else
                     // ONLY ONE NODE OF ITS KIND
                     $node->appendChild(self::convert2Xml($key, $value));
-                }
                 unset($content[$key]); //remove the key from the array once done.
             }
         }
@@ -172,8 +167,7 @@ final class Xml
         // after we are done with all the keys in the array (if it is one)
         // we check if it has any text value, if yes, append it.
         if (!is_array($content))
-            $node->appendChild($xml->createTextNode(self::bool2str($content)));
-
+            $node->appendChild($xml->createTextNode(self::bool2str((bool)$content)));
         return $node;
     }
 
@@ -284,7 +278,7 @@ final class Xml
      */
     private static function isValidTagName(string $tag): bool
     {
-        $pattern = '/^[a-z_]+[a-z0-9\:\-\.\_]*[^:]*$/i';
+        $pattern = '/^[a-z_]+[a-z0-9:\-._]*[^:]*$/i';
 
         return preg_match($pattern, $tag, $matches) && $matches[0] == $tag;
     }

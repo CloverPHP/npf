@@ -149,9 +149,8 @@ final class Rpc
      * @param int $connectionTimeout
      * @return self
      */
-    final public function setConnectionTimeout($connectionTimeout = 0): self
+    final public function setConnectionTimeout(int $connectionTimeout = 0): self
     {
-        $connectionTimeout = (int)$connectionTimeout;
         if ($connectionTimeout > 0)
             $this->connectTimeout = $connectionTimeout;
         return $this;
@@ -165,8 +164,6 @@ final class Rpc
      */
     final public function setTimeout(int $timeout = 30, int $timeoutMS = 0): self
     {
-        $timeout = (int)$timeout;
-        $timeoutMS = (int)$timeoutMS;
         if ($timeout > 0)
             $this->timeout = $timeout;
         if ($timeoutMS > 0)
@@ -182,7 +179,7 @@ final class Rpc
     final public function autoFollowLocation(?bool $enable = null): bool
     {
         if ($enable !== null) {
-            $this->followLocation = (boolean)$enable;
+            $this->followLocation = $enable;
             return $enable;
         } else
             return $this->followLocation;
@@ -360,10 +357,10 @@ final class Rpc
     /**
      * Add a curl option
      * @param int $optId
-     * @param $value
+     * @param int|float|bool|string|array $value
      * @return self
      */
-    final public function addOption(int $optId, int|float|bool|string|array $value)
+    final public function addOption(int $optId, int|float|bool|string|array $value): self
     {
         if (!empty($optId) && is_int($optId))
             $this->curlOpt[$optId] = $value;
@@ -454,7 +451,7 @@ final class Rpc
             if ($name === '*')
                 return $this->response['header'];
             else
-                return isset($this->response['header'][$name]) ? $this->response['header'][$name] : null;
+                return $this->response['header'][$name] ?? null;
         } else
             return null;
     }
@@ -470,7 +467,7 @@ final class Rpc
             if ($name === '*')
                 return $this->response['cookie'];
             else
-                return isset($this->response['cookie'][$name]) ? $this->response['cookie'][$name] : null;
+                return $this->response['cookie'][$name] ?? null;
         } else
             return null;
     }
@@ -584,7 +581,7 @@ final class Rpc
                 CURLOPT_HEADERFUNCTION => [$this, 'processResponseHeader'],
                 CURLOPT_HTTPHEADER => $this->processRequestHeader(),
                 CURLOPT_COOKIESESSION => FALSE,
-                CURLOPT_VERBOSE => $this->verboseDebug ? TRUE : FALSE,
+                CURLOPT_VERBOSE => $this->verboseDebug,
             ] + $this->curlOpt;
         if (($this->timeout * 1000) + $this->timeoutMS < 1000)
             $this->curlOpt[CURLOPT_NOSIGNAL] = TRUE;
@@ -638,7 +635,7 @@ final class Rpc
         $this->curlOpt = [
                 CURLOPT_COOKIEJAR => $tmpCookie,
                 CURLOPT_COOKIEFILE => $tmpCookie,
-                CURLOPT_VERBOSE => $this->verboseDebug ? TRUE : FALSE,
+                CURLOPT_VERBOSE => $this->verboseDebug,
             ] + $this->curlOpt;
 
         //Execute CURL Request & Getting Returning Response
@@ -774,9 +771,9 @@ final class Rpc
 
     /**
      * Process Request Basic Auth
-     * @param resource $cHandle
+     * @param CurlHandle $cHandle
      */
-    private function processRequestBasicAuth($cHandle)
+    private function processRequestBasicAuth(CurlHandle $cHandle)
     {
         if (is_array($this->basicAuth) && !empty($this->basicAuth) && isset($this->basicAuth['userpwd'])) {
             curl_setopt($cHandle, CURLOPT_USERPWD, $this->basicAuth['userpwd']);
@@ -804,9 +801,9 @@ final class Rpc
 
     /**
      * Process Request Cookie
-     * @param resource $cHandle
+     * @param CurlHandle $cHandle
      */
-    private function processRequestCookie($cHandle)
+    private function processRequestCookie(CurlHandle $cHandle)
     {
         $result = [];
         if (is_array($this->cookie) && !empty($this->cookie)) {
@@ -841,13 +838,13 @@ final class Rpc
     }
 
     /**
-     * @param $url
+     * @param string $url
      * @param string $method
-     * @param $content
+     * @param mixed $content
      * @param array $headers
      * @param array $cookies
      */
-    final public function prepare($url, $method = "GET", $content = null, array $headers = [], array $cookies = [])
+    final public function prepare(string $url, string $method = "GET", mixed $content = null, array $headers = [], array $cookies = [])
     {
         $this->setUrl($url);
         $this->setMethod($method);
@@ -1003,7 +1000,7 @@ final class Rpc
         $this->addCookies($cookies);
         $result = $this->_execute($fp);
         fclose($fp);
-        return !$result ? FALSE : TRUE;
+        return (bool)$result;
     }
 
     /**
@@ -1038,12 +1035,11 @@ final class Rpc
      * @param string $name
      * @return bool|resource
      */
-    final public function addNewThread(self $rpcThread, $name = ''): CurlHandle|bool
+    final public function addNewThread(self $rpcThread, string $name = ''): CurlHandle|bool
     {
         $handle = $rpcThread->createHandle(true);
         if ($handle === false)
             return false;
-        $name = (string)$name;
         if (!empty($name))
             $this->rpcThread[$name] = $rpcThread;
         else

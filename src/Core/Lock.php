@@ -14,11 +14,11 @@ namespace Npf\Core {
         /**
          * @var string
          */
-        private string $uniqueValue = '';
+        private string $uniqueValue;
         /**
          * @var string
          */
-        private string $prefix = '';
+        private string $prefix;
 
         /**
          * Consistent Lock Constructor
@@ -35,10 +35,10 @@ namespace Npf\Core {
 
         /**
          * 释放锁
-         * @param $allow
+         * @param bool $allow
          * @return void
          */
-        final public function allowSameInstance($allow = true): void
+        final public function allowSameInstance(bool $allow = true): void
         {
             if ($allow)
                 $this->uniqueValue = Common::getServerIp() . ":" . getmypid();
@@ -52,7 +52,7 @@ namespace Npf\Core {
          * @param bool $immediately
          * @return int|bool
          */
-        final public function release($name, $immediately = false): bool|int
+        final public function release($name, bool $immediately = false): bool|int
         {
             $name = "{$this->prefix}{$name}";
             $redis = $this->app->redis;
@@ -70,11 +70,11 @@ namespace Npf\Core {
          * @param int $ttl
          * @return bool|int
          */
-        final public function ttl(string $name, $ttl = 0): bool|int
+        final public function ttl(string $name, int $ttl = 0): bool|int
         {
             $name = "{$this->prefix}{$name}";
             $redis = $this->app->redis;
-            $value = (int)$redis->get($name);
+            $value = (string)$redis->get($name);
             if ($value === $this->uniqueValue) {
                 if (!empty($ttl) && $redis->expire($name, $ttl))
                     return $ttl;
@@ -87,7 +87,7 @@ namespace Npf\Core {
 
         /**
          * Wait Acquire Done
-         * @param $name
+         * @param string $name
          * @param int $ttl
          * @param int $maxWait
          * @return boolean
@@ -97,7 +97,7 @@ namespace Npf\Core {
             $start = -1 * (int)microtime(true);
             while (!$this->acquire($name, $ttl)) {
                 usleep(Common::randomInt(300000, 1000000));
-                if ((int)microtime(true) + $start > (int)$maxWait)
+                if ((int)microtime(true) + $start > $maxWait)
                     return false;
             }
             return true;
@@ -105,11 +105,11 @@ namespace Npf\Core {
 
         /**
          * Acquire Look
-         * @param $name
+         * @param string $name
          * @param int $ttl
          * @return bool|int
          */
-        final public function acquire(string $name, $ttl = 60): bool|int
+        final public function acquire(string $name, int $ttl = 60): bool|int
         {
             usleep(Common::randomInt(10000, 300000));
             $redis = $this->app->redis;
@@ -135,7 +135,7 @@ namespace Npf\Core {
             if (empty($ttl))
                 return (int)$redis->ttl($name);
             else
-                return $redis->expire($name, (int)$ttl);
+                return $redis->expire($name, $ttl);
         }
 
         /**
@@ -148,7 +148,6 @@ namespace Npf\Core {
         {
             $redis = $this->app->redis;
             $name = "{$this->prefix}{$name}";
-            $ttl = (int)$ttl;
             return $redis->expire($name, (int)$redis->ttl($name) + $ttl);
         }
     }

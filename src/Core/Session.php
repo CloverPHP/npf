@@ -72,7 +72,7 @@ namespace Npf\Core {
         public function cookieDomain(?string $domain = null): string
         {
             if (!empty($domain) && !$this->status)
-                $this->cookieParams['domain'] = (string)$domain;
+                $this->cookieParams['domain'] = $domain;
             return $this->cookieParams['domain'];
         }
 
@@ -83,7 +83,7 @@ namespace Npf\Core {
         public function cookieSecurity(?bool $security = null): bool
         {
             if (!empty($security) && !$this->status)
-                $this->cookieParams['security'] = (boolean)$security;
+                $this->cookieParams['security'] = $security;
             return $this->cookieParams['security'];
         }
 
@@ -94,7 +94,7 @@ namespace Npf\Core {
         public function cookieHttpOnly(?bool $httpOnly = null): bool
         {
             if (!empty($httpOnly) && !$this->status)
-                $this->cookieParams['httpOnly'] = (boolean)$httpOnly;
+                $this->cookieParams['httpOnly'] = $httpOnly;
             return $this->cookieParams['httpOnly'];
         }
 
@@ -127,7 +127,7 @@ namespace Npf\Core {
                 }
                 return !$parts ? $data : $default;
             } else
-                return isset($data[$name]) ? $data[$name] : $default;
+                return $data[$name] ?? $default;
         }
 
         /**
@@ -182,7 +182,7 @@ namespace Npf\Core {
         /**
          * Session Set Data
          * @param string $name
-         * @param $value
+         * @param mixed $value
          * @param string $separator
          * @return self
          * @throws InternalError

@@ -239,8 +239,6 @@ namespace Npf\Core\Db {
          * @param string|int|float|array|null $having
          * @return array
          * @throws DBQueryError
-         * @throws Exception
-         * @throws Exception
          */
         final public function all(string $table,
                                   string|array $column = "*",
@@ -278,7 +276,6 @@ namespace Npf\Core\Db {
          * @param string|int|float|array|null $having
          * @return bool|mysqli_result
          * @throws DBQueryError
-         * @throws Exception
          */
         final public function select(string $table,
                                      string|array $column = "*",
@@ -303,7 +300,7 @@ namespace Npf\Core\Db {
          * @param string|int|float|array|null $group
          * @param string|int|float|array|null $having
          * @return string
-         * @throws Exception
+         * @throws DBQueryError
          */
         final public function getSelectSQL(string $table,
                                            string|array $column = "*",
@@ -778,7 +775,7 @@ namespace Npf\Core\Db {
          * get limit sql
          * @param array|string|float|int|null $limit
          * @return string
-         * @throws Exception
+         * @throws DBQueryError
          */
         private function getLimit(array|string|float|int $limit = null): string
         {
@@ -815,8 +812,6 @@ namespace Npf\Core\Db {
          * @param string|array|null $having
          * @return array|bool
          * @throws DBQueryError
-         * @throws Exception
-         * @throws Exception
          */
         final public function column(string $table,
                                      string|array $column,
@@ -857,8 +852,6 @@ namespace Npf\Core\Db {
          * @param string|array|null $having
          * @return array|null
          * @throws DBQueryError
-         * @throws Exception
-         * @throws Exception
          */
         final public function one(string $table,
                                   string|array $column = "*",
@@ -884,8 +877,6 @@ namespace Npf\Core\Db {
          * @param int $seek
          * @return mixed
          * @throws DBQueryError
-         * @throws Exception
-         * @throws Exception
          */
         final public function cell(string $table,
                                    string|array $column,
@@ -909,8 +900,6 @@ namespace Npf\Core\Db {
          * @param string|array|null $having
          * @return bool|float
          * @throws DBQueryError
-         * @throws Exception
-         * @throws Exception
          */
         final public function sum(string $table,
                                   string|array $column,
@@ -979,7 +968,6 @@ namespace Npf\Core\Db {
          * @param bool $ignore
          * @return bool|mysqli_result
          * @throws DBQueryError
-         * @throws Exception
          */
         final public function action(string $table,
                                      array $colData,
@@ -1006,8 +994,6 @@ namespace Npf\Core\Db {
          * @param string|array|null $having
          * @return bool|int
          * @throws DBQueryError
-         * @throws Exception
-         * @throws Exception
          */
         final public function count(string $table,
                                     array|null $cond = null,
@@ -1036,7 +1022,6 @@ namespace Npf\Core\Db {
          * @param bool $ignore
          * @return mysqli_result|int|bool
          * @throws DBQueryError
-         * @throws Exception
          */
         final public function update(string $table,
                                      array $colDatas,
@@ -1163,7 +1148,6 @@ namespace Npf\Core\Db {
          * @param int|float|string|array|null $limit
          * @return bool|int|mysqli_result
          * @throws DBQueryError
-         * @throws Exception
          */
         final public function delete(string $table,
                                      array|null $cond = null,

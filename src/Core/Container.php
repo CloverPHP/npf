@@ -16,7 +16,7 @@ namespace Npf\Core {
          */
         private array $data = [];
 
-        private bool $lock = false;
+        private bool $lock;
 
         /**
          * Container constructor.
@@ -28,20 +28,8 @@ namespace Npf\Core {
                                     bool $lock = FALSE,
                                     private bool $__firstOnly = false)
         {
-            $this->__import($data);
-            $this->lock = (bool)$lock;
-        }
-
-        /**
-         * Import data from a object/array/json
-         * @param object|array|null $data
-         * @param bool $notExistsOnly
-         * @return Container
-         */
-        final public function import(object|array|null $data,
-                                     bool $notExistsOnly = false): self
-        {
-            return $this->__import($data, $notExistsOnly);
+            $this->import($data);
+            $this->lock = $lock;
         }
 
         /**
@@ -50,8 +38,8 @@ namespace Npf\Core {
          * @param bool $notExistsOnly
          * @return Container
          */
-        final public function __import(object|array|null $data,
-                                       $notExistsOnly = false): self
+        final public function import(object|array|null $data,
+                                       bool $notExistsOnly = false): self
         {
             if ($this->lock || NULL === $data)
                 return $this;
@@ -113,7 +101,7 @@ namespace Npf\Core {
 
         /**
          * Check the key is exist or not
-         * @param $name
+         * @param string $name
          * @return bool
          */
         public function __isset(string $name): bool
@@ -123,7 +111,7 @@ namespace Npf\Core {
 
         /**
          * Remove a key
-         * @param $name
+         * @param string $name
          */
         public function __unset(string $name): void
         {
@@ -186,12 +174,12 @@ namespace Npf\Core {
          */
         public function get(string $name, mixed $default = NULL): mixed
         {
-            return $name === '*' ? $this->data : (isset($this->data[$name]) ? $this->data[$name] : $default);
+            return $name === '*' ? $this->data : ($this->data[$name] ?? $default);
         }
 
         /**
          * Check array is assoc array or index array
-         * @param $arr
+         * @param array $arr
          * @return bool
          */
         #[Pure] private function __isAssoc(array $arr): bool
@@ -234,7 +222,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $data
+         * @param mixed $data
          * @param string $prefix
          * @param string $postfix
          * @param string $keyPrefix
@@ -258,7 +246,7 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @return Container
          */
         public function del(string $name): self
@@ -284,7 +272,7 @@ namespace Npf\Core {
          */
         protected function lock(bool $lock = true): self
         {
-            $this->lock = (boolean)$lock;
+            $this->lock = $lock;
             return $this;
         }
     }

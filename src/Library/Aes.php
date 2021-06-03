@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Npf\Library {
 
-    use Npf\Core\App;
-
     /**
      * Class Aes
      * @package Library\Crypt
@@ -23,15 +21,7 @@ namespace Npf\Library {
         private string $iv = '';
 
         /**
-         * Aes constructor.
-         * @param App $app
-         */
-        public function __construct(private App $app)
-        {
-        }
-
-        /**
-         * @param $key
+         * @param string $key
          * @param string $iv
          * @return self
          */
@@ -49,7 +39,7 @@ namespace Npf\Library {
         public function setIV(string $iv): self
         {
             if (!empty($iv) && is_string($iv)) {
-                if ((int)strlen($iv) !== (int)$this->ivLen())
+                if (strlen($iv) !== $this->ivLen())
                     $this->iv = substr(sha1($iv), -1 * $this->ivLen());
                 else
                     $this->iv = $iv;
@@ -103,7 +93,7 @@ namespace Npf\Library {
         {
             $raw = $this->decrypt($str);
             $data = json_decode($raw, true);
-            return $data ? $data : $raw;
+            return $data ?: $raw;
         }
 
         /**

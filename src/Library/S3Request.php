@@ -19,7 +19,7 @@ final class S3Request
      *
      * @access public
      */
-    public $fp;
+    public mixed $fp;
     /**
      * PUT file size
      *
@@ -37,17 +37,17 @@ final class S3Request
     /**
      * S3 request respone
      *
-     * @var object
+     * @var stdClass
      * @access public
      */
-    public object $response;
+    public stdClass $response;
     /**
      * Final object URI
      *
      * @var string
      * @access private
      */
-    private string $resource = '';
+    private string $resource;
     /**
      * Additional request parameters
      *
@@ -81,9 +81,9 @@ final class S3Request
      * @param string $endpoint AWS endpoint URI
      */
     function __construct(private string $verb,
-                         private $bucket = '',
-                         private $uri = '',
-                         private $endpoint = 's3.amazonaws.com')
+                         private string $bucket = '',
+                         private string $uri = '',
+                         private string $endpoint = 's3.amazonaws.com')
     {
         $this->uri = $this->uri !== '' ? '/' . str_replace('%2F', '/', rawurlencode($this->uri)) : '/';
         if ($this->bucket !== '') {
@@ -276,7 +276,7 @@ final class S3Request
             ];
         @curl_close($curl);
         // Parse body into XML
-        if ($this->response->error === false && isset($this->response->headers['type']) &&
+        if (!$this->response->error  && isset($this->response->headers['type']) &&
             $this->response->headers['type'] == 'application/xml' && isset($this->response->body)) {
             $this->response->body = simplexml_load_string($this->response->body);
             // Grab S3 errors
@@ -322,7 +322,7 @@ final class S3Request
      * @param string &$data Data
      * @return integer
      */
-    private function __responseWriteCallback(&$curl, string &$data): int
+    private function __responseWriteCallback(&$curl, string $data): int
     {
         if (in_array($this->response->code, [200, 206]) && $this->fp)
             return fwrite($this->fp, $data);
@@ -345,7 +345,7 @@ final class S3Request
             $this->response->code = (int)substr($data, 9, 3);
         else {
             $data = trim($data);
-            if (strpos($data, ': ') === false) return $strlen;
+            if (!str_contains($data, ': ')) return $strlen;
             list($header, $value) = explode(': ', $data, 2);
             if ($header == 'Last-Modified')
                 $this->response->headers['time'] = strtotime($value);

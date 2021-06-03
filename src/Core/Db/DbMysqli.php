@@ -131,17 +131,14 @@ namespace Npf\Core\Db {
             $this->persistent = (boolean)$this->config->get('persistent', false);
             $user = $this->config->get('user', 'root');
             $name = $this->config->get('name', '');
-            $this->app->ignoreError();
             if (!@mysqli_real_connect($this->resLink, $this->escapeStr($this->persistent ? "p:{$host}" :
                 $host), $this->escapeStr($user), $this->escapeStr($this->config->get('pass', '')), $this->escapeStr($name),
                 $port)
             ) {
                 $this->connected = false;
-                $this->app->noticeError();
                 throw new DBQueryError("DB Connect Failed : mysql://{$user}@{$host}:{$port}/{$name} " . $this->connectError());
             } else
                 $this->connected = true;
-            $this->app->noticeError();
             return $this->resLink;
         }
 
@@ -150,7 +147,7 @@ namespace Npf\Core\Db {
          * @param string $collate
          * @param int $timeOut
          */
-        private function init($characterSet = 'UTF8MB4', $collate = 'UTF8MB4_UNICODE_CI', $timeOut = 1000): void
+        private function init(string $characterSet = 'UTF8MB4', string $collate = 'UTF8MB4_UNICODE_CI', int $timeOut = 1000): void
         {
             $this->resLink = mysqli_init();
             $this->option(MYSQLI_OPT_CONNECT_TIMEOUT, $timeOut);

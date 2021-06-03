@@ -38,11 +38,10 @@ namespace Npf\Core {
 
         /**
          * Request constructor.
-         * @param App $app
          * @param array|NULL $data
          * @param bool $lock
          */
-        final public function __construct(private App &$app, array $data = NULL, bool $lock = FALSE)
+        final public function __construct(array $data = NULL, bool $lock = FALSE)
         {
             $this->initialRequest();
             if (!$data)
@@ -55,8 +54,8 @@ namespace Npf\Core {
          */
         private function initialRequest(): void
         {
-            $this->contentType = explode(";", isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : 'COMMAND', 2)[0];
-            $this->method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '__RUN__';
+            $this->contentType = explode(";", $_SERVER['CONTENT_TYPE'] ?? 'COMMAND', 2)[0];
+            $this->method = $_SERVER['REQUEST_METHOD'] ?? '__RUN__';
             if ($this->method !== '__RUN__') {
                 $this->initHeader();
                 $this->schema = $this->isSecure() ? 'https' : 'http';
@@ -221,7 +220,7 @@ namespace Npf\Core {
 
         /**
          * Set Uri
-         * @param $uri
+         * @param string $uri
          * @return self
          */
         final public function setUri(string $uri): self
@@ -241,7 +240,7 @@ namespace Npf\Core {
 
         /**
          * Set Uri
-         * @param $pathInfo
+         * @param string $pathInfo
          * @return self
          */
         final public function setPathInfo(string $pathInfo): self
@@ -270,7 +269,7 @@ namespace Npf\Core {
             if ($name === '*')
                 return $this->headers;
             else
-                return isset($this->headers[$name]) ? $this->headers[$name] : $default;
+                return $this->headers[$name] ?? $default;
         }
 
         /**
@@ -297,7 +296,7 @@ namespace Npf\Core {
                                          bool $notExists = false): self
         {
             if (!empty($requests) && is_array($requests))
-                $this->__import($requests, $notExists);
+                $this->import($requests, $notExists);
             if (!empty($headers) && is_array($headers))
                 foreach ($headers as $name => $value) {
                     $name = strtolower($name);

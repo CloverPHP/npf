@@ -20,13 +20,13 @@ namespace Npf\Core {
          * @param App $app
          * @throws InternalError
          */
-        public function __construct(private App $app)
+        public function __construct(App $app)
         {
             $this->setKey($app->config('General')->get('secret'));
         }
 
         /**
-         * @param $key
+         * @param string $key
          * @param string $iv
          */
         public function setKey(string $key, string $iv = '')
@@ -36,12 +36,12 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $iv
+         * @param string $iv
          */
         public function setIv(string $iv)
         {
             if (!empty($iv) && is_string($iv)) {
-                if ((int)strlen($iv) !== (int)$this->ivLen())
+                if (strlen($iv) !== $this->ivLen())
                     $this->iv = substr(sha1($iv), -1 * $this->ivLen());
                 else
                     $this->iv = $iv;
@@ -96,7 +96,7 @@ namespace Npf\Core {
         {
             $raw = $this->decrypt($str);
             $data = json_decode($raw, true);
-            return $data ? $data : $raw;
+            return $data ?: $raw;
         }
 
         /**
