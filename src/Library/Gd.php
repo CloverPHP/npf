@@ -28,9 +28,9 @@ class Gd
     /**
      * Initial Load and Initial Save and Check Resource
      * @param GdImage|null $img
-     * @return self
+     * @return void
      */
-    private function initImage(?GdImage $img = null): self
+    private function initImage(?GdImage $img = null): void
     {
         if ($img && $this->isGDResource($img)) {
             imagepalettetotruecolor($img);
@@ -41,7 +41,6 @@ class Gd
             $this->imgHeight = imagesy($img);
             $this->imgResource = $img;
         }
-        return $this;
     }
 
     /**
@@ -583,7 +582,7 @@ class Gd
      * @param int $start
      * @param int $stop
      * @param int $seg
-     * @return self
+     * @return void
      */
     private function smoothArcDrawSegment(int $cx,
                                           int $cy,
@@ -594,7 +593,7 @@ class Gd
                                           int $fillColor,
                                           int $start,
                                           int $stop,
-                                          int $seg): self
+                                          int $seg): void
     {
         $color = array_values(imagecolorsforindex($this->imgResource, $fillColor));
         $xStart = abs($a * cos($start));
@@ -775,7 +774,6 @@ class Gd
                 }
             }
         }
-        return $this;
     }
 
     /**
@@ -1352,7 +1350,7 @@ class Gd
      * @param string $font
      * @param string $text
      * @param int $blur
-     * @return self
+     * @return void
      */
     private function drawTtfText(int $size,
                                  int $angle,
@@ -1361,7 +1359,7 @@ class Gd
                                  int $color,
                                  string $font,
                                  string $text,
-                                 int $blur = 0): self
+                                 int $blur = 0): void
     {
         $angle = (double)$angle;
         if ($blur > 0) {
@@ -1378,7 +1376,6 @@ class Gd
             imagedestroy($textImg);
         } else
             imagettftext($this->imgResource, $size, $angle, $x, $y, $color, $font, $text);
-        return $this;
     }
 
     /**

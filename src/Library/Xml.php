@@ -20,20 +20,13 @@ final class Xml
     /**
      * Get the root XML node, if there isn't one, create it.
      *
-     * @param string $version
-     * @param string $encoding
-     * @param bool $standalone
-     * @param bool $format_output
      * @return DOMDocument
      */
-    private static function getXMLRoot(string $version = '1.0',
-                                       string $encoding = 'utf-8',
-                                       bool $standalone = false,
-                                       bool $format_output = true): DOMDocument
+    private static function getXMLRoot(): DOMDocument
     {
-        $xml = new DomDocument($version, $encoding);
-        $xml->xmlStandalone = $standalone;
-        $xml->formatOutput = $format_output;
+        $xml = new DomDocument('1.0', 'utf-8');
+        $xml->xmlStandalone = false;
+        $xml->formatOutput = true;
         return $xml;
     }
 

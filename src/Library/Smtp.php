@@ -130,12 +130,12 @@ class Smtp
      * @param string $detail
      * @param string $code
      * @param string $extend
-     * @return self
+     * @return void
      */
     private function setError(string $message,
                               string $detail = '',
                               string $code = '',
-                              string $extend = ''): self
+                              string $extend = ''): void
     {
         $this->error = [
             'error' => $message,
@@ -143,14 +143,13 @@ class Smtp
             'code' => $code,
             'extend' => $extend,
         ];
-        return $this;
     }
 
     /**
      * Disconnect from server if connected
-     * @return self
+     * @return void
      */
-    private function disconnect(): self
+    private function disconnect(): void
     {
         if (is_resource($this->socket)) {
             $this->logs[] = "Disconnected";
@@ -161,7 +160,6 @@ class Smtp
                 fclose($this->socket);
             $this->socket = null;
         }
-        return $this;
     }
 
     /**
