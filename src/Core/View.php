@@ -558,18 +558,14 @@ class View
                 if ($output) {
                     ignore_user_abort(true);
                     @set_time_limit(0);
-                    if (!$range['resume'])
-                        readfile($this->data);
-                    else {
-                        $file = fopen($this->data, 'rb');
-                        fseek($file, $range['start'], SEEK_SET);
-                        $bufferSize = 40096;
-                        $dataSize = $range['end'] - $range['start'];
-                        while (!(connection_aborted() || connection_status() == 1) && $dataSize > 0) {
-                            echo fread($file, $bufferSize);
-                            $dataSize -= $bufferSize;
-                            flush();
-                        }
+                    $file = fopen($this->data, 'rb');
+                    fseek($file, $range['start'], SEEK_SET);
+                    $bufferSize = 4096;
+                    $dataSize = $range['end'] - $range['start'];
+                    while (!(connection_aborted() || connection_status() == 1) && $dataSize > 0) {
+                        echo fread($file, $bufferSize);
+                        $dataSize -= $bufferSize;
+                        flush();
                     }
                 }
                 clearstatcache();
