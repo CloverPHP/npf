@@ -153,7 +153,7 @@ namespace Npf\Core {
          */
         public function timerRead($timer = 'default')
         {
-            return $this->elapsed() - (isset($this->timer[$timer]) ? $this->timer[$timer] : 0);
+            return round($this->elapsed() - (isset($this->timer[$timer]) ? $this->timer[$timer] : 0), 2);
         }
 
         /**
