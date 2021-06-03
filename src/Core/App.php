@@ -219,7 +219,7 @@ namespace Npf\Core {
                     $pass = true;
                 elseif (!is_array($allowCors))
                     $allowCors = [$allowCors];
-                if (in_array($origin, $allowCors, true))
+                if (!$pass && in_array($origin, $allowCors, true))
                     $pass = true;
                 if ($pass === true) {
                     $this->response->header('Access-Control-Allow-Origin', $origin, true);
