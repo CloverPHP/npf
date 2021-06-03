@@ -500,8 +500,6 @@ class View
      */
     private function renderStatic($statusCode = false)
     {
-        if (!empty($statusCode) && (int)$statusCode > 0)
-            http_response_code($statusCode);
         if (file_exists($this->data) && !is_dir($this->data)) {
             $routeConfig = $this->app->config('Route');
             $fileExt = pathinfo($this->data, PATHINFO_EXTENSION);
@@ -527,9 +525,11 @@ class View
             $method = $this->app->request->getMethod();
 
             $range = $this->staticRange($fileSize);
+            if ($range['resume'] && $statusCode === false)
+                $statusCode = 206;
             $baseFile = preg_match('/MSIE/', $this->app->request->header('user_agent')) ? str_replace('+', '%20', urlencode(basename($this->data))) : basename($this->data);
             $this->app->response->setHeaders([
-                "Content-Dispositon" => "attachment; filename={$baseFile}",
+                "Content-Dispositon" => "inline; filename={$baseFile}",
                 "Content-Type" => $contentType,
                 "Last-Modified" => gmdate("D, d M Y H:i:s", $lastModified) . " GMT",
                 "Cache-Control" => $cacheControl,
@@ -545,11 +545,11 @@ class View
             $headers = $this->app->response->getHeaders();
             foreach ($headers as $headerName => $headerContent)
                 header("{$headerName}: {$headerContent}");
-            if ($method === 'OPTIONS') {
-                $statusCode = 200;
+            if ($method === 'OPTIONS')
                 $output = false;
-            }
 
+            if ((int)$statusCode > 0)
+                http_response_code((int)$statusCode);
             if ($fileSize <= 0 && $statusCode === false)
                 http_response_code(204);
             if ((int)$requestLastModified === (int)$lastModified && $eTag === $requestETag && $this->cache && $statusCode === false)
@@ -585,7 +585,6 @@ class View
      */
     private function staticRange($fileSize)
     {
-        $downloadResume = $this->app->config('Route')->get('downloadResume', false);
         $range = explode('-', substr(preg_replace('/[\s|,].*/', '', $this->app->request->header('range')), 6));
         if (count($range) < 2)
             $range[1] = $fileSize;
@@ -599,7 +598,7 @@ class View
             $range['end'] = $fileSize - 1;
         }
         $range['length'] = $range['end'] - $range['start'] + 1;
-        if ($downloadResume)
+        if ($this->app->config('Route')->get('downloadResume', false))
             $this->app->response->header('Accenpt-Ranges', 'bytes');
         $range['resume'] = !((int)$range['start'] === 0 && (int)$range['end'] === $fileSize - 1);
         return $range;
@@ -665,11 +664,9 @@ class View
                     $this->app->response->header("ETag", $eTag, true);
                     $requestETag = !empty($this->app->request->header("if_none_match")) ? trim($this->app->request->header("if_none_match")) : false;
                     if ($requestETag === $eTag && $this->cache && $statusCode === false) {
-                        $this->app->response->header("X-Caching", "Yes", true);
                         $statusCode = 304;
                         $needOutput = false;
-                    }else
-                        $this->app->response->header("X-Caching", "No", true);
+                    }
                 }
 
                 //Send Http Status
