@@ -8,7 +8,7 @@ namespace Npf\Core {
     use Throwable;
 
     /**
-     * 调试处理类
+     * Profiler
      */
     final class Profiler
     {
@@ -18,16 +18,19 @@ namespace Npf\Core {
         private bool $enable = false;
 
         /**
-         *
          * @var float|string
          */
         private float|string $initTime;
 
         /**
-         *
          * @var array
          */
         private array $timeUsage = [];
+
+        /**
+         * @var array
+         */
+        private array $timer = [];
 
         /**
          *
@@ -39,10 +42,12 @@ namespace Npf\Core {
          * @var array
          */
         private array $debug = [];
+
         /**
          * @var Container
          */
         private Container $config;
+
         /**
          * @var int
          */
@@ -91,7 +96,7 @@ namespace Npf\Core {
         /**
          * @return array|bool
          */
-        #[ArrayShape(['memusage' => "string", 'cpuusage' => "false|string", 'timeusage' => "string[]", 'debug' => "array", 'query' => "array", 'uri' => "string", 'params' => "mixed", 'headers' => "mixed"])]
+        #[ArrayShape(['memusage' => "string", 'cpuusage' => "false|string", 'timeusage' => "array", 'uri' => "string", 'params' => "mixed", 'headers' => "mixed", 'debug' => "array", 'query' => "array", 'detail' => "array"])]
         public function fetch(): array|bool
         {
             $Uri = $this->app->request->getUri();
@@ -101,16 +106,16 @@ namespace Npf\Core {
                 'timeusage' => [
                     'total' => $this->elapsed() . "ms",
                 ],
-                'debug' => $this->debug,
-                'query' => $this->query,
                 'uri' => !empty($Uri) ? $Uri : '',
                 'params' => $this->app->request->get("*"),
                 'headers' => $this->app->request->header("*"),
+                'debug' => $this->debug,
+                'query' => $this->query,
             ];
 
-            foreach ($this->timeUsage as $key => $time) {
+            foreach ($this->timeUsage as $key => $time)
                 $profiler['timeusage'][$key] = round($time, 2) . 'ms';
-            }
+
             return $profiler;
         }
 
@@ -134,6 +139,28 @@ namespace Npf\Core {
             } else {
                 return round(microtime(true) - $this->initTime, 2);
             }
+        }
+
+        /**
+         * 计算程序执行时间(ms)
+         * @param string $timer
+         * @param bool $continue
+         * @return void
+         */
+        public function timerStart(string $timer = 'default', bool $continue = false)
+        {
+            if (!$continue || !isset($this->timer[$timer]))
+                $this->timer[$timer] = -1 * round(microtime(true) * 1000, 2);
+        }
+
+        /**
+         * 计算程序执行时间(ms)
+         * @param string $timer
+         * @return float
+         */
+        public function timerRead(string $timer = 'default'): float
+        {
+            return round(microtime(true) * 1000 + ($this->timer[$timer] ?? 0), 2);
         }
 
         /**d
@@ -205,24 +232,22 @@ namespace Npf\Core {
 
         /**
          * @param string $queryStr
-         * @param int|float $sTime
          * @param string $category
          * @return Profiler
          */
-        public function saveQuery(string $queryStr, int|float $sTime, string $category): self
+        public function saveQuery(string $queryStr, string $category): self
         {
             try {
                 if (!$this->enable || !$this->app->config('Profiler')->get("queryLog" . ucfirst($category), true))
                     return $this;
 
-                $nowMilliSec = $this->elapsed();
-                $milliSecond = round(($nowMilliSec + $sTime), 2);
+                $now = $this->elapsed();
+                $start = $this->timer[$category];
+                $elapsed = $this->timerRead($category);
                 if (!isset($this->timeUsage[$category]))
                     $this->timeUsage[$category] = 0;
-                $this->timeUsage[$category] += $milliSecond;
-                $elapsed = round($nowMilliSec, 2);
-                $start = round($nowMilliSec - $milliSecond, 2);
-                $this->query[] = str_pad("({$milliSecond}ms On {$start}-{$elapsed}ms)", 30, " ", STR_PAD_RIGHT) . str_pad($category,
+                $this->timeUsage[$category] += $elapsed;
+                $this->query[] = str_pad("({$elapsed}ms On {$start}-{$now}ms)", 30, " ", STR_PAD_RIGHT) . str_pad($category,
                         5, " ", STR_PAD_LEFT) . ": $queryStr";
                 if ($this->maxLog > 0 && count($this->query) > $this->maxLog)
                     $this->query = array_slice($this->query, -1 * $this->maxLog);

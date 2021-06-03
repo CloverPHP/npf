@@ -496,10 +496,10 @@ namespace Npf\Core\Redis {
             try {
                 $this->close();
                 $this->currentHost = "tcp://{$host}";
-                $sTime = -$this->app->profiler->elapsed();
+                $this->app->profiler->timerStart("redis");
                 $this->socket = $this->persistent ? @pfsockopen($this->currentHost, $port, $this->errorSocket['no'], $this->errorSocket['msg'],
                     $timeout) : @fsockopen($this->currentHost, $port, $this->errorSocket['no'], $this->errorSocket['msg'], $timeout);
-                $this->app->profiler->saveQuery("connect {$this->currentHost}", $sTime, "redis");
+                $this->app->profiler->saveQuery("connect {$this->currentHost}", "redis");
                 if (!$this->socket || !is_resource($this->socket)) {
                     $this->socket = null;
                     return false;
@@ -556,14 +556,14 @@ namespace Npf\Core\Redis {
          */
         public function select(int $db): array|bool|null|string
         {
-            $sTime = -$this->app->profiler->elapsed();
+            $this->app->profiler->timerStart("redis");
             if (!$this->connected)
                 return false;
             elseif ($this->__write(['SELECT', $db])) {
                 $result = $this->__read();
                 if ($result)
                     $this->db = $db;
-                $this->app->profiler->saveQuery("selectDb:{$db}", $sTime, "redis");
+                $this->app->profiler->saveQuery("selectDb: {$db}", "redis");
                 return $result;
             } else
                 return false;

@@ -533,8 +533,6 @@ class View
      */
     private function renderStatic(bool|int $statusCode = false): void
     {
-        if (!empty($statusCode) && (int)$statusCode > 0)
-            http_response_code($statusCode);
         if (file_exists($this->data) && !is_dir($this->data)) {
             $routeConfig = $this->app->config('Route');
             $fileExt = pathinfo($this->data, PATHINFO_EXTENSION);
@@ -560,9 +558,11 @@ class View
             $method = $this->app->request->getMethod();
 
             $range = $this->staticRange($fileSize);
+            if ($range['resume'] && $statusCode === false)
+                $statusCode = 206;
             $baseFile = preg_match('/MSIE/', $this->app->request->header('user_agent')) ? str_replace('+', '%20', urlencode(basename($this->data))) : basename($this->data);
             $this->app->response->setHeaders([
-                "Content-Dispositon" => "attachment; filename={$baseFile}",
+                "Content-Dispositon" => "inline; filename={$baseFile}",
                 "Content-Type" => $contentType,
                 "Last-Modified" => gmdate("D, d M Y H:i:s", $lastModified) . " GMT",
                 "Cache-Control" => $cacheControl,
@@ -578,11 +578,11 @@ class View
             $headers = $this->app->response->getHeaders();
             foreach ($headers as $headerName => $headerContent)
                 header("{$headerName}: {$headerContent}");
-            if ($method === 'OPTIONS') {
-                $statusCode = 200;
+            if ($method === 'OPTIONS')
                 $output = false;
-            }
 
+            if ((int)$statusCode > 0)
+                http_response_code((int)$statusCode);
             if ($fileSize <= 0 && $statusCode === false)
                 http_response_code(204);
             if ((int)$requestLastModified === (int)$lastModified && $eTag === $requestETag && $this->cache && $statusCode === false)
@@ -590,19 +590,15 @@ class View
             else {
                 if ($output) {
                     ignore_user_abort(true);
-                    @set_time_limit(0);
-                    if (!$range['resume'])
-                        readfile($this->data);
-                    else {
-                        $file = fopen($this->data, 'rb');
-                        fseek($file, $range['start'], SEEK_SET);
-                        $bufferSize = 40096;
-                        $dataSize = $range['end'] - $range['start'];
-                        while (!(connection_aborted() || connection_status() == 1) && $dataSize > 0) {
-                            echo fread($file, $bufferSize);
-                            $dataSize -= $bufferSize;
-                            flush();
-                        }
+                    set_time_limit(0);
+                    $file = fopen($this->data, 'rb');
+                    fseek($file, $range['start'], SEEK_SET);
+                    $bufferSize = 4096;
+                    $dataSize = $range['end'] - $range['start'];
+                    while (!(connection_aborted() || connection_status() == 1) && $dataSize > 0) {
+                        echo fread($file, $bufferSize);
+                        $dataSize -= $bufferSize;
+                        flush();
                     }
                 }
                 clearstatcache();
