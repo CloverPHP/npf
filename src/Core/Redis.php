@@ -219,13 +219,12 @@ namespace Npf\Core {
         final public function __destruct()
         {
             if (!empty($this->redis)) {
-                $profiler = &$this->app->profiler;
-                $sTime = -$profiler->elapsed();
+                $this->app->profiler->timerStart("redis");
                 foreach ($this->redis as $redis)
                     if (method_exists($redis, '__destruct'))
                         $redis->__destruct();
                 $this->redis = [];
-                $profiler->saveQuery("close", $sTime, "redis");
+                $this->app->profiler->saveQuery("close", "redis");
             }
         }
 
@@ -304,8 +303,7 @@ namespace Npf\Core {
          */
         public function __call($name, $args)
         {
-            $profiler = &$this->app->profiler;
-            $sTime = -$profiler->elapsed();
+            $this->app->profiler->timerStart("redis");
             if (in_array($name, $this->restrictFnc, true))
                 return false;
             $key = '';
@@ -321,7 +319,7 @@ namespace Npf\Core {
             $rptArgs = '';
             foreach ($args as $arg)
                 $rptArgs .= (" " . (is_string($arg) || is_numeric($arg) ? $arg : gettype($arg)));
-            $profiler->saveQuery(sprintf("%s %s", $name, $rptArgs), $sTime, "redis");
+            $this->app->profiler->saveQuery(sprintf("%s %s", $name, $rptArgs), "redis");
             return $ret;
         }
 

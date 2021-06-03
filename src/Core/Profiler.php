@@ -41,6 +41,11 @@ namespace Npf\Core {
         private $debug = [];
 
         /**
+         * @var array
+         */
+        private $timer = [];
+
+        /**
          * @var Container
          */
         private $config;
@@ -121,17 +126,37 @@ namespace Npf\Core {
         }
 
         /**
-         * 计算程序执行时间(ms)
-         * @param bool $milliSec
+         * elasped time second until now
+         * @param bool $mili
          * @return float
          */
-        public function elapsed($milliSec = true)
+        public function elapsed($mili = true)
         {
-            if ($milliSec) {
-                return round(((microtime(true)) - $this->initTime) * 1000, 2);
-            } else {
-                return round(microtime(true) - $this->initTime, 2);
-            }
+            if ($mili)
+                return round(microtime(true) * 1000 - $this->initTime, 2);
+            else
+                return floor(microtime(true) - $this->initTime / 1000);
+        }
+
+        /**
+         * 计算程序执行时间(ms)
+         * @param string $timer
+         * @return void
+         */
+        public function timerStart($timer = 'default', $continue = false)
+        {
+            if (!$continue || !isset($this->timer[$timer]))
+                $this->timer[$timer] = -1 * round(microtime(true) * 1000, 2);
+        }
+
+        /**
+         * 计算程序执行时间(ms)
+         * @param string $timer
+         * @return float
+         */
+        public function timerRead($timer = 'default')
+        {
+            return round(microtime(true) * 1000 + (isset($this->timer[$timer]) ? $this->timer[$timer] : 0), 2);
         }
 
         /**
@@ -209,23 +234,21 @@ namespace Npf\Core {
 
         /**
          * @param $queryStr
-         * @param $sTime
          * @param $category
          */
-        public function saveQuery($queryStr, $sTime, $category)
+        public function saveQuery($queryStr, $category)
         {
             try {
                 if (!$this->enable || !$this->app->config('Profiler')->get("queryLog" . ucfirst($category), true))
                     return;
 
-                $nowMilliSec = $this->elapsed();
-                $milliSecond = round(($nowMilliSec + $sTime), 2);
+                $now = $this->elapsed();
+                $start = $this->timer[$category];
+                $elapsed = $this->timerRead($category);
                 if (!isset($this->timeUsage[$category]))
                     $this->timeUsage[$category] = 0;
-                $this->timeUsage[$category] += $milliSecond;
-                $elapsed = round($nowMilliSec, 2);
-                $start = round($nowMilliSec - $milliSecond, 2);
-                $this->query[] = str_pad("({$milliSecond}ms On {$start}-{$elapsed}ms)", 30, " ", STR_PAD_RIGHT) . str_pad($category,
+                $this->timeUsage[$category] += $elapsed;
+                $this->query[] = str_pad("({$elapsed}ms On {$start}-{$now}ms)", 30, " ", STR_PAD_RIGHT) . str_pad($category,
                         5, " ", STR_PAD_LEFT) . ": $queryStr";
                 if ($this->maxLog > 0 && count($this->query) > $this->maxLog)
                     $this->query = array_slice($this->query, -1 * $this->maxLog);

@@ -90,9 +90,8 @@ namespace Npf\Core\Db {
         {
             if (!$this->connected)
                 return false;
-            $profiler = &$this->app->profiler;
             if ($this->isResLink($this->resLink)) {
-                $sTime = -$profiler->elapsed();
+                $this->app->profiler->timerStart("db");
                 if (!$this->persistent) {
                     $threadId = @mysqli_thread_id($this->resLink);
                     if ($threadId > 0) {
@@ -100,7 +99,7 @@ namespace Npf\Core\Db {
                     }
                 }
                 @mysqli_close($this->resLink);
-                $profiler->saveQuery("close", $sTime, "db");
+                $this->app->profiler->saveQuery("close", "db");
                 $this->resLink = null;
                 $this->connected = false;
                 return true;
@@ -355,8 +354,7 @@ namespace Npf\Core\Db {
         {
             if (!$this->connected)
                 return false;
-            $profiler = $this->app->profiler;
-            $sTime = -$profiler->elapsed();
+            $this->app->profiler->timerStart("db");
             $result = mysqli_real_query($this->resLink, $queryStr);
             $this->resResult = $this->queryMode === 'use' ? mysqli_use_result($this->resLink) : mysqli_store_result($this->resLink);
             $this->resResult = (mysqli_field_count($this->resLink)) ? $this->resResult : $result;
@@ -365,11 +363,10 @@ namespace Npf\Core\Db {
             if ($errNo !== 0) {
                 $errorMsg = mysqli_error($this->resLink);
                 $queryStr = "Query error: {$errorMsg} - {$queryStr}";
-                $profiler->saveQuery($queryStr, $sTime, "db");
+                $this->app->profiler->saveQuery($queryStr, "db");
                 throw new DBQueryError($queryStr, $errNo);
-            } else {
-                $profiler->saveQuery($queryStr, $sTime, "db");
-            }
+            } else
+                $this->app->profiler->saveQuery($queryStr, "db");
             $this->lastQuery = $queryStr;
             return $this->resResult;
         }
