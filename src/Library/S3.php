@@ -444,7 +444,7 @@ class S3
                         $results[(string)$c->Prefix] = ['prefix' => (string)$c->Prefix];
                 if (isset($response->body, $response->body->NextMarker))
                     $nextMarker = (string)$response->body->NextMarker;
-            } while ($response && (string)$response->body->IsTruncated == 'true');
+            } while ($response != false && (string)$response->body->IsTruncated == 'true');
         return $results;
     }
 
@@ -730,7 +730,7 @@ class S3
         if (!$rest->response->error) $rest->getResponse();
         if (!$rest->response->error && $rest->response->code !== 200)
             $rest->response->error = ['code' => $rest->response->code, 'message' => 'Unexpected HTTP status'];
-        if (!$rest->response->error) {
+        if ($rest->response->error) {
             self::__triggerError(sprintf("S3::getObject({$bucket}, {$uri}): [%s] %s",
                 $rest->response->error['code'], $rest->response->error['message']));
             return false;
