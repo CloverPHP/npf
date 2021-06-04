@@ -347,9 +347,9 @@ class S3
     {
         $rest = new S3Request('GET', '', '', self::$endpoint);
         $rest = $rest->getResponse();
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::listBuckets(): [%s] %s", $rest->error['code'],
                 $rest->error['message']));
             return false;
@@ -472,9 +472,9 @@ class S3
             $rest->setHeader('Content-Type', 'application/xml');
         }
         $rest = $rest->getResponse();
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::putBucket({$bucket}, {$acl}, {$location}): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -493,9 +493,9 @@ class S3
     {
         $rest = new S3Request('DELETE', $bucket, '', self::$endpoint);
         $rest = $rest->getResponse();
-        if ($rest->error === false && $rest->code !== 204)
+        if (!$rest->error && $rest->code !== 204)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::deleteBucket({$bucket}): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -617,7 +617,7 @@ class S3
             $rest->response->error = ['code' => 0, 'message' => 'Missing input parameters'];
         if (!$rest->response->error && $rest->response->code !== 200)
             $rest->response->error = ['code' => $rest->response->code, 'message' => 'Unexpected HTTP status'];
-        if (!$rest->response->error) {
+        if ($rest->response->error) {
             self::__triggerError(sprintf("S3::putObject(): [%s] %s",
                 $rest->response->error['code'], $rest->response->error['message']));
             return false;
@@ -751,9 +751,9 @@ class S3
     {
         $rest = new S3Request('HEAD', $bucket, $uri, self::$endpoint);
         $rest = $rest->getResponse();
-        if ($rest->error === false && ($rest->code !== 200 && $rest->code !== 404))
+        if (!$rest->error && ($rest->code !== 200 && $rest->code !== 404))
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::getObjectInfo({$bucket}, {$uri}): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -789,9 +789,9 @@ class S3
         if (sizeof($requestHeaders) > 0 || sizeof($metaHeaders) > 0)
             $rest->setAmzHeader('x-amz-metadata-directive', 'REPLACE');
         $rest = $rest->getResponse();
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::copyObject({$srcBucket}, {$srcUri}, {$bucket}, {$uri}): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -829,9 +829,9 @@ class S3
         $rest->size = strlen($rest->data);
         $rest->setHeader('Content-Type', 'application/xml');
         $rest = $rest->getResponse();
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::setBucketRedirect({$bucket}, {$location}): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -854,9 +854,9 @@ class S3
         $rest = new S3Request('GET', $bucket, '', self::$endpoint);
         $rest->setParameter('logging', null);
         $rest = $rest->getResponse();
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::getBucketLogging({$bucket}): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -927,9 +927,9 @@ class S3
         $rest->size = strlen($rest->data);
         $rest->setHeader('Content-Type', 'application/xml');
         $rest = $rest->getResponse();
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::setBucketLogging({$bucket}, {$targetBucket}): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -950,9 +950,9 @@ class S3
         $rest = new S3Request('GET', $bucket, $uri, self::$endpoint);
         $rest->setParameter('acl', null);
         $rest = $rest->getResponse();
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::getAccessControlPolicy({$bucket}, {$uri}): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -1037,9 +1037,9 @@ class S3
         $rest->size = strlen($rest->data);
         $rest->setHeader('Content-Type', 'application/xml');
         $rest = $rest->getResponse();
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::setAccessControlPolicy({$bucket}, {$uri}): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -1059,9 +1059,9 @@ class S3
         $rest = new S3Request('GET', $bucket, '', self::$endpoint);
         $rest->setParameter('location', null);
         $rest = $rest->getResponse();
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::getBucketLocation({$bucket}): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -1081,9 +1081,9 @@ class S3
     {
         $rest = new S3Request('DELETE', $bucket, $uri, self::$endpoint);
         $rest = $rest->getResponse();
-        if ($rest->error === false && $rest->code !== 204)
+        if (!$rest->error && $rest->code !== 204)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::deleteObject(): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -1277,9 +1277,9 @@ class S3
         $rest->setHeader('Content-Type', 'application/xml');
         $rest = self::__getCloudFrontResponse($rest);
         self::$useSSL = $useSSL;
-        if ($rest->error === false && $rest->code !== 201)
+        if (!$rest->error && $rest->code !== 201)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::createDistribution({$bucket}, " . (int)$enabled . ", [], '$comment'): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -1423,9 +1423,9 @@ class S3
         $rest = new S3Request('GET', '', '2010-11-01/distribution/' . $distributionId, 'cloudfront.amazonaws.com');
         $rest = self::__getCloudFrontResponse($rest);
         self::$useSSL = $useSSL;
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::getDistribution($distributionId): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -1469,9 +1469,9 @@ class S3
         $rest->setHeader('If-Match', $dist['hash']);
         $rest = self::__getCloudFrontResponse($rest);
         self::$useSSL = $useSSL;
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::updateDistribution({$dist['id']}): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -1502,9 +1502,9 @@ class S3
         $rest->setHeader('If-Match', $dist['hash']);
         $rest = self::__getCloudFrontResponse($rest);
         self::$useSSL = $useSSL;
-        if ($rest->error === false && $rest->code !== 204)
+        if (!$rest->error && $rest->code !== 204)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::deleteDistribution({$dist['id']}): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -1530,9 +1530,9 @@ class S3
         $rest = new S3Request('GET', '', '2010-11-01/distribution', 'cloudfront.amazonaws.com');
         $rest = self::__getCloudFrontResponse($rest);
         self::$useSSL = $useSSL;
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             self::__triggerError(sprintf("S3::listDistributions(): [%s] %s",
                 $rest->error['code'], $rest->error['message']));
             return false;
@@ -1561,9 +1561,9 @@ class S3
         self::$useSSL = true; // CloudFront requires SSL
         $rest = new S3Request('GET', '', '2010-11-01/origin-access-identity/cloudfront', 'cloudfront.amazonaws.com');
         $rest = self::__getCloudFrontResponse($rest);
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             trigger_error(sprintf("S3::listOriginAccessIdentities(): [%s] %s",
                 $rest->error['code'], $rest->error['message']), E_USER_WARNING);
             return false;
@@ -1602,9 +1602,9 @@ class S3
         $rest->size = strlen($rest->data);
         $rest = self::__getCloudFrontResponse($rest);
         self::$useSSL = $useSSL;
-        if ($rest->error === false && $rest->code !== 201)
+        if (!$rest->error && $rest->code !== 201)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             trigger_error(sprintf("S3::invalidate('{$distributionId}',{$paths}): [%s] %s",
                 $rest->error['code'], $rest->error['message']), E_USER_WARNING);
             return false;
@@ -1661,9 +1661,9 @@ class S3
         $rest = new S3Request('GET', '', '2010-11-01/distribution/' . $distributionId . '/invalidation', 'cloudfront.amazonaws.com');
         $rest = self::__getCloudFrontResponse($rest);
         self::$useSSL = $useSSL;
-        if ($rest->error === false && $rest->code !== 200)
+        if (!$rest->error && $rest->code !== 200)
             $rest->error = ['code' => $rest->code, 'message' => 'Unexpected HTTP status'];
-        if ($rest->error !== false) {
+        if ($rest->error) {
             trigger_error(sprintf("S3::getDistributionInvalidationList('{$distributionId}'): [%s] %s",
                 $rest->error['code'], $rest->error['message']), E_USER_WARNING);
             return false;
