@@ -583,24 +583,30 @@ class View
     private function staticRange($fileSize)
     {
         $fileSize = (int)$fileSize;
-        $range = explode('-', substr(preg_replace('/[\s|,].*/', '', $this->app->request->header('range')), 6));
-        if (count($range) < 2)
-            $range[1] = $fileSize;
-        $range = array_combine(['start', 'end'], $range);
-        $range['start'] = (int)$range['start'];
-        $range['end'] = (int)$range['end'];
-        if ($range['start'] < 0)
-            $range['start'] = 0;
-        if (empty($range['end']) || $range['end'] > $fileSize - 1)
-            $range['end'] = $fileSize - 1;
-        if ($range['start'] >= $range['end']) {
-            $range['start'] = 0;
-            $range['end'] = $fileSize - 1;
-        }
-        $range['length'] = $range['end'] - $range['start'] + 1;
-        if ($this->app->config('Route')->get('downloadResume', false))
+        $downloadResume = $this->app->config('Route')->get('downloadResume', false);
+        if ($downloadResume) {
             $this->app->response->header('Accenpt-Ranges', 'bytes');
-        $range['resume'] = !($range['start'] === 0 && $range['end'] === $fileSize - 1);
+            $range = explode('-', substr(preg_replace('/[\s|,].*/', '', $this->app->request->header('range')), 6));
+            if (count($range) < 2)
+                $range[1] = $fileSize;
+            $range = array_combine(['start', 'end'], $range);
+            if ((int)$range['start'] < 0)
+                $range['start'] = 0;
+            if (empty($range['end']) || (int)$range['end'] > $fileSize - 1)
+                $range['end'] = $fileSize - 1;
+            if ($range['start'] >= $range['end']) {
+                $range['start'] = 0;
+                $range['end'] = $fileSize - 1;
+            }
+            $range['length'] = $range['end'] - $range['start'] + 1;
+            $range['resume'] = !((int)$range['start'] === 0 && (int)$range['end'] === $fileSize - 1);
+        } else
+            $range = [
+                'start' => 0,
+                'end' => $fileSize - 1,
+                'length' => $fileSize,
+                'resume' => false,
+            ];
         return $range;
     }
 
