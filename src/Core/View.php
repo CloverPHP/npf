@@ -512,11 +512,9 @@ class View
             if (isset($staticFileContentType[$fileExt]))
                 $contentType = $staticFileContentType[$fileExt];
             else {
-                $contentType = $routeConfig->get('defaultStaticFileContentType', 'auto');
-                if ($contentType === 'auto') {
-                    $fifo = new finfo(FILEINFO_MIME_TYPE);
-                    $contentType = $fifo->file($this->data);
-                }
+                $contentType = mime_content_type($this->data);
+                if (!$contentType)
+                    $contentType = $routeConfig->get('defaultStaticFileContentType', 'application/octet-stream');
             }
             $expireTime = (int)$routeConfig->get('staticFileCacheTime', 0);
             if ($expireTime <= 0)
