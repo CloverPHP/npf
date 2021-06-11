@@ -157,8 +157,8 @@ namespace Npf\Core {
                     $this->appPath = explode("\\", $appFile);
                     break;
                 }
-                $lowerCase = substr($lowerCase, 0, strrpos($lowerCase, "\\", -1)) . "\\";
-            } while (!empty($lowerCase));
+                $lowerCase = substr($lowerCase, 0, strrpos($lowerCase, "\\", -2)) . "\\";
+            } while ($lowerCase != '\\');
         }
 
         /**
