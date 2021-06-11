@@ -306,9 +306,12 @@ namespace Npf\Core {
         {
             $appPath = $this->getRootPath() . "App/";
             $this->searchFile($appPath, "*.php", $results, true);
-            foreach ($results as &$result)
+            foreach ($results as $key => &$result) {
+                if (str_ends_with($result, "Router.php"))
+                    unset($results[$key]);
                 $result = str_replace(["\\", $appPath, "/", ".php"], ["/", "", "\\", ""], $result);
-            return $results;
+            }
+            return array_values($results);
         }
 
         /**
