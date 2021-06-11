@@ -305,9 +305,9 @@ namespace Npf\Core {
         public function genRouteTable()
         {
             $appPath = $this->getRootPath() . "App/";
-            $this->searchFile($appPath, "*.php", $results);
+            $this->searchFile($appPath, "*.php", $results, true);
             foreach ($results as &$result)
-                $result = str_replace(["\\", $appPath, ".php"], ["/", "", ""], $result);
+                $result = str_replace(["\\", $appPath, "/", ".php"], ["/", "", "\\", ""], $result);
             return $results;
         }
 
@@ -317,7 +317,7 @@ namespace Npf\Core {
          * @param array|null $results
          * @param bool $statCache
          */
-        public function searchFile($path, $search = "*", &$results = [], $statCache = false)
+        public function searchFile($path, $search = "*", &$results = [], $includePath = false, $statCache = false)
         {
             if (!is_array($results))
                 $results = [];
@@ -327,8 +327,11 @@ namespace Npf\Core {
                     $scanValue = realpath($path . DIRECTORY_SEPARATOR . $value);
                     if (!is_dir($scanValue) && fnmatch($search, $scanValue, FNM_CASEFOLD))
                         $results[] = $scanValue;
-                    else if ($value != "." && $value != "..")
-                        $this->searchFile($scanValue, $search, $results, true);
+                    else if ($value != "." && $value != "..") {
+                        if ($includePath)
+                            $results[] = "{$scanValue}/";
+                        $this->searchFile($scanValue, $search, $results, $includePath, true);
+                    }
                 }
             }
             if (!$statCache)

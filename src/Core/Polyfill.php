@@ -25,7 +25,6 @@ use function is_resource;
 use function is_string;
 use function ord;
 use function strlen;
-use const DEBUG_BACKTRACE_IGNORE_ARGS;
 use const DIRECTORY_SEPARATOR;
 use const E_USER_WARNING;
 use const FILTER_VALIDATE_BOOLEAN;
@@ -44,7 +43,6 @@ use const PREG_SPLIT_NO_EMPTY;
 
 class Polyfill
 {
-    private static $hashMask;
 
     private static $startAt = 1533462603;
 
@@ -134,16 +132,6 @@ class Polyfill
                 function utf8_decode($string)
                 {
                     return $this->utf8Decode($string);
-                }
-            }
-            if (!function_exists('spl_object_id')) {
-                /**
-                 * @param object $object
-                 * @return int|string|void
-                 */
-                function spl_object_id($object)
-                {
-                    return $this->splObjectId($object);
                 }
             }
             if (!function_exists('mb_ord')) {
@@ -505,21 +493,6 @@ class Polyfill
     }
 
     /**
-     * @param $object
-     * @return int|string|void
-     */
-    public static function splObjectId($object)
-    {
-        if (null === self::$hashMask)
-            self::initHashMask();
-        if (null === $hash = spl_object_hash($object))
-            return;
-
-        // On 32-bit systems, PHP_INT_SIZE is 4,
-        return self::$hashMask ^ hexdec(substr($hash, 16 - (PHP_INT_SIZE * 2 - 1), (PHP_INT_SIZE * 2 - 1)));
-    }
-
-    /**
      * @param $stream
      * @param null $enable
      * @return bool
@@ -562,28 +535,6 @@ class Polyfill
             return $stat && 0020000 === ($stat['mode'] & 0170000);
         }
         return function_exists('posix_isatty') && @posix_isatty($stream);
-    }
-
-    public static function initHashMask()
-    {
-        $obj = (object)[];
-        self::$hashMask = -1;
-
-        // check if we are nested in an output buffering handler to prevent a fatal error with ob_start() below
-        $obFuncs = ['ob_clean', 'ob_end_clean', 'ob_flush', 'ob_end_flush', 'ob_get_contents', 'ob_get_flush'];
-        foreach (debug_backtrace(PHP_VERSION_ID >= 50400 ? DEBUG_BACKTRACE_IGNORE_ARGS : false) as $frame) {
-            if (isset($frame['function'][0]) && !isset($frame['class']) && 'o' === $frame['function'][0] && in_array($frame['function'], $obFuncs)) {
-                $frame['line'] = 0;
-                break;
-            }
-        }
-        if (!empty($frame['line'])) {
-            ob_start();
-            debug_zval_dump($obj);
-            self::$hashMask = (int)substr(ob_get_clean(), 17);
-        }
-
-        self::$hashMask ^= hexdec(substr(spl_object_hash($obj), 16 - (PHP_INT_SIZE * 2 - 1), (PHP_INT_SIZE * 2 - 1)));
     }
 
     /**
