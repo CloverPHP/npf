@@ -58,6 +58,8 @@ namespace Npf\Core {
          */
         private bool $isStatic = false;
 
+        private ?array $routeTable = null;
+
         /**
          * Route constructor.
          * @param App $app
@@ -109,6 +111,7 @@ namespace Npf\Core {
             }
 
             $this->appFile = implode("\\", $this->appPath);
+            $this->routeTableMap();
             if (count($this->appPath) > 1 && $addHomeDirectory && $appRootPath === $this->homeDirectory) {
                 if (
                     !$this->isExistsAppClass($this->appFile) &&
@@ -117,6 +120,7 @@ namespace Npf\Core {
                 ) {
                     array_shift($this->appPath);
                     $this->appFile = implode("\\", $this->appPath);
+                    $this->routeTableMap();
                 }
             }
             if (
@@ -125,6 +129,26 @@ namespace Npf\Core {
                 !$this->isExistsAppClass($this->appFile)
             )
                 $this->isStatic = true;
+        }
+
+        /**
+         * @param bool $classPath
+         */
+        private function routeTableMap(bool $classPath = false)
+        {
+            if ($this->routeTable === null) {
+                $this->routeTable = [];
+                $routeTableFile = $this->app->getRootPath() . "route.table";
+                if (is_file($routeTableFile) && ($routeTable = file($routeTableFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)))
+                    $this->routeTable = array_combine(array_map('strtolower', $routeTable), $routeTable);
+            }
+            $lowerStrPathInfo = strtolower(str_replace("\\", "/", $this->appFile));
+            if (!empty($this->routeTable[$lowerStrPathInfo])) {
+                $this->appPath = explode("/", $this->routeTable[$lowerStrPathInfo]);
+                $this->appFile = $this->routeTable[$lowerStrPathInfo];
+                if ($classPath)
+                    $this->appFile = str_replace("/", "\\", $this->appFile);
+            }
         }
 
         /**
@@ -141,15 +165,16 @@ namespace Npf\Core {
                 $routeClass = implode("\\", $routePath) . "\\Router";
                 if (class_exists($routeClass)) {
                     $routerObj = new $routeClass($this->app, $this);
+                    if (!empty($routerObj) && method_exists($routerObj, '__invoke')) {
+                        //Execute Route Class for Sub App Prepare parameter
+                        $params = $routerObj->__invoke($this->app);
+                        unset($routerObj);
+                    }
                     break;
                 }
             } while (empty($routPath));
-            if (!empty($routerObj) && method_exists($routerObj, '__invoke')) {
-                //Execute Route Class for Sub App Prepare parameter
-                $params = $routerObj->__invoke($this->app);
-                unset($routerObj);
-            }
 
+            $this->routeTableMap();
             $this->app->request->setUri($this->appFile);
 
             //Route Static File

@@ -303,6 +303,44 @@ namespace Npf\Core {
         }
 
         /**
+         * @return array
+         */
+        public function genRouteTable(): array
+        {
+            $appPath = $this->getRootPath() . "App/";
+            $this->searchFile($appPath, "*.php", $results);
+            foreach ($results as &$result)
+                $result = str_replace(["\\", $appPath, ".php"], ["/", "", ""], $result);
+            return $results;
+        }
+
+        /**
+         * @param string $path
+         * @param string $search
+         * @param array|null $results
+         * @param bool $statCache
+         * @return array|null
+         */
+        public function searchFile(string $path, string $search = "*", ?array &$results = [], bool $statCache = false): ?array
+        {
+            if (!is_array($results))
+                $results = [];
+            if (is_dir($path)) {
+                $files = scandir($path);
+                foreach ($files as $value) {
+                    $scanValue = realpath($path . DIRECTORY_SEPARATOR . $value);
+                    if (!is_dir($scanValue) && fnmatch($search, $scanValue, FNM_CASEFOLD))
+                        $results[] = $scanValue;
+                    else if ($value != "." && $value != "..")
+                        $this->searchFile($scanValue, $search, $results, true);
+                }
+            }
+            if (!$statCache)
+                clearstatcache();
+            return $results;
+        }
+
+        /**
          * @param string $modelName
          * @param array $params
          * @return mixed

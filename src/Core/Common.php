@@ -109,17 +109,14 @@ namespace Npf\Core {
         /**
          * @param int $min
          * @param int $max
-         * @return int
+         * @return int|false
          */
-        public static function randomInt(int $min, int $max): int
+        public static function randomInt(int $min, int $max): bool|int
         {
             try {
-                if (function_exists('random_int'))
-                    return random_int($min, $max);
-                else
-                    return mt_rand($min, $max);
+                return random_int($min, $max);
             } catch (\Exception) {
-                return mt_rand($min, $max);
+                return false;
             }
         }
 
