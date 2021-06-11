@@ -44,9 +44,9 @@ use const PREG_SPLIT_NO_EMPTY;
 
 class Polyfill
 {
-    private $hashMask;
+    private static $hashMask;
 
-    private $startAt = 1533462603;
+    private static $startAt = 1533462603;
 
     /**
      * Polyfill constructor.
@@ -54,25 +54,22 @@ class Polyfill
     final public function __construct()
     {
         /********************************************************
-         * PHP 7.0 Polyfill
+         * General Polyfill (Incase Unavaliable)
          ********************************************************/
-        if (PHP_VERSION_ID < 70000) {
-
-            if (!function_exists('fnmatch')) {
-                define('FNM_PATHNAME', 1);
-                define('FNM_NOESCAPE', 2);
-                define('FNM_PERIOD', 4);
-                define('FNM_CASEFOLD', 16);
-                /**
-                 * @param string $pattern
-                 * @param string $string
-                 * @param int $flags
-                 * @return bool
-                 */
-                function fnmatch($pattern, $string, $flags = 0)
-                {
-                    return $this->fnMatch($pattern, $string, $flags);
-                }
+        if (!function_exists('fnmatch')) {
+            define('FNM_PATHNAME', 1);
+            define('FNM_NOESCAPE', 2);
+            define('FNM_PERIOD', 4);
+            define('FNM_CASEFOLD', 16);
+            /**
+             * @param string $pattern
+             * @param string $string
+             * @param int $flags
+             * @return bool
+             */
+            function fnmatch($pattern, $string, $flags = 0)
+            {
+                return Polyfill::fnMatch($pattern, $string, $flags);
             }
         }
 
@@ -196,8 +193,7 @@ class Polyfill
                 }
             }
             if (!function_exists('hrtime')) {
-                require_once __DIR__ . '/Php73.php';
-                $this->startAt = (int)microtime(true);
+                self::$startAt = (int)microtime(true);
                 /**
                  * @param false $as_number
                  * @return array|float|int
@@ -375,7 +371,10 @@ class Polyfill
                  * @param string $enum
                  * @return bool
                  */
-                function enum_exists($enum) { return class_exists($enum); }
+                function enum_exists($enum)
+                {
+                    return class_exists($enum);
+                }
             }
         }
 
@@ -391,7 +390,7 @@ class Polyfill
      * @param int $flags
      * @return bool
      */
-    private function fnMatch($pattern, $string, $flags)
+    public static function fnMatch($pattern, $string, $flags)
     {
         $modifiers = null;
         $transforms = array(
@@ -436,7 +435,7 @@ class Polyfill
      * PHP 7.2 Polyfill
      ********************************************************/
 
-    private function utf8Encode($s)
+    public static function utf8Encode($s)
     {
         $s .= $s;
         $len = strlen($s);
@@ -458,7 +457,7 @@ class Polyfill
         return substr($s, 0, $j);
     }
 
-    private function utf8Decode($s)
+    public static function utf8Decode($s)
     {
         $s = (string)$s;
         $len = strlen($s);
@@ -486,7 +485,7 @@ class Polyfill
         return substr($s, 0, $j);
     }
 
-    private function php_os_family()
+    public static function php_os_family()
     {
         if ('\\' === DIRECTORY_SEPARATOR) {
             return 'Windows';
@@ -509,15 +508,15 @@ class Polyfill
      * @param $object
      * @return int|string|void
      */
-    private function splObjectId($object)
+    public static function splObjectId($object)
     {
-        if (null === $this->hashMask)
-            $this->initHashMask();
+        if (null === self::$hashMask)
+            self::initHashMask();
         if (null === $hash = spl_object_hash($object))
             return;
 
         // On 32-bit systems, PHP_INT_SIZE is 4,
-        return $this->hashMask ^ hexdec(substr($hash, 16 - (PHP_INT_SIZE * 2 - 1), (PHP_INT_SIZE * 2 - 1)));
+        return self::$hashMask ^ hexdec(substr($hash, 16 - (PHP_INT_SIZE * 2 - 1), (PHP_INT_SIZE * 2 - 1)));
     }
 
     /**
@@ -525,7 +524,7 @@ class Polyfill
      * @param null $enable
      * @return bool
      */
-    private function sapi_windows_vt100_support($stream, $enable)
+    public static function sapi_windows_vt100_support($stream, $enable)
     {
         if (!is_resource($stream)) {
             trigger_error('sapi_windows_vt100_support() expects parameter 1 to be resource, ' . gettype($stream) . ' given', E_USER_WARNING);
@@ -551,7 +550,7 @@ class Polyfill
                 || 'Hyper' === getenv('TERM_PROGRAM'));
     }
 
-    private function streamIsatty($stream)
+    public static function streamIsatty($stream)
     {
         if (!is_resource($stream)) {
             trigger_error('stream_isatty() expects parameter 1 to be resource, ' . gettype($stream) . ' given', E_USER_WARNING);
@@ -565,10 +564,10 @@ class Polyfill
         return function_exists('posix_isatty') && @posix_isatty($stream);
     }
 
-    private function initHashMask()
+    public static function initHashMask()
     {
         $obj = (object)[];
-        $this->hashMask = -1;
+        self::$hashMask = -1;
 
         // check if we are nested in an output buffering handler to prevent a fatal error with ob_start() below
         $obFuncs = ['ob_clean', 'ob_end_clean', 'ob_flush', 'ob_end_flush', 'ob_get_contents', 'ob_get_flush'];
@@ -581,10 +580,10 @@ class Polyfill
         if (!empty($frame['line'])) {
             ob_start();
             debug_zval_dump($obj);
-            $this->hashMask = (int)substr(ob_get_clean(), 17);
+            self::$hashMask = (int)substr(ob_get_clean(), 17);
         }
 
-        $this->hashMask ^= hexdec(substr(spl_object_hash($obj), 16 - (PHP_INT_SIZE * 2 - 1), (PHP_INT_SIZE * 2 - 1)));
+        self::$hashMask ^= hexdec(substr(spl_object_hash($obj), 16 - (PHP_INT_SIZE * 2 - 1), (PHP_INT_SIZE * 2 - 1)));
     }
 
     /**
@@ -592,7 +591,7 @@ class Polyfill
      * @param string|null $encoding
      * @return array|false|string
      */
-    private function mbChr($code, $encoding)
+    public static function mbChr($code, $encoding)
     {
         if (0x80 > $code %= 0x200000)
             $s = chr($code);
@@ -612,7 +611,7 @@ class Polyfill
      * @param $encoding
      * @return int|mixed
      */
-    private function mbOrd($s, $encoding)
+    public static function mbOrd($s, $encoding)
     {
         if (null === $encoding)
             $s = mb_convert_encoding($s, 'UTF-8');
@@ -638,10 +637,10 @@ class Polyfill
      * @param bool $asNum
      * @return array|float|int
      */
-    private function hrtime($asNum)
+    public static function hrtime($asNum)
     {
         $ns = microtime(false);
-        $s = substr($ns, 11) - $this->startAt;
+        $s = substr($ns, 11) - self::$startAt;
         $ns = 1E9 * (float)$ns;
 
         if ($asNum) {
@@ -661,7 +660,7 @@ class Polyfill
      * @return array|false|null
      * @throws ReflectionException
      */
-    private function getMangledObjectVars($obj)
+    public static function getMangledObjectVars($obj)
     {
         if (!is_object($obj)) {
             trigger_error('get_mangled_object_vars() expects parameter 1 to be object, ' . gettype($obj) . ' given', E_USER_WARNING);
@@ -686,7 +685,7 @@ class Polyfill
      * @param string|null $encoding
      * @return array|false|string[]|null
      */
-    private function mbStrSplit($string, $splitLength, $encoding)
+    public static function mbStrSplit($string, $splitLength, $encoding)
     {
         if (null !== $string && !is_scalar($string) && !(is_object($string) && method_exists($string, '__toString'))) {
             trigger_error('mb_str_split() expects parameter 1 to be string, ' . gettype($string) . ' given', E_USER_WARNING);
@@ -711,7 +710,7 @@ class Polyfill
     /**
      * @return array
      */
-    private function passwordAlgos()
+    public static function passwordAlgos()
     {
         $algos = [];
         if (defined('PASSWORD_BCRYPT'))
@@ -732,7 +731,7 @@ class Polyfill
      * @param string $needle
      * @return bool
      */
-    private function strContains($haystack, $needle)
+    public static function strContains($haystack, $needle)
     {
         return '' === $needle || false !== strpos($haystack, $needle);
     }
@@ -742,7 +741,7 @@ class Polyfill
      * @param string $needle
      * @return bool
      */
-    private function strStartsWith($haystack, $needle)
+    public static function strStartsWith($haystack, $needle)
     {
         return 0 === strncmp($haystack, $needle, strlen($needle));
     }
@@ -752,7 +751,7 @@ class Polyfill
      * @param string $needle
      * @return bool
      */
-    private function strEndsWith($haystack, $needle)
+    public static function strEndsWith($haystack, $needle)
     {
         return '' === $needle || ('' !== $haystack && 0 === substr_compare($haystack, $needle, -strlen($needle)));
     }
@@ -762,7 +761,7 @@ class Polyfill
      * @param float $divisor
      * @return float|int
      */
-    private function fdiv($dividend, $divisor)
+    public static function fdiv($dividend, $divisor)
     {
         return @($dividend / $divisor);
     }
@@ -771,7 +770,7 @@ class Polyfill
      * @param mixed $value
      * @return string
      */
-    private function getDebugType($value)
+    public static function getDebugType($value)
     {
         switch (true) {
             case null === $value:
@@ -846,7 +845,7 @@ class Polyfill
      * @param array $array
      * @return bool
      */
-    private function arrayIsList(array $array)
+    public static function arrayIsList(array $array)
     {
         if ([] === $array)
             return true;
