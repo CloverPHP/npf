@@ -507,7 +507,7 @@ namespace Npf\Core\Db {
          * @param int $column
          * @param int $row
          * @param null $resResult
-         * @return bool
+         * @return bool|string|int|float
          */
         final public function fetchCell($column = 0, $row = 0, $resResult = null)
         {

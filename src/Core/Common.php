@@ -113,12 +113,16 @@ namespace Npf\Core {
         public static function randomInt($min, $max)
         {
             try {
-                if (function_exists('random_int'))
+                if (function_exists('random_int')) {
                     return random_int($min, $max);
-                else
-                    return mt_rand($min, $max);
-            } catch (\Exception $e) {
-                return mt_rand($min, $max);
+                } else
+                    return @mt_rand($min, $max);
+            } catch (\ValueError $exception) {
+                return false;
+            } catch (\Error $exception) {
+                return false;
+            } catch (\Exception $exception) {
+                return false;
             }
         }
 

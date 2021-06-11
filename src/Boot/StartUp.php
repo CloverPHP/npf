@@ -5,6 +5,7 @@ namespace Npf\Boot;
 use Exception;
 use Npf\Core\App;
 use Npf\Core\Kernel;
+use Npf\Core\Polyfill;
 
 /**
  * Class StartUp
@@ -35,6 +36,7 @@ final class StartUp
      */
     final public function __construct($role = 'web', $env = 'local', $name = 'default')
     {
+        new Polyfill();
         define('INIT_MEMORY', memory_get_usage());
         define('INIT_TIMESTAMP', microtime(true));
         $this->appInfo = [

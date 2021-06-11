@@ -97,7 +97,6 @@ namespace Npf\Core {
             $this->appEnv = !empty($env) ? $env : 'local';
             $this->appName = !empty($name) ? $name : 'defaultApp';
             $this->basePath = getcwd();
-            $this->configPath = sprintf("Config\\%s\\%s\\", ucfirst($this->appEnv), ucfirst($this->appName));
             $this->request = new Request($this);
             $this->response = new Response(null);
             $this->view = new View($this);
@@ -191,7 +190,9 @@ namespace Npf\Core {
             if (isset($this->config[$name]))
                 return $this->config[$name];
             else {
-                $configClass = $this->configPath . $name;
+                if (empty($this->configPath))
+                    $this->configPath = sprintf("Config\\%s\\%s", $this->appEnv, $this->appName);
+                $configClass = "{$this->configPath}\\{$name}";
                 if ($ignoreError || class_exists($configClass)) {
                     if (!class_exists($configClass))
                         $this->config[$name] = new Container([], true, true);
@@ -296,6 +297,43 @@ namespace Npf\Core {
                 $this->rootPath = implode("/", $this->rootPath) . '/';
             }
             return $this->rootPath;
+        }
+
+        /**
+         * @return array
+         */
+        public function genRouteTable()
+        {
+            $appPath = $this->getRootPath() . "App/";
+            $this->searchFile($appPath, "*.php", $results);
+            foreach ($results as &$result)
+                $result = str_replace(["\\", $appPath, ".php"], ["/", "", ""], $result);
+            return $results;
+        }
+
+        /**
+         * @param string $path
+         * @param string $search
+         * @param array|null $results
+         * @param bool $statCache
+         */
+        public function searchFile($path, $search = "*", &$results = [], $statCache = false)
+        {
+            if (!is_array($results))
+                $results = [];
+            if (is_dir($path)) {
+                $files = scandir($path);
+                foreach ($files as $value) {
+                    $scanValue = realpath($path . DIRECTORY_SEPARATOR . $value);
+                    if (!is_dir($scanValue) && fnmatch($search, $scanValue, FNM_CASEFOLD))
+                        $results[] = $scanValue;
+                    else if ($value != "." && $value != "..")
+                        $this->searchFile($scanValue, $search, $results, true);
+                }
+            }
+            if (!$statCache)
+                clearstatcache();
+            return $results;
         }
 
         /**
