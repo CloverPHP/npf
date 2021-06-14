@@ -124,11 +124,11 @@ namespace Npf\Core {
         }
 
         /**
-         * @return string|null
+         * @return string
          */
-        public function getMessage(): ?string
+        public function getMessage(): string
         {
-            return $this->stats['desc'];
+            return (string)$this->stats['desc'];
         }
 
         public function getCode()
