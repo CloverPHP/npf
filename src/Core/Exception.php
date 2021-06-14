@@ -169,9 +169,9 @@ namespace Npf\Core {
         }
 
         /**
-         * @return null
+         * @return ?Throwable
          */
-        public function getPrevious()
+        public function getPrevious(): ?Throwable
         {
             return null;
         }
