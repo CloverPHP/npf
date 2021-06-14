@@ -136,14 +136,17 @@ namespace Npf\Core {
             return $this->stats['status'];
         }
 
-        public function getFile()
+        public function getFile(): string
         {
             return $this->stats['file'];
         }
 
-        public function getLine()
+        /**
+         * @return int
+         */
+        public function getLine(): int
         {
-            return $this->stats['line'];
+            return (int)$this->stats['line'];
         }
 
         public function getTrace()
