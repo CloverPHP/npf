@@ -462,6 +462,8 @@ namespace Npf\Core\Redis {
                         if ($this->__openSocket($config[0], $config[1], $this->timeout, $this->
                         rwTimeout)
                         ) {
+                            if($this->authPass)
+                                $this->auth($this->authPass);
                             $role = $this->role();
                             $this->mode = $role[0];
                             if ($this->mode === 'master')
@@ -549,9 +551,7 @@ namespace Npf\Core\Redis {
          */
         private function auth($pass)
         {
-            if (!$this->connected)
-                return false;
-            elseif ($this->__write(['AUTH', $pass])) {
+            if ($this->__write(['AUTH', $pass])) {
                 return $this->__read();
             } else
                 return false;

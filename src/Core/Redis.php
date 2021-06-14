@@ -193,7 +193,7 @@ namespace Npf\Core {
                     $this->instance = $config->instance;
                     $this->size = $size;
                     $this->db = (int)$config->db;
-                    $this->authPass = (int)$config->authPass;
+                    $this->authPass = (string)$config->authPass;
                     $this->timeout = (int)$config->timeout;
                     $this->rwTimeout = (int)$config->rwTimeout;
                 }
