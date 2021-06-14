@@ -308,20 +308,24 @@ namespace Npf\Core {
         public function genRouteTable(): array
         {
             $appPath = $this->getRootPath() . "App/";
-            $this->searchFile($appPath, "*.php", $results);
-            foreach ($results as &$result)
-                $result = str_replace(["\\", $appPath, ".php"], ["/", "", ""], $result);
-            return $results;
+            $this->searchFile($appPath, "*.php", $results, true);
+            foreach ($results as $key => &$result) {
+                if (str_ends_with($result, "Router.php"))
+                    unset($results[$key]);
+                $result = str_replace(["\\", $appPath, "/", ".php"], ["/", "", "\\", ""], $result);
+            }
+            return array_values($results);
         }
 
         /**
          * @param string $path
          * @param string $search
          * @param array|null $results
+         * @param bool $includePath
          * @param bool $statCache
          * @return array|null
          */
-        public function searchFile(string $path, string $search = "*", ?array &$results = [], bool $statCache = false): ?array
+        public function searchFile(string $path, string $search = "*", ?array &$results = [], bool $includePath = false, bool $statCache = false): ?array
         {
             if (!is_array($results))
                 $results = [];
@@ -331,14 +335,18 @@ namespace Npf\Core {
                     $scanValue = realpath($path . DIRECTORY_SEPARATOR . $value);
                     if (!is_dir($scanValue) && fnmatch($search, $scanValue, FNM_CASEFOLD))
                         $results[] = $scanValue;
-                    else if ($value != "." && $value != "..")
-                        $this->searchFile($scanValue, $search, $results, true);
+                    else if ($value != "." && $value != "..") {
+                        if ($includePath)
+                            $results[] = "{$scanValue}/";
+                        $this->searchFile($scanValue, $search, $results, $includePath, true);
+                    }
                 }
             }
             if (!$statCache)
                 clearstatcache();
             return $results;
         }
+
 
         /**
          * @param string $modelName
