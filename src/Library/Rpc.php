@@ -909,7 +909,7 @@ final class Rpc
      */
     final public function __invoke(string $url,
                                    string $method = "GET",
-                                   ?string $content = null,
+                                   string|array|null $content = null,
                                    array $headers = [],
                                    array $cookies = []): mixed
     {
@@ -926,7 +926,7 @@ final class Rpc
      */
     final public function run(string $url,
                               string $method = "GET",
-                              ?string|array $content = null,
+                              string|array|null $content = null,
                               array $headers = [],
                               array $cookies = []): mixed
     {
@@ -951,7 +951,7 @@ final class Rpc
      */
     final public function requestOnly(string $url,
                                       string $method = "GET",
-                                      ?string $content = null,
+                                      string|array|null $content = null,
                                       array $headers = [],
                                       array $cookies = []): void
     {
@@ -983,7 +983,7 @@ final class Rpc
     final public function downloadFile(string $url,
                                        string $saveFileName,
                                        string $method = "GET",
-                                       ?string $content = NULL,
+                                       string|array|null $content = null,
                                        array $headers = [],
                                        array $cookies = []): bool
     {
