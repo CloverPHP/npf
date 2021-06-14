@@ -131,9 +131,12 @@ namespace Npf\Core {
             return (string)$this->stats['desc'];
         }
 
-        public function getCode()
+        /**
+         * @return int
+         */
+        public function getCode():int
         {
-            return $this->stats['status'];
+            return (int)$this->stats['code'];
         }
 
         public function getFile(): string
@@ -149,7 +152,10 @@ namespace Npf\Core {
             return (int)$this->stats['line'];
         }
 
-        public function getTrace()
+        /**
+         * @return array
+         */
+        public function getTrace(): array
         {
             return $this->stats['trace'];
         }
