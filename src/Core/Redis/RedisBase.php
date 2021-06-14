@@ -273,15 +273,15 @@ namespace Npf\Core\Redis {
 
         /**
          * @param string $data
-         * @param int $retry
          * @return bool|int
          * @throws InternalError
          */
-        private function __socketWrite(string $data, int $retry = 100): bool|int
+        private function __socketWrite(string $data): bool|int
         {
+            $retry = 5;
             $bytes_to_write = strlen($data);
             $bytes_written = 0;
-            if ($retry <= 0)
+            if (100 <= 0)
                 $retry = 3;
             while ($bytes_written < $bytes_to_write) {
                 if ($retry <= 0)

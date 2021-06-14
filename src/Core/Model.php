@@ -213,7 +213,7 @@ namespace Npf\Core {
         private function buildIdField(int $id): array
         {
             return [
-                "{$this->prefix}id" => $id,
+                $this->prefix . 'id' => $id,
             ];
         }
 

@@ -132,9 +132,9 @@ namespace Npf\Core {
         }
 
         /**
-         * @param bool $classPath
+         * Route Table Mapping
          */
-        private function routeTableMap(bool $classPath = false)
+        private function routeTableMap()
         {
             if ($this->routeTable === null) {
                 $this->routeTable = [];
@@ -142,40 +142,54 @@ namespace Npf\Core {
                 if (is_file($routeTableFile) && ($routeTable = file($routeTableFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)))
                     $this->routeTable = array_combine(array_map('strtolower', $routeTable), $routeTable);
             }
-            $lowerStrPathInfo = strtolower(str_replace("\\", "/", $this->appFile));
-            if (!empty($this->routeTable[$lowerStrPathInfo])) {
-                $this->appPath = explode("/", $this->routeTable[$lowerStrPathInfo]);
-                $this->appFile = $this->routeTable[$lowerStrPathInfo];
-                if ($classPath)
-                    $this->appFile = str_replace("/", "\\", $this->appFile);
-            }
+            $lowerCase = strtolower($this->appFile);
+            do {
+                if (!empty($this->routeTable[$lowerCase])) {
+                    $appFile = $this->routeTable[$lowerCase];
+                    if (substr($appFile, -1) === "\\")
+                        $appFile .= $this->indexFile;
+                    $this->appFile = $appFile;
+                    $this->appPath = explode("\\", $appFile);
+                    break;
+                }
+                $lowerCase = substr($lowerCase, 0, strrpos($lowerCase, "\\", -2)) . "\\";
+            } while ($lowerCase != '\\');
         }
 
         /**
          * @throws InternalError
          * @throws UnknownClass
          */
-        final public function __invoke(): void
+        final public function __invoke()
         {
             //App Router
             $routePath = explode("\\", "{$this->rootDirectory}\\{$this->appFile}");
-            $routerObj = null;
+            $routerFound = false;
             do {
                 array_pop($routePath);
                 $routeClass = implode("\\", $routePath) . "\\Router";
                 if (class_exists($routeClass)) {
                     $routerObj = new $routeClass($this->app, $this);
                     if (!empty($routerObj) && method_exists($routerObj, '__invoke')) {
-                        //Execute Route Class for Sub App Prepare parameter
-                        $params = $routerObj->__invoke($this->app);
+                        $params = $routerObj($this->app, $this);
                         unset($routerObj);
+                        $routerFound = true;
+                        break;
                     }
-                    break;
                 }
-            } while (empty($routPath));
+            } while (!empty($routePath));
+            if (!$routerFound)
+                throw new UnknownClass("URI Router class not found: {$this->appFile}");
 
-            $this->routeTableMap();
             $this->app->request->setUri($this->appFile);
+
+            //CORS Support
+            if ($this->app->request->getMethod() === 'OPTIONS') {
+                $this->app->view->setNone();
+                $this->app->view->lock();
+                $this->app->response->statusCode($this->isExistsAppClass($this->appFile) ? 200 : 404);
+                return;
+            }
 
             //Route Static File
             if ($this->isStatic)

@@ -248,7 +248,7 @@ namespace Npf\Core {
          * @param mixed $args
          * @return mixed
          */
-        private function eventFire(callable $callable, mixed $args = []): mixed
+        private function eventFire(callable $callable, array|string|int|float|bool $args = []): mixed
         {
             if (!is_array($args))
                 $args = [$args];
@@ -266,7 +266,7 @@ namespace Npf\Core {
                 $now = ceil(Common::timestamp(true));
                 $this->emitSchedule();
                 $offset = $now - $this->timerLastTimestamp - 1;
-                $this->timerEmit('timerTick', $now, $offset);
+                $this->timerEmit($now, $offset);
                 $this->timerLastTimestamp = $now;
                 $this->tick++;
                 return true;
@@ -338,16 +338,16 @@ namespace Npf\Core {
 
         /**
          * Execute/Fire an event
-         * @param string $eventName
          * @param float $timestamp
          * @param int $offset
-         * @return Event
+         * @return void
          * @internal param string $event Event Name
          */
-        private function timerEmit(string $eventName, float $timestamp, int $offset): self
+        private function timerEmit(float $timestamp, int $offset): void
         {
-            if (is_string($eventName) && !empty($eventName) && isset($this->timerListener[$eventName])) {
-                foreach ($this->timerListener[$eventName] as $key => $event)
+            $eventName = 'timerTick';
+            if (is_string('timerTick') && !empty($eventName) && isset($this->timerListener['timerTick'])) {
+                foreach ($this->timerListener['timerTick'] as $key => $event)
                     if (isset($event['listener']) && is_callable($event['listener'])) {
                         if (!isset($event['tick']) || (int)$event['tick'] < 1)
                             $emit = true;
@@ -365,19 +365,17 @@ namespace Npf\Core {
                         }
                     }
             }
-            return $this;
         }
 
         /**
          * Execute/Fire an terminal Event
-         * @param int $sigNo
          */
-        private function emitTermSignal(int $sigNo = 0): void
+        private function emitTermSignal(): void
         {
-            $this->eventParams[] = $sigNo;
+            $this->eventParams[] = 0;
             foreach ($this->termListener as $event)
                 if (isset($event['listener'])) {
-                    $result = $this->eventFire($event['listener'], $sigNo);
+                    $result = $this->eventFire($event['listener']);
                     if ($result === false)
                         break;
                 }

@@ -41,8 +41,7 @@
         "mobiledetect/mobiledetectlib": "^2.8",
         "twig/twig": "^3.1",
         "twig/markdown-extra": "^3.1",
-        "erusev/parsedown": "^1.7",
-        "ext-pcntl": "*"
+        "erusev/parsedown": "^1.7"
     },
     "autoload": {
         "psr-4": {
