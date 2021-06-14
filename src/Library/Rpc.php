@@ -919,14 +919,14 @@ final class Rpc
     /**
      * @param string $url
      * @param string $method
-     * @param string|null $content
+     * @param string|array|null $content
      * @param array $headers
      * @param array $cookies
      * @return mixed
      */
     final public function run(string $url,
                               string $method = "GET",
-                              ?string $content = null,
+                              ?string|array $content = null,
                               array $headers = [],
                               array $cookies = []): mixed
     {

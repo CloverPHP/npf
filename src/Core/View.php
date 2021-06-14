@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Npf\Core;
 
-use finfo;
 use Throwable;
 use Npf\Exception\InternalError;
 use Npf\Library\Xml;
@@ -546,10 +545,8 @@ class View
                 $contentType = $staticFileContentType[$fileExt];
             else {
                 $contentType = $routeConfig->get('defaultStaticFileContentType', 'auto');
-                if ($contentType === 'auto') {
-                    $fifo = new finfo(FILEINFO_MIME_TYPE);
-                    $contentType = $fifo->file($this->data);
-                }
+                if ($contentType === 'auto')
+                    $contentType = mime_content_type($this->data);
             }
             $expireTime = (int)$routeConfig->get('staticFileCacheTime', 0);
             if ($expireTime <= 0)
