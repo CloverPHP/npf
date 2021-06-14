@@ -875,14 +875,14 @@ namespace Npf\Core\Db {
          * @param array|string|null $cond
          * @param array|string|null $order
          * @param int $seek
-         * @return mixed
+         * @return string|array|bool|int|float|null
          * @throws DBQueryError
          */
         final public function cell(string $table,
                                    string|array $column,
                                    array|string|null $cond = null,
                                    array|string|null $order = null,
-                                   int $seek = 0): mixed
+                                   int $seek = 0): string|array|bool|int|null|float
         {
             if (!empty($table) && !empty($column)) {
                 return $this->driver->fetchCell(0, 0,

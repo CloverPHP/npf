@@ -902,7 +902,7 @@ final class Rpc
     /**
      * @param string $url
      * @param string $method
-     * @param ?string $content
+     * @param string|array|null $content
      * @param array $headers
      * @param array $cookies
      * @return mixed
@@ -945,7 +945,7 @@ final class Rpc
      * Request Only, not waiting for response
      * @param string $url
      * @param string $method
-     * @param ?string $content
+     * @param string|array|null $content
      * @param array $headers
      * @param array $cookies
      */
@@ -975,7 +975,7 @@ final class Rpc
      * @param string $url
      * @param string $saveFileName
      * @param string $method
-     * @param string|null $content
+     * @param string|array|null $content
      * @param array $headers
      * @param array $cookies
      * @return bool
