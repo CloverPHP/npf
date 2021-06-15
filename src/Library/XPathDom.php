@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Library;
 
@@ -17,19 +18,19 @@ final class XPathDom
     /**
      * @var DOMXPath Dom XPath Element Library
      */
-    protected $domXPath = null;
+    protected DOMXPath $domXPath;
     /**
      * @var DOMNodeList
      */
-    protected $domNodeList = null;
+    protected DOMNodeList $domNodeList;
 
     /**
      * @var DOMDocument Dom Document Library
      */
-    private $dom;
+    private DOMDocument $dom;
 
     /**
-     * Doma constructor.
+     * XPathDom constructor.
      */
     final public function __construct()
     {
@@ -39,40 +40,39 @@ final class XPathDom
 
     /**
      * Load Html Content
-     * @param $content
-     * @return bool
+     * @param string $content
+     * @return self
      */
-    final public function loadContent($content)
+    final public function loadContent(string $content): self
     {
         if ($this->dom->loadHTML($content)) {
             unset($this->domXPath);
             $this->domXPath = new DOMXPath($this->dom);
             $this->domXPath->registerNamespace("php", "http://php.net/xpath");
             $this->domXPath->registerPhpFunctions();
-            return true;
-        } else
-            return false;
+        }
+        return $this;
     }
 
     /**
      * Search Dom Element that content attr
-     * @param $QueryTag
-     * @param $Attr
+     * @param string $queryTag
+     * @param string $attribute
      * @param DOMNode|null $contextNode
      * @return DOMNodeList|null
      */
-    final public function searchTagAttr($QueryTag, $Attr, DOMNode $contextNode = null)
+    final public function searchTagAttr(string $queryTag, string $attribute, ?DOMNode $contextNode = null): ?DOMNodeList
     {
-        return $this->queryDom("{$QueryTag}[@{$Attr}]", $contextNode);
+        return $this->queryDom("{$queryTag}[@{$attribute}]", $contextNode);
     }
 
     /**
      * Query a html path
-     * @param $queryString
+     * @param string $queryString
      * @param DOMNode|null $contextNode
      * @return DOMNodeList|null
      */
-    final public function queryDom($queryString, DOMNode $contextNode = null)
+    final public function queryDom(string $queryString, DOMNode $contextNode = null): ?DOMNodeList
     {
         $this->domNodeList = $this->domXPath->query($queryString, $contextNode);
         return $this->domNodeList;
@@ -80,24 +80,27 @@ final class XPathDom
 
     /**
      * Search Dom Element that content attr
-     * @param $QueryTag
-     * @param $Attr
-     * @param $Content
+     * @param string $queryString
+     * @param string $attribute
+     * @param string $content
      * @param DOMNode|null $contextNode
      * @return DOMNodeList|null
      */
-    final public function searchTagAttrValue($QueryTag, $Attr, $Content, DOMNode $contextNode = null)
+    final public function searchTagAttrValue(string $queryString,
+                                             string $attribute,
+                                             string $content,
+                                             DOMNode $contextNode = null): ?DOMNodeList
     {
-        $Content = str_replace("'", "\\'", $Content);
-        return $this->queryDom("{$QueryTag}[contains(@{$Attr},'{$Content}')]", $contextNode);
+        $content = str_replace("'", "\\'", $content);
+        return $this->queryDom("{$queryString}[contains(@{$attribute},'{$content}')]", $contextNode);
     }
 
     /**
-     * @param null $dom
-     * @param DOMNode $contextNode
-     * @return string|null
+     * @param string|DOMNode $dom
+     * @param DOMNode|null $contextNode
+     * @return ?string
      */
-    final public function getElementValue($dom, DOMNode $contextNode = null)
+    final public function getElementValue(string|DOMNode $dom, DOMNode $contextNode = null): ?string
     {
         if (is_string($dom) && !empty($dom))
             $dom = $this->oneDom($dom, 'ASC', $contextNode);
@@ -109,12 +112,14 @@ final class XPathDom
 
     /**
      * Query a first found dom
-     * @param $queryString
+     * @param string $queryString
      * @param string $order
      * @param DOMNode|null $contextNode
      * @return DOMNode|null
      */
-    final public function oneDom($queryString, $order = 'ASC', DOMNode $contextNode = null)
+    final public function oneDom(string $queryString,
+                                 string $order = 'ASC',
+                                 DOMNode $contextNode = null): ?DOMNode
     {
         $domNodeList = $this->domXPath->query($queryString, $contextNode);
         $position = 0;
@@ -124,12 +129,14 @@ final class XPathDom
     }
 
     /**
-     * @param null $dom
-     * @param $attr
-     * @param DOMNode $contextNode
+     * @param string|DOMNode $dom
+     * @param string $attr
+     * @param DOMNode|null $contextNode
      * @return string|null
      */
-    final public function getElementAttr($dom, $attr, DOMNode $contextNode = null)
+    final public function getElementAttr(string|DOMNode $dom,
+                                         string $attr,
+                                         DOMNode $contextNode = null): ?string
     {
         if (is_string($dom) && !empty($dom))
             $dom = $this->oneDom($dom, 'ASC', $contextNode);
@@ -140,19 +147,19 @@ final class XPathDom
     }
 
     /**
-     * @param null $doms
+     * @param string|DOMNodeList $domList
      * @param DOMNode|null $contextNode
-     * @return array|mixed|null
+     * @return mixed
      */
-    final public function getElementListValues($doms = null, DOMNode $contextNode = null)
+    final public function getElementListValues(string|DOMNodeList $domList, DOMNode $contextNode = null): mixed
     {
-        if (is_string($doms) && !empty($doms))
-            $doms = $this->queryDom($doms, $contextNode);
-        if ($doms instanceof DOMNodeList === false)
-            $doms = $this->domNodeList;
-        if ($doms instanceof DOMNodeList === true) {
+        if (is_string($domList) && !empty($domList))
+            $domList = $this->queryDom($domList, $contextNode);
+        if ($domList instanceof DOMNodeList === false)
+            $domList = $this->domNodeList;
+        if ($domList instanceof DOMNodeList === true) {
             $values = [];
-            foreach ($doms as $dom)
+            foreach ($domList as $dom)
                 $values[] = trim($dom->nodeValue);
             if (count($values) === 1)
                 return reset($values);
@@ -164,23 +171,25 @@ final class XPathDom
 
     /**
      * Get Node List Elements Values
-     * @param $Name
-     * @param DOMNodeList|string|null $queryDoms
-     * @param DOMNode $contextNode
-     * @return array|mixed|null
+     * @param string $name
+     * @param DOMNodeList|string|null $queryString
+     * @param DOMNode|null $contextNode
+     * @return mixed
      * @internal DOMNode $dom
      */
-    final public function getElementsListAttrValues($Name, $queryDoms = null, DOMNode $contextNode = null)
+    final public function getElementsListAttrValues(string $name,
+                                                    string|DOMNodeList|null $queryString = null,
+                                                    ?DOMNode $contextNode = null): mixed
     {
-        if (is_string($queryDoms) && !empty($queryDoms))
-            $queryDoms = $this->queryDom($queryDoms, $contextNode);
-        if ($queryDoms instanceof DOMNodeList === false)
-            $queryDoms = $this->domNodeList;
+        if (is_string($queryString) && !empty($queryString))
+            $queryString = $this->queryDom($queryString, $contextNode);
+        if ($queryString instanceof DOMNodeList === false)
+            $queryString = $this->domNodeList;
         $values = [];
-        if ($queryDoms instanceof DOMNodeList === true) {
-            foreach ($queryDoms as $Dom) {
+        if ($queryString instanceof DOMNodeList === true) {
+            foreach ($queryString as $Dom) {
                 if ($Dom instanceof DOMElement)
-                    $values[] = trim($Dom->getAttribute($Name));
+                    $values[] = trim($Dom->getAttribute($name));
             }
             if (count($values) === 1)
                 return reset($values);
@@ -195,7 +204,7 @@ final class XPathDom
      * @param string $tagName
      * @return DOMNodeList|null
      */
-    final public function getElementByTagName($tagName)
+    final public function getElementByTagName(string $tagName): ?DOMNodeList
     {
         return $this->dom->getElementsByTagName($tagName);
     }
@@ -205,41 +214,41 @@ final class XPathDom
      * @param string $id
      * @return DOMElement|null
      */
-    final public function getElementById($id)
+    final public function getElementById(string $id): ?DOMElement
     {
         return $this->dom->getElementById($id);
     }
 
     /**
      * Count Query of dom
-     * @param null $queryDoms
-     * @param DOMNode $contextNode
+     * @param string $queryString
+     * @param DOMNode|null $contextNode
      * @return mixed
      */
-    final public function countDom($queryDoms = null, DOMNode $contextNode = null)
+    final public function countDom(string $queryString, DOMNode $contextNode = null): mixed
     {
-        return $this->domXPath->evaluate("count({$queryDoms})", $contextNode);
+        return $this->domXPath->evaluate("count({$queryString})", $contextNode);
     }
 
     /**
      * Sum Dom Values
-     * @param null $queryDoms
-     * @param DOMNode $contextNode
+     * @param string $queryString
+     * @param DOMNode|null $contextNode
      * @return mixed
      */
-    final public function sumDomValue($queryDoms = null, DOMNode $contextNode = null)
+    final public function sumDomValue(string $queryString, DOMNode $contextNode = null): mixed
     {
-        return $this->domXPath->evaluate("sum({$queryDoms})", $contextNode);
+        return $this->domXPath->evaluate("sum({$queryString})", $contextNode);
     }
 
     /**
      * Evaluate DOm
-     * @param null $queryDoms
+     * @param string $queryString
      * @param DOMNode|null $contextNode
      * @return mixed
      */
-    final public function evaluate($queryDoms = null, DOMNode $contextNode = null)
+    final public function evaluate(string $queryString, DOMNode $contextNode = null): mixed
     {
-        return $this->domXPath->evaluate($queryDoms, $contextNode);
+        return $this->domXPath->evaluate($queryString, $contextNode);
     }
 }

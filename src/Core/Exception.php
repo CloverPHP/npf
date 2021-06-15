@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
@@ -8,10 +9,26 @@ namespace Npf\Core {
      */
     class Exception extends \Exception
     {
-        protected $response;
-        protected $status = '';
-        protected $error = '';
-        protected $sysLog = false;
+        /**
+         * @var Response
+         */
+        protected Response $response;
+        /**
+         * @var string
+         */
+        protected string $error = 'error';
+        /**
+         * @var bool
+         */
+        protected bool $sysLog = false;
+        /**
+         * @var int
+         */
+        protected int $severity = 0;
+        /**
+         * @var array
+         */
+        private array $stats;
 
         /**
          * ExceptionNormal constructor.
@@ -21,32 +38,52 @@ namespace Npf\Core {
          * @param array $extra
          * @internal param string $error
          */
-        public function __construct($desc = '', $code = '', $status = 'error', array $extra = [])
+        public function __construct(?string $desc = '',
+                                    string $code = '',
+                                    string $status = 'error',
+                                    array $extra = [])
         {
             parent::__construct($desc);
-            if (empty($status))
-                $status = 'error';
-            $output = [
+            $stack = debug_backtrace(0);
+            $this->stats = [
+                'desc' => (string)$desc,
+                'error' => $this->error,
                 'status' => $status,
-                'error' => !empty($this->error) ? $this->error : 'error',
-                'profiler' => [
-                    'desc' => $desc,
-                    'trace' => $this->trace(),
-                ],
+                'code' => $code,
             ];
-            if (!empty($code))
-                $output['code'] = $code;
-            $output['profiler'] += $extra;
-            $output += $extra;
-            $this->response = new Response($output);
+            $iPos = 0;
+            for ($i = 0; $i < count($stack); $i++) {
+                $iPos++;
+                if (empty($this->stats['file'])) {
+                    $this->stats['line'] = $stack[$i]['line'];
+                    $this->stats['file'] = $stack[$i]['file'];
+                }
+                $this->stats['trace'][] = !empty($stack[$i]['file']) ?
+                    "#{$iPos}. {$stack[$i]['file']}:{$stack[$i]['line']}" :
+                    (
+                    !empty($stack[$i]['class']) ?
+                        "#{$iPos}. {$stack[$i]['class']}->{$stack[$i]['function']}" :
+                        "#{$iPos}. Closure"
+                    );
+            }
+            $this->response = new Response([
+                    'status' => $this->stats['status'] ?? 'error',
+                    'error' => $this->stats['error'] ?? '',
+                    'code' => $this->stats['code'] ?? '',
+                    'profiler' => [
+                        'desc' => $this->stats['desc'],
+                        'trace' => $this->stats['trace'],
+                        'extra' => $extra,
+                    ],
+                ] + $extra);
         }
 
         /**
-         * @param $name
-         * @param $arguments
-         * @return bool|mixed
+         * @param string $name
+         * @param array $arguments
+         * @return mixed
          */
-        public function __call($name, $arguments)
+        public function __call(string $name, array $arguments): mixed
         {
             if (method_exists($this->response, $name)) {
                 return call_user_func_array([$this->response, $name], $arguments);
@@ -57,7 +94,7 @@ namespace Npf\Core {
         /**
          * @return Response
          */
-        public function response()
+        public function response(): Response
         {
             return $this->response;
         }
@@ -65,7 +102,7 @@ namespace Npf\Core {
         /**
          * @return bool
          */
-        public function sysLog()
+        public function sysLog(): bool
         {
             return $this->sysLog;
         }
@@ -73,20 +110,25 @@ namespace Npf\Core {
         /**
          * @return string
          */
-        public function getErrorCode()
+        public function getErrorCode(): string
         {
             return $this->error;
         }
 
-        private function trace()
+        /**
+         * @return int
+         */
+        public function getSeverity(): int
         {
-            $trace = explode("\n", $this->getTraceAsString());
-            array_pop($trace);
-            $length = count($trace);
-            $result = [];
-            for ($i = 0; $i < $length; $i++)
-                $result[] = ($i + 1) . '.' . substr($trace[$i], strpos($trace[$i], ' '));
-            return $result;
+            return $this->severity;
+        }
+
+        /**
+         * @return string
+         */
+        public function __toString(): string
+        {
+            return json_encode($this->response->fetch());
         }
     }
 

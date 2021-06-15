@@ -1,6 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
+
+    use JetBrains\PhpStorm\Pure;
 
     /**
      * Class Container
@@ -10,32 +13,23 @@ namespace Npf\Core {
     {
         /**
          * Data Storage
-         * @var array
          */
-        private $__data = [];
+        private array $data = [];
 
-        /**
-         * @var bool Lock the content
-         */
-        private $__lock;
-
-        /**
-         * Container ID (Prevent Clone in same)
-         * @var array
-         */
-        private $__firstOnly;
+        private bool $lock = false;
 
         /**
          * Container constructor.
-         * @param $data
+         * @param object|array|null $data
          * @param bool $lock
-         * @param bool $firstOnly
+         * @param bool $__firstOnly
          */
-        public function __construct($data = NULL, $lock = FALSE, $firstOnly = false)
+        public function __construct(object|array|null $data = NULL,
+                                    bool $lock = FALSE,
+                                    private bool $__firstOnly = false)
         {
-            $this->__firstOnly = (bool)$firstOnly;
-            $this->__import($data);
-            $this->__lock = (bool)$lock;
+            $this->import($data);
+            $this->lock = $lock;
         }
 
         /**
@@ -44,20 +38,10 @@ namespace Npf\Core {
          * @param bool $notExistsOnly
          * @return Container
          */
-        final public function import($data, $notExistsOnly = false)
+        final public function import(object|array|null $data,
+                                       bool $notExistsOnly = false): self
         {
-            return $this->__import($data, $notExistsOnly);
-        }
-
-        /**
-         * Import data from a object/array/json
-         * @param mixed $data
-         * @param bool $notExistsOnly
-         * @return Container
-         */
-        final public function __import($data, $notExistsOnly = false)
-        {
-            if ($this->__lock || NULL === $data)
+            if ($this->lock || NULL === $data)
                 return $this;
             if (!empty($data)) {
 
@@ -88,14 +72,14 @@ namespace Npf\Core {
 
         /**
          * Set data value
-         * @param string $name Name
+         * @param int|string $name Name
          * @param null $value Value to set
          * @param bool $notExistsOnly set only not exists
          * @return Container
          */
-        public function set($name, $value = NULL, $notExistsOnly = false)
+        public function set(int|string $name, mixed $value = NULL, bool $notExistsOnly = false): self
         {
-            if (($notExistsOnly && !isset($this->__data[$name])) || !$notExistsOnly)
+            if (($notExistsOnly && !isset($this->data[$name])) || !$notExistsOnly)
                 $this->__set($name, $value);
             return $this;
         }
@@ -103,44 +87,44 @@ namespace Npf\Core {
         /**
          * Set State
          * @param array $args
-         * @return Container
+         * @return self
          */
-        public static function __set_state($args)
+        public static function __set_state(array $args): self
         {
             return new Container($args['__data'], $args['__lock']);
         }
 
         public function __destruct()
         {
-            $this->__data = NULL;
+            $this->data = [];
         }
 
         /**
          * Check the key is exist or not
-         * @param $name
+         * @param string $name
          * @return bool
          */
-        public function __isset($name)
+        public function __isset(string $name): bool
         {
-            return isset($this->__data[$name]);
+            return isset($this->data[$name]);
         }
 
         /**
          * Remove a key
-         * @param $name
+         * @param string $name
          */
-        public function __unset($name)
+        public function __unset(string $name): void
         {
-            if (!$this->__lock && isset($this->__data[$name]))
-                unset($this->__data[$name]);
+            if (!$this->lock && isset($this->data[$name]))
+                unset($this->data[$name]);
         }
 
         /**
          * Object invoke, equivalent __get
-         * @param string $name key of value, empty will return entire.
-         * @return array
+         * @param string|null $name key of value, empty will return entire.
+         * @return mixed
          */
-        public function __invoke($name = NULL)
+        public function __invoke(?string $name = NULL): mixed
         {
             return $name === NULL ? $this->__dump() : $this->__get($name);
         }
@@ -149,10 +133,10 @@ namespace Npf\Core {
          * Dump a copy
          * @return array
          */
-        final protected function __dump()
+        final protected function __dump(): array
         {
             $entire = [];
-            foreach ($this->__data as $key => $data)
+            foreach ($this->data as $key => $data)
                 $entire[$key] = $data instanceof Container ? $data->__dump() : $data;
             return $entire;
         }
@@ -162,26 +146,24 @@ namespace Npf\Core {
          * @param string $name
          * @return mixed
          */
-        public function __get($name)
+        public function __get(string $name): mixed
         {
             return $this->get($name);
         }
 
         /**
          * Set a value
-         * @param $name
-         * @param $value
-         * @return Container
+         * @param int|string $name
+         * @param mixed $value
          */
-        public function __set($name, $value)
+        public function __set(int|string $name, mixed $value)
         {
-            if ($this->__lock || NULL === $value)
-                return $this;
+            if ($this->lock || NULL === $value)
+                return;
             if (!$this->__firstOnly && is_array($value) && $this->__isAssoc($value))
-                $this->__data[$name] = new Container($value);
+                $this->data[$name] = new Container($value);
             else
-                $this->__data[$name] = $value;
-            return $this;
+                $this->data[$name] = $value;
         }
 
         /**
@@ -190,49 +172,40 @@ namespace Npf\Core {
          * @param mixed $default Default Value if not exists
          * @return mixed
          */
-        public function get($name, $default = NULL)
+        public function get(string $name, mixed $default = NULL): mixed
         {
-            return $name === '*' ? $this->__data : (isset($this->__data[$name]) ? $this->__data[$name] : $default);
+            return $name === '*' ? $this->data : ($this->data[$name] ?? $default);
         }
 
         /**
          * Check array is assoc array or index array
-         * @param $arr
+         * @param array $arr
          * @return bool
          */
-        private function __isAssoc($arr)
+        #[Pure] private function __isAssoc(array $arr): bool
         {
             return array_keys($arr) !== range(0, count($arr) - 1);
-        }
-
-        /**
-         * WakePp
-         * @return bool
-         */
-        public function __wakeup()
-        {
-            return TRUE;
         }
 
         /**
          * Data to string, will convert to json
          * @return string
          */
-        public function __toString()
+        public function __toString(): string
         {
             return json_encode($this->__dump());
         }
 
         /**
          * To call a class method if exit, else return FALSE
-         * @param $method
-         * @param $arguments
-         * @return bool|mixed
+         * @param string $method
+         * @param array $arguments
+         * @return mixed
          */
-        final public function __call($method, $arguments)
+        final public function __call(string $method, array $arguments): mixed
         {
-            if (isset($this->__data[$method]) && is_callable($this->__data[$method]))
-                return call_user_func_array($this->__data[$method], $arguments);
+            if (isset($this->data[$method]) && is_callable($this->data[$method]))
+                return call_user_func_array($this->data[$method], $arguments);
             else
                 return FALSE;
         }
@@ -243,19 +216,22 @@ namespace Npf\Core {
          * @param string $postfix
          * @return array
          */
-        final public function flattenData($prefix = '', $postfix = '')
+        final public function flattenData(string $prefix = '', string $postfix = ''): array
         {
-            return $this->__flattenData($this->__data, $prefix, $postfix);
+            return $this->__flattenData($this->data, $prefix, $postfix);
         }
 
         /**
-         * @param $data
+         * @param mixed $data
          * @param string $prefix
          * @param string $postfix
          * @param string $keyPrefix
          * @return array
          */
-        private function __flattenData($data, $prefix = '', $postfix = '', $keyPrefix = '')
+        private function __flattenData(mixed $data,
+                                       string $prefix = '',
+                                       string $postfix = '',
+                                       string $keyPrefix = ''): array
         {
             $result = [];
             foreach ($data as $key => $item) {
@@ -270,22 +246,22 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @return Container
          */
-        public function del($name)
+        public function del(string $name): self
         {
-            if (isset($this->__data[$name]))
-                unset($this->__data[$name]);
+            if (isset($this->data[$name]))
+                unset($this->data[$name]);
             return $this;
         }
 
         /**
          * @return Container
          */
-        public function clear()
+        public function clear(): self
         {
-            $this->__data = [];
+            $this->data = [];
             return $this;
         }
 
@@ -294,9 +270,9 @@ namespace Npf\Core {
          * @param bool $lock
          * @return Container
          */
-        protected function lock($lock = true)
+        protected function lock(bool $lock = true): self
         {
-            $this->__lock = (boolean)$lock;
+            $this->lock = $lock;
             return $this;
         }
     }

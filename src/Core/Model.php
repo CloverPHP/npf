@@ -1,7 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
+    use JetBrains\PhpStorm\Pure;
     use mysqli_result;
     use Npf\Exception\DBQueryError;
 
@@ -12,34 +14,29 @@ namespace Npf\Core {
     abstract class Model
     {
         /**
-         * @var App
+         * @var Db
          */
-        protected $app = null;
-        /**
-         * @var Db|null
-         */
-        protected $db = null;
+        protected Db $db;
         /**
          * @var string
          */
-        protected $tableName = '';
+        protected string $tableName = '';
         /**
          * @var string
          */
-        protected $dbName = '';
+        protected string $dbName = '';
         /**
          * @var string|null
          */
-        protected $prefix = null;
+        protected ?string $prefix = null;
 
         /**
-         * BankTac constructor.
+         * Model constructor.
          * @param App $app
-         * @param Db $db
+         * @param Db|null $db
          */
-        public function __construct(App $app, Db &$db = null)
+        public function __construct(protected App $app, ?Db &$db = null)
         {
-            $this->app = $app;
             if ($this->prefix === null)
                 $this->prefix = $this->tableName . "_";
             if ($db instanceof Db)
@@ -51,25 +48,27 @@ namespace Npf\Core {
 
         /**
          * @param string $dbNames
+         * @return Model
          */
-        public function setDbName($dbNames = '')
+        public function setDbName(string $dbNames = ''): self
         {
             if (is_string($dbNames) && !empty($dbNames))
                 $this->dbName = $dbNames;
+            return $this;
         }
 
         /**
-         * @return string
+         * @return bool|int|string
          */
-        public function getLastQuery()
+        #[Pure] public function getLastQuery(): bool|int|string
         {
             return $this->db->getLastQuery();
         }
 
         /**
-         * @return int|string
+         * @return bool|int|string
          */
-        protected function getLastInsertId()
+        protected function getLastInsertId(): bool|int|string
         {
             return $this->db->getInsertId();
         }
@@ -77,38 +76,32 @@ namespace Npf\Core {
         /**
          * @param array $params
          * @param bool $ignore
-         * @return bool|int|string
+         * @return bool|int|mysqli_result
          * @throws DBQueryError
          */
-        protected function addOne(array $params, $ignore = false)
+        protected function addOne(array $params, bool $ignore = false): bool|int|mysqli_result
         {
             $data = $this->buildOne($params);
             $ret = $this->db->insert($this->getTableName(), $data, $ignore);
-
-            if (false === $ret) {
-                return false;
-            } else {
-                return $this->db->getInsertId();
-            }
+            return (false === $ret) ? false : $this->db->getInsertId();
         }
 
         /**
          * @param $param
          * @return array
          */
-        private function buildOne($param)
+        private function buildOne($param): array
         {
             $data = [];
-            foreach ($param as $k => $v) {
+            foreach ($param as $k => $v)
                 $data["{$this->prefix}$k"] = $v;
-            }
             return $data;
         }
 
         /**
          * @return string
          */
-        private function getTableName()
+        private function getTableName(): string
         {
             return !empty($this->dbName) ? "{$this->dbName}.{$this->tableName}" : $this->tableName;
         }
@@ -117,26 +110,23 @@ namespace Npf\Core {
          * @param array $fields
          * @param array $params
          * @param bool $ignore
-         * @return bool|int|string
+         * @return bool|int|mysqli_result
          * @throws DBQueryError
          */
-        protected function addMulti(array $fields, array $params, $ignore = false)
+        protected function addMulti(array $fields,
+                                    array $params,
+                                    bool $ignore = false): bool|int|mysqli_result
         {
             $fields = $this->buildField($fields);
             $ret = $this->db->inserts($this->getTableName(), $fields, $params, $ignore);
-
-            if (false === $ret) {
-                return false;
-            } else {
-                return $this->db->getInsertId();
-            }
+            return (false === $ret) ? false : $this->db->getInsertId();
         }
 
         /**
-         * @param $param
+         * @param array $param
          * @return array
          */
-        private function buildField($param)
+        private function buildField(array $param): array
         {
             foreach ($param as &$v)
                 $v = "{$this->prefix}$v";
@@ -144,16 +134,21 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $id
          * @param string|array $field
-         * @param null $orderBy
+         * @param int|null $id
+         * @param string|array|null $orderBy
          * @param int $seek
-         * @param null $groupBy
-         * @param null $having
+         * @param string|array|null $groupBy
+         * @param string|array|null $having
          * @return array
          * @throws DBQueryError
          */
-        protected function getOneById($field, $id, $orderBy = null, $seek = 0, $groupBy = null, $having = null)
+        protected function getOneById(string|array $field,
+                                      ?int $id,
+                                      null|string|array $orderBy = null,
+                                      int $seek = 0,
+                                      null|string|array $groupBy = null,
+                                      null|string|array $having = null): array
         {
             $data = $this->db->one(
                 $this->getTableName(),
@@ -168,10 +163,10 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $fields
+         * @param array|string $fields
          * @return array|bool|string
          */
-        private function buildSelCol($fields)
+        private function buildSelCol(array|string $fields): array|bool|string
         {
             $patternFnc = '/^\\{DB_FNC\\}(.*)/';
             $matches = [];
@@ -192,11 +187,11 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $value
+         * @param mixed $value
          * @param bool $prefix
-         * @return mixed
+         * @return null|int|float|string|array
          */
-        private function buildCmd($value, $prefix = true)
+        private function buildCmd(mixed $value, bool $prefix = true): null|int|float|string|array
         {
             $matches = [];
             if (is_string($value) && !is_numeric($value)) {
@@ -212,21 +207,21 @@ namespace Npf\Core {
 
         /**
          * Return Id Field
-         * @param $id
+         * @param int $id
          * @return array
          */
-        private function buildIdField($id)
+        private function buildIdField(int $id): array
         {
             return [
-                "{$this->prefix}id" => $id,
+                $this->prefix . 'id' => $id,
             ];
         }
 
         /**
          * @param mixed $orders
-         * @return mixed
+         * @return string|array|int|float|null
          */
-        private function buildOrder($orders)
+        private function buildOrder(mixed $orders): string|array|int|null|float
         {
             if (is_array($orders) && !empty($orders)) {
                 $data = [];
@@ -237,7 +232,7 @@ namespace Npf\Core {
                         else
                             $data[$this->buildCmd($v)] = 'ASC';
                     } else {
-                        $v = strtoupper($v);
+                        $v = strtoupper((string)$v);
                         if ($v != "DESC")
                             $v = "ASC";
                         $data[$this->buildCmd($k)] = $v;
@@ -250,10 +245,10 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $groupBy
-         * @return mixed
+         * @param array|string|null $groupBy
+         * @return array|string|null
          */
-        private function buildGroup($groupBy)
+        private function buildGroup(array|string|null $groupBy): array|null|string
         {
             if (is_array($groupBy) && !empty($groupBy)) {
                 $data = [];
@@ -268,9 +263,9 @@ namespace Npf\Core {
 
         /**
          * @param mixed $cond
-         * @return mixed
+         * @return null|int|float|string|array
          */
-        private function buildCond($cond)
+        private function buildCond(mixed $cond): null|int|float|string|array
         {
             if (is_array($cond) && !empty($cond)) {
                 $data = [];
@@ -284,10 +279,10 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $param
+         * @param ?array $param
          * @return array
          */
-        private function formatOne($param)
+        #[Pure] private function formatOne(?array $param): array
         {
             $data = [];
             if ($param) {
@@ -299,14 +294,17 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $field
-         * @param $id
-         * @param null $orderBy
+         * @param string $field
+         * @param int $id
+         * @param string|array|null $orderBy
          * @param int $seek
-         * @return bool|null
+         * @return string|int|bool|array|float|null
          * @throws DBQueryError
          */
-        protected function getCellById($field, $id, $orderBy = null, $seek = 0)
+        protected function getCellById(string $field,
+                                       int $id,
+                                       string|array|null $orderBy = null,
+                                       int $seek = 0): string|int|bool|array|null|float
         {
             return $this->db->cell(
                 $this->getTableName(),
@@ -319,13 +317,16 @@ namespace Npf\Core {
 
         /**
          * @param string $field
-         * @param array $cond
-         * @param null $groupBy
-         * @param null $having
-         * @return bool|float
+         * @param array|null $cond
+         * @param string|array|null $groupBy
+         * @param string|array|null $having
+         * @return float|bool
          * @throws DBQueryError
          */
-        protected function getSum($field = '*', array $cond = null, $groupBy = null, $having = null)
+        protected function getSum(string $field,
+                                  array $cond = null,
+                                  string|array|null $groupBy = null,
+                                  string|array|null $having = null): float|bool
         {
             return $this->db->sum(
                 $this->getTableName(),
@@ -338,13 +339,16 @@ namespace Npf\Core {
 
         /**
          * @param string $field
-         * @param array $cond
-         * @param null $groupBy
-         * @param null $having
+         * @param ?array $cond
+         * @param string|array|null $groupBy
+         * @param string|array|null $having
          * @return bool|int
          * @throws DBQueryError
          */
-        protected function getCount($field = '*', array $cond = null, $groupBy = null, $having = null)
+        protected function getCount(string $field = '*',
+                                    ?array $cond = null,
+                                    string|array|null $groupBy = null,
+                                    string|array|null $having = null): bool|int
         {
             return $this->db->count(
                 $this->getTableName(),
@@ -356,40 +360,49 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $id
+         * @param int $id
          * @param null $orderBy
-         * @param int $limit
-         * @return bool|mysqli_result
+         * @param int|float|string|array|null $limit
+         * @return bool|int|mysqli_result
          * @throws DBQueryError
          */
-        protected function deleteOneById($id, $orderBy = null, $limit = 0)
+        protected function deleteOneById(int $id,
+                                         $orderBy = null,
+                                         int|float|string|array|null $limit = 0): bool|int|mysqli_result
         {
             return $this->db->delete($this->getTableName(), $this->buildIdField($id), $this->buildOrder($orderBy), $limit);
         }
 
         /**
          * @param array $data
-         * @param $id
+         * @param int $id
          * @param bool $ignore
-         * @return bool|mysqli_result
+         * @return bool|int|mysqli_result
          * @throws DBQueryError
          */
-        protected function updateOneById(array $data, $id, $ignore = false)
+        protected function updateOneById(array $data,
+                                         int $id,
+                                         bool $ignore = false): bool|int|mysqli_result
         {
             return $this->db->update($this->getTableName(), $this->buildOne($data), $this->buildIdField($id), null, 1, $ignore);
         }
 
         /**
-         * @param string $field
-         * @param array $cond
-         * @param null $orderBy
+         * @param string|array $field
+         * @param ?array $cond
+         * @param string|array|null $orderBy
          * @param int $seek
-         * @param null $groupBy
-         * @param null $having
-         * @return array
+         * @param string|array|null $groupBy
+         * @param string|array|null $having
+         * @return bool|array
          * @throws DBQueryError
          */
-        protected function getOneByCond($field = '*', array $cond = null, $orderBy = null, $seek = 0, $groupBy = null, $having = null)
+        protected function getOneByCond(string|array $field = '*',
+                                        ?array $cond = null,
+                                        string|array|null $orderBy = null,
+                                        int $seek = 0,
+                                        string|array|null $groupBy = null,
+                                        string|array|null $having = null): bool|array
         {
             $data = $this->db->one(
                 $this->getTableName(),
@@ -405,16 +418,21 @@ namespace Npf\Core {
         }
 
         /**
-         * @param string $field
-         * @param array $cond
-         * @param null $orderBy
-         * @param int $limit
-         * @param null $groupBy
-         * @param null $having
-         * @return array
+         * @param string|array $field
+         * @param array|null $cond
+         * @param string|array|null $orderBy
+         * @param int|array|null $limit
+         * @param string|array|null $groupBy
+         * @param string|array|null $having
+         * @return bool|array
          * @throws DBQueryError
          */
-        protected function getColumnByCond($field = '*', array $cond = null, $orderBy = null, $limit = 0, $groupBy = null, $having = null)
+        protected function getColumnByCond(array|string $field = '*',
+                                           ?array $cond = null,
+                                           string|array|null $orderBy = null,
+                                           null|int|array $limit = 0,
+                                           string|array|null $groupBy = null,
+                                           string|array|null $having = null): bool|array
         {
             return $this->db->column(
                 $this->getTableName(),
@@ -428,14 +446,17 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $field
-         * @param array $cond
-         * @param null $orderBy
+         * @param array|string $field
+         * @param ?array $cond
+         * @param string|array|null $orderBy
          * @param int $seek
-         * @return bool|null
+         * @return string|int|bool|array|float|null
          * @throws DBQueryError
          */
-        protected function getCellByCond($field, array $cond = null, $orderBy = null, $seek = 0)
+        protected function getCellByCond(array|string $field,
+                                         ?array $cond = null,
+                                         string|array|null $orderBy = null,
+                                         int $seek = 0): string|int|bool|array|null|float
         {
             return $this->db->cell(
                 $this->getTableName(),
@@ -447,17 +468,23 @@ namespace Npf\Core {
         }
 
         /**
-         * @param string $field
-         * @param string $key
-         * @param array $cond
-         * @param null $orderBy
-         * @param null $limit
-         * @param null $groupBy
-         * @param null $having
-         * @return array
+         * @param string|array $field
+         * @param ?string $key
+         * @param array|null $cond
+         * @param string|array|null $orderBy
+         * @param int|float|string|array|null $limit
+         * @param string|array|null $groupBy
+         * @param string|array|null $having
+         * @return bool|array
          * @throws DBQueryError
          */
-        protected function getAllByCond($field = '*', $key = null, array $cond = null, $orderBy = null, $limit = null, $groupBy = null, $having = null)
+        protected function getAllByCond(string|array $field = '*',
+                                        ?string $key = null,
+                                        array $cond = null,
+                                        string|array|null $orderBy = null,
+                                        int|float|string|array|null $limit = null,
+                                        string|array|null $groupBy = null,
+                                        string|array|null $having = null): bool|array
         {
             $key = is_null($key) ? $key : ($field === '*' ? $this->prefix . $key : $key);
             $data = $this->db->all(
@@ -474,10 +501,10 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $params
+         * @param array $params
          * @return array
          */
-        private function formatAll($params)
+        #[Pure] private function formatAll(array $params): array
         {
             $data = [];
             if ($params) {
@@ -495,75 +522,95 @@ namespace Npf\Core {
 
         /**
          * @param array|null $cond
-         * @param null $orderBy
-         * @param int $limit
-         * @return bool|mysqli_result
+         * @param string|array|null $orderBy
+         * @param int|float|string|array|null $limit
+         * @return bool
          * @throws DBQueryError
          */
-        protected function deleteOneByCond(array $cond = null, $orderBy = null, $limit = 0)
+        protected function deleteOneByCond(?array $cond = null,
+                                           string|array|null $orderBy = null,
+                                           int|float|string|array|null $limit = 0): bool
         {
             return $this->db->delete($this->getTableName(), $this->buildCond($cond), $this->buildOrder($orderBy), $limit);
         }
 
         /**
          * @param array|null $cond
-         * @param null $orderBy
-         * @param null $limit
-         * @return bool|mysqli_result
+         * @param string|array|null $orderBy
+         * @param int|float|string|array|null $limit
+         * @return bool
          * @throws DBQueryError
          */
-        protected function deleteAll(array $cond = null, $orderBy = null, $limit = null)
+        protected function deleteAll(?array $cond = null,
+                                     string|array|null $orderBy = null,
+                                     int|float|string|array|null $limit = null): bool
         {
             return $this->db->delete($this->getTableName(), $this->buildCond($cond), $this->buildOrder($orderBy), $limit);
         }
 
         /**
          * @param array $data
-         * @param array $cond
-         * @param $orderBy
+         * @param ?array $cond
+         * @param string|array|null $orderBy
          * @param bool $ignore
-         * @return bool|mysqli_result
+         * @return bool|int|mysqli_result
          * @throws DBQueryError
          */
-        protected function updateOneByCond(array $data, array $cond = null, $orderBy = null, $ignore = false)
+        protected function updateOneByCond(array $data,
+                                           ?array $cond = null,
+                                           string|array|null $orderBy = null,
+                                           bool $ignore = false): bool|int|mysqli_result
         {
-            return $this->db->update($this->getTableName(), $this->buildOne($data), $this->buildCond($cond), $this->buildOrder($orderBy), 1, $ignore);
+            return $this->db->update($this->getTableName(),
+                $this->buildOne($data),
+                $this->buildCond($cond),
+                $this->buildOrder($orderBy),
+                1,
+                $ignore);
         }
 
         /**
          * @param array $data
-         * @param array $cond
-         * @param null $orderBy
-         * @param null $limit
+         * @param ?array $cond
+         * @param string|array|null $orderBy
+         * @param int|float|string|array|null $limit
          * @param bool $ignore
          * @return bool|mysqli_result
          * @throws DBQueryError
          */
-        protected function updateAll(array $data, array $cond = null, $orderBy = null, $limit = null, $ignore = false)
+        protected function updateAll(array $data,
+                                     ?array $cond = null,
+                                     string|array|null $orderBy = null,
+                                     int|float|string|array|null $limit = null,
+                                     bool $ignore = false): bool|mysqli_result
         {
             return $this->db->update($this->getTableName(), $this->buildOne($data), $this->buildCond($cond), $this->buildOrder($orderBy), $limit, $ignore);
         }
 
         /**
          * @param array $data
-         * @param array $cond
+         * @param array|null $cond
          * @param bool $check Check those condition exist or not
          * @param bool $ignore
          * @return bool|mysqli_result
          * @throws DBQueryError
          */
-        protected function addUpdate(array $data, array $cond = null, $check = false, $ignore = false)
+        protected function addUpdate(array $data,
+                                     ?array $cond = null,
+                                     bool $check = false,
+                                     bool $ignore = false): bool|mysqli_result
         {
             return $this->db->action($this->getTableName(), $this->buildOne($data), $this->buildCond($cond), $check, $ignore);
         }
 
         /**
-         * @param $queryStr
+         * @param string $queryStr
          * @param int $resultMode
-         * @return array|bool|null
+         * @return bool|int|array|mysqli_result
          * @throws DBQueryError
          */
-        protected function query($queryStr, $resultMode = 0)
+        protected function query(string $queryStr,
+                                 int $resultMode = 0): bool|int|array|mysqli_result
         {
             return $this->db->query($queryStr, $resultMode);
         }

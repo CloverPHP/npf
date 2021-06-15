@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Exception {
 
@@ -13,8 +14,8 @@ namespace Npf\Exception {
         /**
          * @var bool Want to system log or not
          */
-        protected $sysLog = true;
+        protected bool $sysLog = true;
 
-        protected $error = 'unexpected_error';
+        protected string $error = 'unexpected_error';
     }
 }

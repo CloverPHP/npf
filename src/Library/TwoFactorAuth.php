@@ -1,9 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Library;
 
 use Exception;
-use Npf\Core\App;
 use Npf\Exception\InternalError;
 
 /**
@@ -12,31 +12,21 @@ use Npf\Exception\InternalError;
  */
 final class TwoFactorAuth
 {
-    private $app;
     /**
      * @var int Code Length
      */
-    private $_codeLength = 6;
+    private int $_codeLength = 6;
 
     /**
      * @var array Get array with all 32 characters for decoding from/encoding to base32.
      */
-    private $base32LookupTable = [
+    private array $base32LookupTable = [
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', //  7
         'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', // 15
         'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', // 23
         'Y', 'Z', '2', '3', '4', '5', '6', '7', // 31
         '=',  // padding char
     ];
-
-    /**
-     * TwoFactorAuth constructor.
-     * @param App $app
-     */
-    final public function __construct(App &$app)
-    {
-        $this->app = &$app;
-    }
 
     /**
      * Create new secret.
@@ -46,7 +36,7 @@ final class TwoFactorAuth
      * @throws InternalError
      * @throws Exception
      */
-    final public function createSecret($secretLength = 16)
+    final public function createSecret(int $secretLength = 16): string
     {
         $validChars = $this->base32LookupTable;
         // Valid secret lengths are 80 to 640 bits
@@ -83,7 +73,7 @@ final class TwoFactorAuth
      * @param int|NULL $currentTimeSlice time slice if we want use other that time()
      * @return bool
      */
-    final public function verifyCode($secret, $code, $discrepancy = 1, $currentTimeSlice = NULL)
+    final public function verifyCode(string $secret, string $code, int $discrepancy = 1, ?int $currentTimeSlice = NULL): bool
     {
         if ($currentTimeSlice === NULL) {
             $currentTimeSlice = floor(time() / 30);
@@ -108,7 +98,7 @@ final class TwoFactorAuth
      * @param int|NULL $timeSlice
      * @return string
      */
-    final public function getCode($secret, $timeSlice = NULL)
+    final public function getCode(string $secret, ?int $timeSlice = NULL): string
     {
         if ($timeSlice === NULL) {
             $timeSlice = floor(time() / 30);
@@ -122,15 +112,15 @@ final class TwoFactorAuth
         $value = $value[1];
         $value = $value & 0x7FFFFFFF;
         $modulo = pow(10, $this->_codeLength);
-        return str_pad($value % $modulo, $this->_codeLength, '0', STR_PAD_LEFT);
+        return str_pad((string)($value % $modulo), $this->_codeLength, '0', STR_PAD_LEFT);
     }
 
     /**
      * Helper class to decode base32.
-     * @param $secret
+     * @param string $secret
      * @return bool|string
      */
-    private function _base32Decode($secret)
+    private function _base32Decode(string $secret): bool|string
     {
         if (empty($secret)) {
             return '';
@@ -162,7 +152,7 @@ final class TwoFactorAuth
             }
             $eightBits = str_split($x, 8);
             for ($z = 0; $z < count($eightBits); ++$z) {
-                $binaryString .= (($y = chr(base_convert($eightBits[$z], 2, 10))) || ord($y) == 48) ? $y : '';
+                $binaryString .= (($y = chr((int)base_convert($eightBits[$z], 2, 10))) || ord($y) == 48) ? $y : '';
             }
         }
         return $binaryString;
@@ -174,7 +164,7 @@ final class TwoFactorAuth
      * @param string $userString The user submitted (unsafe) value
      * @return bool True if the two strings are identical
      */
-    private function timingSafeEquals($safeString, $userString)
+    private function timingSafeEquals(string $safeString, string $userString): bool
     {
         if (function_exists('hash_equals')) {
             return hash_equals($safeString, $userString);
@@ -197,7 +187,7 @@ final class TwoFactorAuth
      * @param int $length
      * @return self
      */
-    final public function setCodeLength($length)
+    final public function setCodeLength(int $length): self
     {
         $this->_codeLength = $length;
         return $this;

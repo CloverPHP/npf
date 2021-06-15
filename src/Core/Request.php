@@ -1,7 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
+    use JetBrains\PhpStorm\Pure;
     use Npf\Exception\InvalidParams;
 
 
@@ -14,53 +16,46 @@ namespace Npf\Core {
         /**
          * @var array
          */
-        private $headers = [];
+        private array $headers = [];
         /**
          * @var string Uri
          */
-        private $uri = '';
+        private string $uri = '';
         /**
          * @var string Uri
          */
-        private $pathInfo = '';
-        /**
-         * @var App
-         */
-        private $app = '';
+        private string $pathInfo = '';
 
-        private $raw = '';
+        private string $raw = '';
 
-        private $contentType = 'COMMAND';
+        private string $contentType = 'COMMAND';
 
-        private $method = 'RUN';
+        private string $method = 'RUN';
 
-        private $schema = 'cmd';
+        private string $schema = 'cmd';
 
-        private $fullRequestUri = '';
+        private string $fullRequestUri = '';
 
         /**
          * Request constructor.
-         * @param App $app
          * @param array|NULL $data
          * @param bool $lock
          */
-        final public function __construct(App &$app, array $data = NULL, $lock = FALSE)
+        final public function __construct(array $data = NULL, bool $lock = FALSE)
         {
-            $this->app = &$app;
             $this->initialRequest();
-            if (!$data) {
+            if (!$data)
                 $data = $this->getRequestParams();
-            }
             parent::__construct($data, $lock, true);
         }
 
         /**
          * Initial Request
          */
-        private function initialRequest()
+        private function initialRequest(): void
         {
-            $this->contentType = explode(";", isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : 'COMMAND', 2)[0];
-            $this->method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '__RUN__';
+            $this->contentType = explode(";", $_SERVER['CONTENT_TYPE'] ?? 'COMMAND', 2)[0];
+            $this->method = $_SERVER['REQUEST_METHOD'] ?? '__RUN__';
             if ($this->method !== '__RUN__') {
                 $this->initHeader();
                 $this->schema = $this->isSecure() ? 'https' : 'http';
@@ -70,7 +65,7 @@ namespace Npf\Core {
         /**
          * Retrieve Header from $_SERVER
          */
-        private function initHeader()
+        private function initHeader(): void
         {
             $this->headers = [];
             foreach ($_SERVER as $name => $value)
@@ -82,7 +77,7 @@ namespace Npf\Core {
          * Check is secure
          * @return bool
          */
-        final public function isSecure()
+        final public function isSecure(): bool
         {
             if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on')
                 return true;
@@ -97,7 +92,7 @@ namespace Npf\Core {
          * 默认获取params方式(http post json)
          * @return array
          */
-        private function getRequestParams()
+        private function getRequestParams(): array
         {
             $this->raw = file_get_contents('php://input');
             switch ($this->method) {
@@ -171,7 +166,7 @@ namespace Npf\Core {
          * Get Protocol
          * @return string
          */
-        final public function getProtocol()
+        final public function getProtocol(): string
         {
             return $this->schema;
         }
@@ -180,7 +175,7 @@ namespace Npf\Core {
          * Get Protocol
          * @return string
          */
-        final public function getSchema()
+        final public function getSchema(): string
         {
             return $this->schema;
         }
@@ -189,7 +184,7 @@ namespace Npf\Core {
          * Return Request Method
          * @return string
          */
-        final public function getMethod()
+        final public function getMethod(): string
         {
             return $this->method;
         }
@@ -198,7 +193,7 @@ namespace Npf\Core {
          * Return Request Method
          * @return string
          */
-        final public function getContentType()
+        final public function getContentType(): string
         {
             return $this->contentType;
         }
@@ -207,7 +202,7 @@ namespace Npf\Core {
          * Return Uri
          * @return string
          */
-        final public function getFullRequestUri()
+        final public function getFullRequestUri(): string
         {
             if (empty($this->fullRequestUri))
                 $this->fullRequestUri = "{$this->getSchema()}://{$this->header('host')}{$this->pathInfo}";
@@ -218,19 +213,19 @@ namespace Npf\Core {
          * Return Uri
          * @return string
          */
-        final public function getUri()
+        final public function getUri(): string
         {
             return $this->uri;
         }
 
         /**
          * Set Uri
-         * @param $Uri
-         * @return Request
+         * @param string $uri
+         * @return self
          */
-        final public function setUri($Uri)
+        final public function setUri(string $uri): self
         {
-            $this->uri = $Uri;
+            $this->uri = $uri;
             return $this;
         }
 
@@ -238,17 +233,17 @@ namespace Npf\Core {
          * Return Uri
          * @return string
          */
-        final public function getPathInfo()
+        final public function getPathInfo(): string
         {
             return $this->pathInfo;
         }
 
         /**
          * Set Uri
-         * @param $pathInfo
-         * @return Request
+         * @param string $pathInfo
+         * @return self
          */
-        final public function setPathInfo($pathInfo)
+        final public function setPathInfo(string $pathInfo): self
         {
             $this->pathInfo = $pathInfo;
             return $this;
@@ -258,33 +253,32 @@ namespace Npf\Core {
          * Get Raw Data
          * @return string
          */
-        final public function getRaw()
+        final public function getRaw(): string
         {
             return $this->raw;
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @param mixed $default
-         * @return mixed|null
+         * @return mixed
          */
-        final public function header($name, $default = null)
+        #[Pure] final public function header(string $name, mixed $default = null): mixed
         {
             $name = strtolower($name);
             if ($name === '*')
                 return $this->headers;
             else
-                return isset($this->headers[$name]) ? $this->headers[$name] : $default;
+                return $this->headers[$name] ?? $default;
         }
 
         /**
          * Set request header
-         *
          * @param string $name
          * @param mixed $value Value
-         * @return Request
+         * @return self
          */
-        public function setHeader($name, $value)
+        public function setHeader(string $name, mixed $value): self
         {
             $name = strtolower($name);
             $this->headers[$name] = $value;
@@ -297,10 +291,12 @@ namespace Npf\Core {
          * @param bool $notExists
          * @return Request
          */
-        final public function addRequest($requests = [], $headers = [], $notExists = false)
+        final public function addRequest(array $requests = [],
+                                         array $headers = [],
+                                         bool $notExists = false): self
         {
             if (!empty($requests) && is_array($requests))
-                $this->__import($requests, $notExists);
+                $this->import($requests, $notExists);
             if (!empty($headers) && is_array($headers))
                 foreach ($headers as $name => $value) {
                     $name = strtolower($name);
@@ -313,11 +309,11 @@ namespace Npf\Core {
 
         /**
          * Validate all the parameter accordingly requirement
-         * @param string|int|array $patterns
-         * @param array|Container $data
+         * @param string|array $patterns
+         * @param array|Container|null $data
          * @throws InvalidParams
          */
-        final public function validate($patterns, $data = null)
+        final public function validate(string|array $patterns, array|Container|null $data = null): void
         {
             if ($data instanceof Container)
                 $data = $data();
@@ -333,7 +329,7 @@ namespace Npf\Core {
         /**
          * @return bool
          */
-        final public function isXHR()
+        final public function isXHR(): bool
         {
             $method = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) ? strtoupper($_SERVER['HTTP_X_REQUESTED_WITH']) : '';
             return ($method === 'XMLHTTPREQUEST');

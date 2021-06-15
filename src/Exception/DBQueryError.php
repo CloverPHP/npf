@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Exception {
 
@@ -10,7 +11,7 @@ namespace Npf\Exception {
      */
     class DBQueryError extends Exception
     {
-        protected $error = 'db_query_error';
-        protected $sysLog = true;
+        protected string $error = 'db_query_error';
+        protected bool $sysLog = true;
     }
 }

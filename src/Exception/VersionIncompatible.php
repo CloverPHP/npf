@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Exception {
 
@@ -10,6 +11,6 @@ namespace Npf\Exception {
      */
     class VersionIncompatible extends Exception
     {
-        protected $error = 'version_incompatible';
+        protected string $error = 'version_incompatible';
     }
 }

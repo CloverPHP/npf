@@ -1,7 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
+    use JetBrains\PhpStorm\Pure;
     use Npf\Core\Db\DbData;
     use Npf\Exception\DBQueryError;
     use Npf\Exception\InternalError;
@@ -13,6 +15,8 @@ namespace Npf\Core {
      */
     final class Db extends DbData
     {
+        protected Container $config;
+
         /**
          * Db constructor.
          * @param App $app
@@ -21,16 +25,18 @@ namespace Npf\Core {
          * @throws InternalError
          * @throws UnknownClass
          */
-        public function __construct(App &$app, Container &$config = null)
+        public function __construct(protected App $app, ?Container $config = null)
         {
             if ($config === null)
-                $config = $app->config('Db');
+                $this->config = $app->config('Db');
+            else
+                $this->config = $config;
 
-            parent::__construct($app, $config);
+            parent::__construct($app, $this->config);
 
             $this->connect();
 
-            if ($config->get('tran'))
+            if ($this->config->get('tran'))
                 $this->tranStart();
         }
 
@@ -38,7 +44,7 @@ namespace Npf\Core {
          * Connect DB
          * @throws DBQueryError
          */
-        private function connect()
+        private function connect(): void
         {
             $hosts = $this->config->get('hosts');
             shuffle($hosts);
@@ -54,14 +60,14 @@ namespace Npf\Core {
             }
 
             if ($this->driver->connected !== true)
-                throw new DBQueryError("No mysql server avaliable, system exit");
+                throw new DBQueryError("No mysql server available, system exit");
         }
 
         /**
          * Log connection error.
          * @param $Error
          */
-        private function connectError($Error)
+        private function connectError($Error): void
         {
             $this->app->profiler->logCritical("DBConnectError", "Error Message: {$Error}");
         }
@@ -70,7 +76,7 @@ namespace Npf\Core {
          * Reconnect
          * @throws DBQueryError
          */
-        public function reconnect()
+        public function reconnect(): void
         {
             $this->close();
             $this->connect();
@@ -86,7 +92,7 @@ namespace Npf\Core {
          * @return bool
          * @throws DBQueryError
          */
-        final public function rollback()
+        final public function rollback(): bool
         {
             return $this->driver->rollback();
         }
@@ -95,7 +101,7 @@ namespace Npf\Core {
          * DB is connected
          * @return bool
          */
-        final public function isConnected()
+        #[Pure] final public function isConnected(): bool
         {
             return $this->driver->isConnected();
         }
@@ -105,7 +111,7 @@ namespace Npf\Core {
          * @return bool
          * @throws DBQueryError
          */
-        final public function commit()
+        final public function commit(): bool
         {
             if ($this->errno() !== 0)
                 throw new DBQueryError($this->error());
@@ -116,7 +122,7 @@ namespace Npf\Core {
          * Get last query string
          * @return string
          */
-        public function getLastQuery()
+        public function getLastQuery(): string
         {
             return $this->driver->lastQuery;
         }

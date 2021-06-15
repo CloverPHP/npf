@@ -1,9 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf;
 
-use Exception;
 use Npf\Boot\StartUp;
+use Throwable;
 
 /**
  * Class Cronjob
@@ -14,21 +15,21 @@ final class Cronjob
     /**
      * @var StartUp
      */
-    private $startUp;
+    private StartUp $startUp;
 
     /**
      * StartUp constructor.
      * @param string $env
      * @param string $name
      */
-    final public function __construct($env = 'Local', $name = 'DefaultApp')
+    final public function __construct(string $env = 'Local', string $name = 'DefaultApp')
     {
         $this->startUp = new StartUp('cronjob', $env, $name);
     }
 
     /**
      * Start Up
-     * @throws Exception
+     * @throws Throwable
      */
     final public function __invoke()
     {

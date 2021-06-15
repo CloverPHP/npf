@@ -6,6 +6,7 @@ use Exception;
 use Npf\Core\App;
 use Npf\Core\Kernel;
 use Npf\Core\Polyfill;
+use Throwable;
 
 /**
  * Class StartUp
@@ -16,17 +17,17 @@ final class StartUp
     /**
      * @var Kernel
      */
-    private $instance;
+    private Kernel $instance;
 
     /**
      * @var App
      */
-    private $app;
+    private App $app;
 
     /**
      * @var array App Info
      */
-    private $appInfo;
+    private array $appInfo;
 
     /**
      * StartUp constructor.
@@ -34,7 +35,10 @@ final class StartUp
      * @param string $env
      * @param string $name
      */
-    final public function __construct($role = 'web', $env = 'local', $name = 'default')
+    final public function __construct(string $role = 'web',
+                                      string $env = 'local',
+                                      string $name = 'default'
+    )
     {
         new Polyfill();
         define('INIT_MEMORY', memory_get_usage());
@@ -45,23 +49,23 @@ final class StartUp
             'name' => $name,
         ];
         $this->instance = new Kernel();
-        $this->app = $this->instance->buildApp($this->appInfo);
+        $this->app = $this->instance->createApp($this->appInfo);
     }
 
     /**
      * Start Up
      * @throws Exception
      */
-    final public function getApp()
+    final public function getApp(): App
     {
         return $this->app;
     }
 
     /**
      * Start Up
-     * @throws Exception
+     * @throws Throwable
      */
-    final public function start()
+    final public function start(): void
     {
         $this->instance->__invoke($this->appInfo);
     }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core\Redis {
 
@@ -9,159 +10,147 @@ namespace Npf\Core\Redis {
     /**
      * Class RedisBase
      *
-     * @method psetex()
-     * @method getSet()
-     * @method randomKey()
-     * @method renameKey()
-     * @method renameNx()
-     * @method expire($name, $expired)
-     * @method exists(string $name)
-     * @method del(string $name)
-     * @method incr(string $name)
-     * @method incrBy(string $name, int $value)
-     * @method incrByFloat(string $name, float $value)
-     * @method decr(string $name)
-     * @method decrBy(string $name, int $value)
-     * @method type()
-     * @method append()
-     * @method getRange()
-     * @method setRange()
-     * @method getBit()
-     * @method setBit()
-     * @method strlen()
-     * @method getKeys()
-     * @method sort()
-     * @method sortAsc()
-     * @method sortAscAlpha()
-     * @method sortDesc()
-     * @method sortDescAlpha()
-     * @method lPush()
-     * @method rPush()
-     * @method lPushx()
-     * @method rPushx()
-     * @method lPop()
-     * @method rPop()
-     * @method blPop()
-     * @method brPop()
-     * @method lSize()
-     * @method lRemove()
-     * @method listTrim()
-     * @method lGet()
-     * @method lGetRange()
-     * @method lSet()
-     * @method lInsert()
-     * @method sAdd()
-     * @method sSize()
-     * @method sRemove()
-     * @method sMove()
-     * @method sPop()
-     * @method sRandMember()
-     * @method sContains()
-     * @method sMembers()
-     * @method sInter()
-     * @method sInterStore()
-     * @method sUnion()
-     * @method sUnionStore()
-     * @method sDiff()
-     * @method sDiffStore()
-     * @method setTimeout()
-     * @method save()
-     * @method bgSave()
-     * @method lastSave()
-     * @method flushDB()
-     * @method flushAll()
-     * @method dbSize()
-     * @method ttl()
-     * @method pttl()
-     * @method persist()
-     * @method info()
-     * @method resetStat()
-     * @method move()
-     * @method bgrewriteaof()
-     * @method slaveof()
-     * @method object()
-     * @method bitop()
-     * @method bitcount()
-     * @method bitpos()
-     * @method mset()
-     * @method msetnx()
-     * @method rpoplpush()
-     * @method brpoplpush()
-     * @method zAdd()
-     * @method zDelete()
-     * @method zRange()
-     * @method zReverseRange()
-     * @method zRangeByScore()
-     * @method zRevRangeByScore()
-     * @method zCount()
-     * @method zDeleteRangeByScore()
-     * @method zDeleteRangeByRank()
-     * @method zCard()
-     * @method zScore()
-     * @method zRank()
-     * @method zRevRank()
-     * @method zInter()
-     * @method zUnion()
-     * @method zIncrBy()
-     * @method expireAt()
-     * @method pexpire()
-     * @method pexpireAt()
-     * @method hGet(string $name, string $field)
-     * @method hSet(string $name, string $field, string $value)
-     * @method hSetNx(string $name, string $field, string $value)
-     * @method hDel(string $name, string $field)
-     * @method hLen(string $name)
-     * @method hKeys(string $name)
-     * @method hVals(string $name)
-     * @method hExists(string $name, string $field)
-     * @method hIncrBy(string $name, string $field, int $number)
-     * @method hIncrByFloat(string $name, string $field, float $number)
-     * @method pipeline()
-     * @method watch()
-     * @method unwatch()
-     * @method psubscribe()
-     * @method unsubscribe()
-     * @method punsubscribe()
-     * @method time()
-     * @method evalsha()
-     * @method script()
-     * @method dump()
+     * Key Timing
+     * @method ttl(string $name): int
+     * @method pTtl(string $name): int
+     * @method expireAt(string $name, int $timestamp)
+     * @method pExpire(string $name, int $milliSecond)
+     * @method pExpireAt(string $name, int $milliSecondTimestamp)
+     * @method expire(string $name, int $second): boolean
+     *
+     * Standard key
+     * @method move(string $name, int $dbIndex): int
+     * @method object(string $method, string $name): mixed
+     * @method type(string $name): string
+     * @method exists(string $name): int
+     * @method persist(string $name): int
+     * @method strLen(string $name): int
+     * @method pSetEx(string $name, int $milliSec): bool
+     * @method getSet(string $name, string $value): mixed
+     * @method append(string $name, string $value): int
+     * @method randomKey(): string
+     * @method rename(string $oriKey, string $newKey): boolean
+     * @method renameNx(string $oriKey, string $newKey): boolean
+     * @method incr(string $name): int
+     * @method incrBy(string $name, int $value): int
+     * @method incrByFloat(string $name, float $value): float
+     * @method decr(string $name): int
+     * @method decrBy(string $name, int $value): int
+     * @method getRange(string $name, int $start, int $end)
+     * @method setRange(string $name, int $offset, string $value)
+     * @method getBit(string $name, int $offset): int
+     * @method setBit(string $name, int $offset, int $value): int
+     *
+     * M Series (Multi)
+     * @method mGet(string ...$name): array
+     * @method mSet(string ...$args): bool
+     * @method mSetNx(string ...$args): int
+     *
+     * L Series (List)
+     * @method sort(string $name, ...$arg): array
+     * @method lPush(string $name, string ...$value): int
+     * @method rPush(string $name, string ...$value): int
+     * @method lPushX(string $name, string $value): int
+     * @method rPushX(string $name, string $value): int
+     * @method lPop(string $name): string
+     * @method rPop(string $name): string
+     * @method lLen(string $name): int
+     * @method lRem(string $name, int $index, string $value): int
+     * @method lTrim(string $name, int $start, int $end): bool
+     * @method lIndex(string $name, int $index): null|bool|string
+     * @method lRange(string $name, int $start, int $end): array
+     * @method lSet(string $name, int $index, string $value): bool
+     * @method lInsert(string $name, string $position, string $search, string $value): int
+     *
+     * S Series
+     * @method sAdd(string $name, string ...$member): int
+     * @method sRem(string $name, string ...$member): int
+     * @method sCard(string $name): int
+     * @method sMove(string $oriName, string $newName, string $member): int
+     * @method sPop(string $name, int $count): array
+     * @method sRandMember(string $name, int $count): array
+     * @method sMembers(string $name): array
+     * @method sDiff (string $source, string $destination): array
+     * @method sDiffStore(string $name, string $source, string $destination): int
+     * @method sIsMember(string $name, string $value): int
+     * @method sInter(string $source, string $destination): array
+     * @method sInterStore(string $name, string $source, string $destination): int
+     * @method sUnion(string $source, string $destination): array
+     * @method sUnionStore(string $name, string $source, string $destination): int
+     *
+     * H Series (Hash Map)
+     * @method hGet(string $name, string $field): string|null
+     * @method hSet(string $name, string $field, string $value): int
+     * @method hSetNx(string $name, string $field, string $value): int
+     * @method hDel(string $name, string ...$field): int
+     * @method hLen(string $name): int
+     * @method hKeys(string $name): array
+     * @method hVals(string $name): array
+     * @method hExists(string $name, string $field): int
+     * @method hIncrBy(string $name, string $field, int $number): int
+     * @method hIncrByFloat(string $name, string $field, float $number): float
+     * @method hMSet(string $name, string ...$args): bool
+     * @method hMGet(string $name, string ...$args): array
+     *
+     * Z Series (Z Score)
+     * @method zAdd(string $name, string ...$args): int
+     * @method zRem(string $name, string $member): int
+     * @method zRange(string $name, int $start, int $end, string $withScores)
+     * @method zRangeByScore(string $name, int $min, int $max, string $withScores): array
+     * @method zRevRangeByScore(string $name, int $max, int $min, string $withScores): array
+     * @method zCount(string $name, int $min, int $max): int
+     * @method zCard(string $name): int
+     * @method zScore(string $name, string $member): string
+     * @method zRank(string $name, string $member): int|null
+     * @method zRevRank(string $name, string $member): int|null
+     * @method zInter(int $numberKey, string ...$args): array
+     * @method zInterStore(string $destination, int $numberKey, string ...$args): array
+     * @method zUnion(int $numberKey, string ...$args): array
+     * @method zUnionStore(string $name, int $numberKey, string ...$args): int
+     * @method zIncrBy(string $name, int $increment, string $member)
+     * @method rPopLPush(string $source, string $destination): string
+     *
+     * Db Function
+     * @method flushDB(int $dbIndex): bool
+     * @method flushAll(): bool
+     * @method dbSize(): int
+     * @method time(): array
+     * @method dump(string $name): string
      * @method getLastError()
      * @method clearLastError()
      * @method _prefix()
+     *
+     * Transaction (Watch/Unwatch)
+     * @method watch()
+     * @method unwatch()
+     *
+     * Redis server Control/Info
+     * @method info(string $section): string
+     * @method save(): bool
+     * @method lastSave(): int
      */
     class RedisBase
     {
-        private $hosts;
-        private $connected = false;
-        private $socket = null;
-        private $mode = '';
-        private $db;
-        private $authPass;
-        private $timeout;
-        private $rwTimeout = 3;
-        private $lastError = '';
-        private $retry = 1;
-        private $trans = false;
-        private $transError = false;
-        private $allowReconnect;
-        private $bufferSize = 10240;
-        private $persistent;
-        private $errorSocket = [
+        private bool $connected = false;
+        private mixed $socket = null;
+        private string $mode = '';
+        private int $rwTimeout = 3;
+        private string $lastError = '';
+        private int $retry = 1;
+        private bool $trans = false;
+        private bool $transError = false;
+        private int $bufferSize = 10240;
+        private array $errorSocket = [
             'no' => 0,
             'msg' => '',
         ];
-        private $currentHost = '';
-        private $readFnc = ['GETOPTION', 'TIME', 'EXISTS', 'GET', 'GETUNSERIALISE',
+        private string $currentHost = '';
+        private array $readFnc = ['GETOPTION', 'TIME', 'EXISTS', 'GET', 'GETUNSERIALISE',
             'LASTSAVE', 'GETRANGE', 'STRLEN', 'HGET', 'HLEN', 'HKEYS', 'HVALS', 'HGETALL',
             'HEXISTS', 'LINDEX', 'LGET', 'LLEN', 'LSIZE', 'SCARD', 'SSIZE', 'SDIFF',
             'SCONTAINS', 'SISMEMBER', 'SMEMBERS', 'SGETMEMBERS', 'SUNION', 'ZCARD', 'ZSIZE',
             'ZCOUNT', 'ZRANGE', 'ZREVRANGE', 'ZRANGEBYSCORE', 'ZREVRANGEBYSCORE',
             'ZRANGEBYLEX', 'ZRANK', 'ZREVRANK', 'ZUNION'];
-        /**
-         * @var App
-         */
-        private $app;
 
         /**
          * RedisClient constructor.
@@ -174,18 +163,17 @@ namespace Npf\Core\Redis {
          * @param bool $allowReconnect
          * @param bool $persistent
          */
-        final public function __construct(App $app, $hosts, $authPass, $db, $timeout = 10, $rwTimeout =
-        0, $allowReconnect = true, $persistent = false)
+        final public function __construct(private App $app,
+                                          private array $hosts,
+                                          private string $authPass,
+                                          private int $db,
+                                          private int $timeout = 10,
+                                          int $rwTimeout = 0,
+                                          private bool $allowReconnect = true,
+                                          private bool $persistent = false)
         {
-            $this->app = &$app;
-            $this->hosts = $hosts;
-            $this->authPass = $authPass;
-            $this->timeout = (int)$timeout;
-            $this->db = (int)$db;
-            $this->persistent = (boolean)$persistent;
-            $this->allowReconnect = $allowReconnect;
-            if ((int)$rwTimeout != 0)
-                $this->rwTimeout = (int)$rwTimeout;
+            if ($rwTimeout != 0)
+                $this->rwTimeout = $rwTimeout;
         }
 
         final public function __destruct()
@@ -196,7 +184,7 @@ namespace Npf\Core\Redis {
         /**
          * @param bool $full
          */
-        private function close($full = false)
+        private function close(bool $full = false): void
         {
             $isResource = is_resource($this->socket);
             if (($this->persistent && $full && $isResource) || (!$this->persistent && $isResource))
@@ -211,7 +199,7 @@ namespace Npf\Core\Redis {
          * @return bool
          * @throws InternalError
          */
-        public function ping()
+        public function ping(): bool
         {
             return $this->__execmd('ping') === 'PONG';
         }
@@ -220,7 +208,7 @@ namespace Npf\Core\Redis {
          * @return mixed
          * @throws InternalError
          */
-        private function __execmd()
+        private function __execmd(): mixed
         {
             $args = func_get_args();
             $masterOnly = !in_array(strtoupper($args[0]), $this->readFnc, true);
@@ -235,22 +223,23 @@ namespace Npf\Core\Redis {
                     return $this->__read();
                 } else
                     $this->__errorHandle('Unable write to redis');
-            } catch (InternalError $e) {
+            } catch (InternalError) {
                 if ($this->lastError !== '')
                     $this->__errorHandle($this->lastError);
-                else
+                else {
                     return $this->reconnect($masterOnly) === false ? false : call_user_func_array(
                         [$this, '__execmd'], $args);
+                }
             }
             return false;
         }
 
         /**
-         * @param $arguments
+         * @param array $arguments
          * @return bool|int
          * @throws InternalError
          */
-        private function __write($arguments)
+        private function __write(array $arguments): bool|int
         {
             if (is_array($arguments)) {
                 $raw = '';
@@ -262,11 +251,11 @@ namespace Npf\Core\Redis {
         }
 
         /**
-         * @param $raw
-         * @param $arguments
+         * @param string $raw
+         * @param array $arguments
          * @return int
          */
-        private function __request(&$raw, $arguments)
+        private function __request(string &$raw, array $arguments): int
         {
             $count = 0;
             foreach ($arguments as $argument) {
@@ -274,23 +263,26 @@ namespace Npf\Core\Redis {
                     $count += $this->__request($raw, $argument);
                 } else {
                     $count++;
-                    $arglen = strlen($argument);
-                    $raw .= "\${$arglen}\r\n{$argument}\r\n";
+                    $argument = (string)$argument;
+                    $argLen = strlen($argument);
+                    $raw .= "\${$argLen}\r\n{$argument}\r\n";
                 }
             }
             return $count;
         }
 
         /**
-         * @param $data
+         * @param string $data
          * @return bool|int
          * @throws InternalError
          */
-        private function __socketWrite($data)
+        private function __socketWrite(string $data): bool|int
         {
+            $retry = 5;
             $bytes_to_write = strlen($data);
             $bytes_written = 0;
-            $retry = 5;
+            if (100 <= 0)
+                $retry = 3;
             while ($bytes_written < $bytes_to_write) {
                 if ($retry <= 0)
                     return false;
@@ -310,10 +302,10 @@ namespace Npf\Core\Redis {
         }
 
         /**
-         * @param $desc
+         * @param string $desc
          * @throws InternalError
          */
-        private function __errorHandle($desc)
+        private function __errorHandle(string $desc)
         {
             $this->close(TRUE);
             throw new InternalError(trim($desc), "REDIS_ERROR");
@@ -321,13 +313,12 @@ namespace Npf\Core\Redis {
 
         /**
          * @param int $times
-         * @return array|bool|null|string
+         * @return int|bool|array|string|null
          * @throws InternalError
          */
-        private function __read($times = 0)
+        private function __read(int $times = 0): null|int|bool|array|string
         {
             $response = $this->__receive($this->bufferSize);
-
             if (!$response) {
                 if (FALSE === $response) {
                     $this->lastError = 'Error while reading line from the server.';
@@ -384,7 +375,7 @@ namespace Npf\Core\Redis {
                     return $multiResult;
 
                 default:
-                    $this->lastError = "Unknown response prefix: '$prefix'.'";
+                    $this->lastError = "Unknown response prefix: '$prefix'.";
                     $this->__errorHandle($this->lastError);
                     return null;
             }
@@ -394,7 +385,7 @@ namespace Npf\Core\Redis {
          * @param int $len
          * @return string
          */
-        private function __receive($len = 4096)
+        private function __receive(int $len = 4096): string
         {
             $response = @fgets($this->socket, $len);
             return trim($response);
@@ -406,7 +397,7 @@ namespace Npf\Core\Redis {
          * @return bool
          * @throws InternalError
          */
-        private function reconnect($masterOnly = false)
+        private function reconnect(bool $masterOnly = false): bool
         {
             try {
                 if ($this->allowReconnect || ($this->mode !== 'master' && $masterOnly)) {
@@ -428,7 +419,7 @@ namespace Npf\Core\Redis {
          * @return bool
          * @throws InternalError
          */
-        private function connect($masterOnly = false)
+        private function connect(bool $masterOnly = false): bool
         {
             $this->__connect($masterOnly);
             if ($this->connected) {
@@ -449,7 +440,7 @@ namespace Npf\Core\Redis {
          * @return bool
          * @throws InternalError
          */
-        public function __connect($masterOnly = false, $retry = 1)
+        public function __connect(bool $masterOnly = false, int $retry = 1): bool
         {
             if (is_array($this->hosts) && !empty($this->hosts)) {
                 $hosts = $this->hosts;
@@ -462,8 +453,6 @@ namespace Npf\Core\Redis {
                         if ($this->__openSocket($config[0], $config[1], $this->timeout, $this->
                         rwTimeout)
                         ) {
-                            if($this->authPass)
-                                $this->auth($this->authPass);
                             $role = $this->role();
                             $this->mode = $role[0];
                             if ($this->mode === 'master')
@@ -488,7 +477,7 @@ namespace Npf\Core\Redis {
                 }
                 if ($retry > 0) {
                     usleep(100000);
-                    return $this->__connect($masterOnly, (int)$retry - 1);
+                    return $this->__connect($masterOnly, $retry - 1);
                 } else
                     return false;
             } else
@@ -502,7 +491,7 @@ namespace Npf\Core\Redis {
          * @param int $rwTimeout
          * @return bool
          */
-        private function __openSocket($host, $port, $timeout, $rwTimeout)
+        private function __openSocket(string $host, int $port, int $timeout, int $rwTimeout): bool
         {
             try {
                 $this->close();
@@ -522,7 +511,7 @@ namespace Npf\Core\Redis {
                     $this->connected = true;
                     return true;
                 }
-            } catch (Exception $e) {
+            } catch (Exception) {
                 $this->close();
                 return false;
             }
@@ -533,7 +522,7 @@ namespace Npf\Core\Redis {
          * @return array|bool|null|string
          * @throws InternalError
          */
-        private function role()
+        private function role(): array|bool|null|string
         {
             if (!$this->connected)
                 return false;
@@ -549,9 +538,11 @@ namespace Npf\Core\Redis {
          * @return array|bool|null|string
          * @throws InternalError
          */
-        private function auth($pass)
+        private function auth(string $pass): array|bool|null|string
         {
-            if ($this->__write(['AUTH', $pass])) {
+            if (!$this->connected)
+                return false;
+            elseif ($this->__write(['AUTH', $pass])) {
                 return $this->__read();
             } else
                 return false;
@@ -559,13 +550,12 @@ namespace Npf\Core\Redis {
 
         /**
          * Select Redis DB
-         * @param $db
+         * @param int $db
          * @return array|bool|null|string
          * @throws InternalError
          */
-        public function select($db)
+        public function select(int $db): array|bool|null|string
         {
-            $db = (int)$db;
             $this->app->profiler->timerStart("redis");
             if (!$this->connected)
                 return false;
@@ -573,7 +563,7 @@ namespace Npf\Core\Redis {
                 $result = $this->__read();
                 if ($result)
                     $this->db = $db;
-                $this->app->profiler->saveQuery("selectDb:{$db}", "redis");
+                $this->app->profiler->saveQuery("selectDb: {$db}", "redis");
                 return $result;
             } else
                 return false;
@@ -581,10 +571,10 @@ namespace Npf\Core\Redis {
 
         /**
          * Start Redis Transaction
-         * @return bool|mixed
+         * @return mixed
          * @throws InternalError
          */
-        public function multi()
+        public function multi(): mixed
         {
             if (!$this->trans) {
                 $this->trans = $this->__execmd('multi');
@@ -598,7 +588,7 @@ namespace Npf\Core\Redis {
          * @return bool
          * @throws InternalError
          */
-        public function exec()
+        public function exec(): bool
         {
             $results = null;
             if (!$this->transError)
@@ -623,7 +613,7 @@ namespace Npf\Core\Redis {
          * @return bool
          * @throws InternalError
          */
-        public function discard()
+        public function discard(): bool
         {
             if ($this->trans) {
                 if ($this->__execmd('discard')) {
@@ -637,95 +627,92 @@ namespace Npf\Core\Redis {
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @return mixed
          * @throws InternalError
          */
-        public function getUnserialise($name)
+        public function getUnserialise(string $name): mixed
         {
             return $this->varUnserialise($this->get($name));
         }
 
         /**
-         * @param $Json
+         * @param string $json
          * @return mixed
          */
-        private function varUnserialise($Json)
+        private function varUnserialise(string $json): mixed
         {
-            $Data = json_decode($Json, true);
-            return json_last_error() !== 0 ? $Json : $Data;
+            $Data = json_decode($json, true);
+            return json_last_error() !== 0 ? $json : $Data;
         }
 
         /**
-         * @param $name
-         * @return bool
+         * @param string $name
+         * @return mixed
          * @throws InternalError
          */
-        public function get($name)
+        public function get(string $name): mixed
         {
             return $this->__execmd('get', $name);
         }
 
         /**
-         * @param $name
-         * @param $value
-         * @param $expired
+         * @param string $name
+         * @param string $value
+         * @param int $expired
          * @return bool
          * @throws InternalError
          */
-        public function setex($name, $value, $expired)
+        public function setEx(string $name, string $value, int $expired): bool
         {
-            $expired = (int)$expired;
             return (boolean)$this->__execmd('setex', $name, $expired, $value);
         }
 
         /**
          * @param string $name
          * @param string $value
-         * @param int $lifeTime
+         * @param int|null $lifeTime
          * @param bool $noExists
          * @return bool
          */
-        public function setSerialise($name, $value, $lifeTime = null, $noExists = null)
+        public function setSerialise(string $name, mixed $value, ?int $lifeTime = null, ?bool $noExists = null): bool
         {
             $value = $this->varSerialise($value);
             return (boolean)$this->set($name, $value, $lifeTime, $noExists);
         }
 
         /**
-         * @param mixed $Data
+         * @param mixed $data
          * @return string
          */
-        private function varSerialise($Data)
+        private function varSerialise(mixed $data): string
         {
-            return json_encode($Data);
+            return json_encode($data);
         }
 
         /**
          * @param string $name Key Name
          * @param string $value Key Value
-         * @param int $lifeTime Set key Life Time in second
+         * @param int|null $lifeTime Set key Life Time in second
          * @param bool $noExists Set only key not exists
          * @return mixed
          */
-        public function set($name, $value, $lifeTime = null, $noExists = null)
+        public function set(string $name, string $value, ?int $lifeTime = null, ?bool $noExists = null): mixed
         {
             $param = ['set', $name, $value];
             if (!empty($lifeTime))
-                $param = array_merge($param, ['EX', (int)$lifeTime]);
-            if (null !== $noExists) {
-                $noExists = (boolean)$noExists;
+                $param = array_merge($param, ['EX', $lifeTime]);
+            if (null !== $noExists)
                 $param[] = $noExists ? 'NX' : 'XX';
-            }
             return call_user_func_array([$this, '__execmd'], $param);
         }
 
         /**
-         * @param $name
-         * @param $args
+         * @param string $name
+         * @param array $args
          * @return mixed
          */
-        public function __call($name, $args)
+        public function __call(string $name, array $args): mixed
         {
             if (!is_array($args) || (array_diff_key($args, array_keys(array_keys
                 ($args))))
@@ -736,35 +723,35 @@ namespace Npf\Core\Redis {
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @param mixed $value
-         * @param null $expired
+         * @param int|null $expired
          * @return bool
          */
-        public function setnxSerialise($name, $value, $expired = null)
+        public function setNxSerialise(string $name, mixed $value, ?int $expired = null): bool
         {
             $value = $this->varSerialise($value);
-            return $this->setnx($name, $value, $expired);
+            return $this->setNx($name, $value, $expired);
         }
 
         /**
-         * @param $name
-         * @param $value
-         * @param null $expired
+         * @param string $name
+         * @param string $value
+         * @param int|null $expired
          * @return bool
          */
-        public function setnx($name, $value, $expired = null)
+        public function setNx(string $name, string $value, ?int $expired = null): mixed
         {
             $expired = (int)$expired;
             return $this->set($name, $value, $expired, true);
         }
 
         /**
-         * @param $name
+         * @param string $name
          * @return array
          * @throws InternalError
          */
-        public function hGetAll($name)
+        public function hGetAll(string $name): array
         {
             $data = (array)$this->__execmd('hgetall', $name);
             $result = [];

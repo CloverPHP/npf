@@ -3,7 +3,9 @@
 namespace Npf;
 
 use Exception;
+use JetBrains\PhpStorm\Pure;
 use Npf\Boot\StartUp;
+use Throwable;
 
 /**
  * Class Web
@@ -14,7 +16,7 @@ final class Web
     /**
      * @var StartUp
      */
-    private $startUp;
+    private StartUp $startUp;
 
     /**
      * StartUp constructor.
@@ -22,7 +24,7 @@ final class Web
      * @param string $name
      * @param string $role
      */
-    final public function __construct($env = 'Local', $name = 'DefaultApp', $role = 'web')
+    final public function __construct(string $env = 'Local', string $name = 'DefaultApp', string $role = 'web')
     {
         $role = strtolower($role);
         if (empty($role))
@@ -34,14 +36,14 @@ final class Web
      * Create App
      * @throws Exception
      */
-    final public function createApp()
+    #[Pure] final public function createApp(): Core\App
     {
         return $this->startUp->getApp();
     }
 
     /**
      * Start Up
-     * @throws Exception
+     * @throws Throwable
      */
     final public function __invoke()
     {

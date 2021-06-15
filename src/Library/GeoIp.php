@@ -1,9 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Library {
 
     use BadMethodCallException;
-    use Exception as ExceptionAlias;
+    use Exception ;
     use GeoIp2\Database\Reader;
     use GeoIp2\Exception\AddressNotFoundException;
     use InvalidArgumentException;
@@ -19,56 +20,51 @@ namespace Npf\Library {
     class GeoIp
     {
         /**
-         * @var App
+         * @var string|null
          */
-        private $app;
+        private string|null $continent;
         /**
-         * @var string
+         * @var string|null
          */
-        private $continent = null;
+        private string|null $continentCode = null;
         /**
-         * @var string
+         * @var string|null
          */
-        private $continentCode = null;
+        private string|null $countryIsoCode = null;
         /**
-         * @var string
+         * @var string|null
          */
-        private $countryIsoCode = null;
+        private string|null $country = null;
         /**
-         * @var string
+         * @var string|null
          */
-        private $country = null;
+        private string|null $city = null;
         /**
-         * @var string
+         * @var string|null
          */
-        private $city = null;
+        private string|null $ip = null;
         /**
-         * @var string
+         * @var string|null
          */
-        private $ip = null;
-        /**
-         * @var string
-         */
-        private $dbFiles;
+        private string|null $dbFiles;
 
         /**
          * Aes constructor.
          * @param App $app
          * @throws InternalError
          */
-        public function __construct(App &$app)
+        public function __construct(private App $app)
         {
-            $this->app = &$app;
             $this->dbFiles = $this->app->config('Misc')->get('geoIpDB');
             $this->setIp(Common::getClientIp());
             $this->app->response->add('geoError', Common::getServerIp());
         }
 
         /**
-         * @param $ip
-         * @return bool
+         * @param string $ip
+         * @return self
          */
-        public function setIp($ip)
+        public function setIp(string $ip): self
         {
             $this->continent = null;
             $this->continentCode = null;
@@ -86,7 +82,7 @@ namespace Npf\Library {
                     $this->countryIsoCode = $data->country->isoCode;
                     $this->city = $data->city->name;
                 }
-            } catch (BadMethodCallException $ex) {
+            } catch (BadMethodCallException) {
                 try {
                     if (!empty($geoIp) && $geoIp instanceof Reader) {
                         $data = $geoIp->country($this->ip);
@@ -95,57 +91,57 @@ namespace Npf\Library {
                         $this->country = $data->country->name;
                         $this->countryIsoCode = $data->country->isoCode;
                     }
-                } catch (ExceptionAlias $ex) {
-                    return false;
+                } catch (Exception) {
+                    return $this;
                 }
-            } catch (AddressNotFoundException $ex) {
+            } catch (AddressNotFoundException) {
                 $this->ip = null;
-                return false;
-            } catch (InvalidArgumentException $ex) {
-                return false;
-            } catch (InvalidDatabaseException $ex) {
+                return $this;
+            } catch (InvalidArgumentException) {
+                return $this;
+            } catch (InvalidDatabaseException) {
                 $this->dbFiles = null;
-                return false;
+                return $this;
             }
-            return true;
+            return $this;
         }
 
         /**
-         * @return string
+         * @return string|null
          */
-        public final function getContinent()
+        public final function getContinent(): ?string
         {
             return $this->continent;
         }
 
         /**
-         * @return string
+         * @return string|null
          */
-        public final function getContinentCode()
+        public final function getContinentCode(): ?string
         {
             return $this->continentCode;
         }
 
         /**
-         * @return string
+         * @return string|null
          */
-        public final function getCountry()
+        public final function getCountry(): ?string
         {
             return $this->country;
         }
 
         /**
-         * @return string
+         * @return string|null
          */
-        public final function getCountryCode()
+        public final function getCountryCode(): ?string
         {
             return $this->countryIsoCode;
         }
 
         /**
-         * @return string
+         * @return string|null
          */
-        public final function getCity()
+        public final function getCity(): ?string
         {
             return $this->city;
         }

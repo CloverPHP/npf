@@ -1,8 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
-    use ErrorException;
+    use Npf\Exception\ErrorException;
+    use Throwable;
 
     /**
      * Kernel, handling error, exception, critical error.
@@ -14,13 +16,13 @@ namespace Npf\Core {
         /**
          * @var array App Info
          */
-        public static $appInfo = [];
+        public static array $appInfo = [];
 
         /**
          * App Object
          * @var App
          */
-        public $app = null;
+        public App $app;
 
         /**
          * Core constructor.
@@ -28,20 +30,11 @@ namespace Npf\Core {
         final public function __construct()
         {
             //Initial Handling
-            ini_set('display_errors', 1);
-            ini_set('display_startup_errors', 1);
+            ini_set('display_errors', '1');
+            ini_set('display_startup_errors', '1');
             register_shutdown_function([$this, 'handleShutdown']);
             set_exception_handler([$this, 'handleException']);
             set_error_handler([$this, 'handleError'], E_ALL);
-        }
-
-        private function createApp()
-        {
-            if ($this->app === null) {
-                $app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
-                $this->app = &$app;
-            }
-            return $this->app;
         }
 
         /**
@@ -49,7 +42,7 @@ namespace Npf\Core {
          * @param array $appInfo
          * @return App
          */
-        final public function buildApp(array $appInfo)
+        final public function createApp(array $appInfo): App
         {
             self::$appInfo = array_intersect_key($appInfo, array_fill_keys(['role', 'env', 'name'], true));
             if (empty(self::$appInfo['role']))
@@ -58,15 +51,18 @@ namespace Npf\Core {
                 self::$appInfo['env'] = 'local';
             if (empty(self::$appInfo['name']))
                 self::$appInfo['name'] = 'defaultApp';
-            return $this->createApp();
+            $app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
+            $this->app = &$app;
+            return $this->app;
         }
 
         /**
          * Critical Error Handle
          */
-        final public function handleShutdown()
+        final public function handleShutdown(): void
         {
-            $this->createApp();
+            if (!isset($this->app))
+                $this->app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
             $this->app->emit('shutdown', [&$this->app]);
             $this->handleCritical();
         }
@@ -74,49 +70,51 @@ namespace Npf\Core {
         /**
          * Handle Critical Error
          */
-        final public function handleCritical()
+        final public function handleCritical(): void
         {
             $error = error_get_last();
             if (!empty($error) && is_array($error)) {
-                $this->createApp();
+                if (!isset($this->app))
+                    $this->app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
                 $this->app->handleCritical($error);
             }
         }
 
         /**
          * Exception Handle
-         * @param \Exception $exception
+         * @param Throwable $exception
          */
-        final public function handleException($exception)
+        final public function handleException(Throwable $exception): void
         {
-            $this->createApp();
-            $this->app->handleException($exception, true);
+            if (!isset($this->app))
+                $this->app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
+            $trace = $this->app->trace($exception);
+            $this->app->handleException($trace, $exception, true);
         }
 
         /**
          * Error Handle
-         * @param $severity
-         * @param $message
-         * @param $file
-         * @param $line
+         * @param int $severity
+         * @param string $message
+         * @throws ErrorException
          */
-        final public function handleError($severity, $message, $file, $line)
+        final public function handleError(int $severity, string $message)
         {
             // This error code is not included in error_reporting
             if (!(error_reporting() & $severity))
                 return;
-            $this->app->handleException(new ErrorException($message, 0, $severity, $file, $line), true);
+            throw new ErrorException($message, "error_exception", "error", $severity);
         }
 
         /**
          * @param array $appInfo
-         * @throws \Exception
+         * @throws Throwable
          */
-        final public function __invoke(array $appInfo = [])
+        final public function __invoke(array $appInfo = []): void
         {
             try {
-                $timezone = $this->app->config('General')->get('timezone');
-            } catch (\Exception $e) {
+                $timezone = $this->app->config('General')->get('timezone', 'UTC');
+            } catch (Throwable) {
                 $timezone = 'UTC';
             }
             Common::initial($timezone);

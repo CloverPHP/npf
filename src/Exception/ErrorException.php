@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Exception {
 
@@ -13,15 +14,15 @@ namespace Npf\Exception {
         /**
          * @var string
          */
-        protected $error = 'error_exception';
+        protected string $error = 'error_exception';
         /**
          * @var bool
          */
-        protected $sysLog = true;
+        protected bool $sysLog = true;
         /**
          * @var int
          */
-        protected $severity = 0;
+        protected int $severity = 0;
 
         final public function __construct($desc, $code, $status = 'error', $severity = 0)
         {

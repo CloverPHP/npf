@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Exception {
 
@@ -10,6 +11,6 @@ namespace Npf\Exception {
      */
     class SystemMaintenance extends Exception
     {
-        protected $error = 'system_maintenance';
+        protected string $error = 'system_maintenance';
     }
 }

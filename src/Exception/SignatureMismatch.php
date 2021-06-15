@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Exception {
 
@@ -10,7 +11,7 @@ namespace Npf\Exception {
      */
     class SignatureMismatch extends Exception
     {
-        protected $error = 'signature_mismatch';
+        protected string $error = 'signature_mismatch';
     }
 }
 

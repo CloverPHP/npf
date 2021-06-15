@@ -1,7 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Library;
 
+use CurlHandle;
 use finfo;
 use Npf\Exception\InternalError;
 
@@ -14,123 +16,123 @@ final class Rpc
     /**
      * @var string Url
      */
-    private $url = '';
+    private string $url = '';
 
     /**
      * @var bool Enable Verbose Debug
      */
-    private $verboseDebug = false;
+    private bool $verboseDebug = false;
 
     /**
      * @var string CURL Verbose Debug Log
      */
-    private $verboseDebugLog = '';
+    private string $verboseDebugLog = '';
 
     /**
      * @var int Request Timeout
      */
-    private $timeout = 30;
+    private int $timeout = 30;
 
     /**
      * @var int Request Timeout in ms
      */
-    private $timeoutMS = 0;
+    private int $timeoutMS = 0;
 
     /**
      * @var int Request Timeout
      */
-    private $connectTimeout = 30;
+    private int $connectTimeout = 30;
 
     /**
      * @var int Request Connection Port
      */
-    private $port = 0;
+    private int $port = 0;
 
     /**
      * @var array Request Header
      */
-    private $headers = ['Expect' => ''];
+    private array $headers = ['Expect' => ''];
 
     /**
      * @var array Basic Auth
      */
-    private $basicAuth = [];
+    private array $basicAuth = [];
 
     /**
      * @var array Get/Post Parameters
      */
-    private $params = [];
+    private array $params = [];
 
     /**
      * @var array Get/Post Binding Parameters
      */
-    private $bindingParams = [];
+    private array $bindingParams = [];
 
     /**
      * @var array Cookie
      */
-    private $cookie = [];
+    private array $cookie = [];
 
     /**
      * @var string Body Content
      */
-    private $content = '';
+    private string $content = '';
 
     /**
      * @var string Request Method : Post/Get/Put/HTTP2.0 Custom method
      */
-    private $method = 'GET';
+    private string $method = 'GET';
 
     /**
      * @var array Available Method
      */
-    private $availableMethod = ['GET', 'POST', 'PUT', 'HEADER'];
+    private array $availableMethod = ['GET', 'POST', 'PUT', 'HEADER'];
 
     /**
      * @var string User Agent Simulation
      */
-    private $userAgent = 'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36'; //Simulation Google Chrome
+    private string $userAgent = 'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36'; //Simulation Google Chrome
 
     /**
      * @var array Response Data
      */
-    private $response = [];
+    private array $response = [];
 
     /**
-     * @var null|array Request Proxy
+     * @var ?array Request Proxy
      */
-    private $proxy = null;
+    private ?array $proxy = null;
 
     /**
      * @var string Internal Cookie Handle
      */
-    private $internalCookie = '';
+    private string $internalCookie = '';
 
     /**
      * @var bool Flag is have file upload
      */
-    private $fileUpload = false;
+    private bool $fileUpload = false;
 
     /**
      * @var array Curl additional option
      */
-    private $curlOpt = [];
+    private array $curlOpt = [];
 
     /**
      * @var string CA Cert File Path to load
      */
-    private $CACert = '';
+    private string $CACert = '';
 
     /**
      * @var bool
      */
-    private $followLocation = true;
+    private bool $followLocation = true;
     /**
-     * @var
+     * @var CurlHandle
      */
-    private $handle;
+    private mixed $handle;
 
-    private $rpcThread = [];
+    private array $rpcThread = [];
 
     /**
      * Rpc constructor.
@@ -143,29 +145,30 @@ final class Rpc
     }
 
     /**
-     * Rpc constructor.
+     * Set Connection Timeout
      * @param int $connectionTimeout
+     * @return self
      */
-    final public function setConnectionTimeout($connectionTimeout = 0)
+    final public function setConnectionTimeout(int $connectionTimeout = 0): self
     {
-        $connectionTimeout = (int)$connectionTimeout;
         if ($connectionTimeout > 0)
             $this->connectTimeout = $connectionTimeout;
+        return $this;
     }
 
     /**
      * Rpc constructor.
      * @param int $timeout
      * @param int $timeoutMS
+     * @return self
      */
-    final public function setTimeout($timeout = 30, $timeoutMS = 0)
+    final public function setTimeout(int $timeout = 30, int $timeoutMS = 0): self
     {
-        $timeout = (int)$timeout;
-        $timeoutMS = (int)$timeoutMS;
         if ($timeout > 0)
             $this->timeout = $timeout;
         if ($timeoutMS > 0)
             $this->timeoutMS = $timeoutMS;
+        return $this;
     }
 
     /**
@@ -173,10 +176,10 @@ final class Rpc
      * @param null|boolean $enable
      * @return bool
      */
-    final public function autoFollowLocation($enable = null)
+    final public function autoFollowLocation(?bool $enable = null): bool
     {
         if ($enable !== null) {
-            $this->followLocation = (boolean)$enable;
+            $this->followLocation = $enable;
             return $enable;
         } else
             return $this->followLocation;
@@ -186,7 +189,7 @@ final class Rpc
      * Get User Agent
      * @return string
      */
-    final public function getUserAgent()
+    final public function getUserAgent(): string
     {
         return $this->userAgent;
     }
@@ -194,22 +197,25 @@ final class Rpc
     /**
      * Set User Agent
      * @param string $userAgent
+     * @return self
      */
-    final public function setUserAgent($userAgent)
+    final public function setUserAgent(string $userAgent): self
     {
-        if (is_string($userAgent) && !empty($userAgent)) {
+        if (is_string($userAgent) && !empty($userAgent))
             $this->userAgent = $userAgent;
-        }
+        return $this;
     }
 
     /**
      * Set Request Connection Port
      * @param int $port
+     * @return self
      */
-    final public function setPort($port = 0)
+    final public function setPort(int $port = 0): self
     {
         if (is_int($port) && !empty($port))
             $this->port = $port;
+        return $this;
     }
 
     /**
@@ -217,13 +223,15 @@ final class Rpc
      * @param string $user Proxy Auth User
      * @param string $pass Proxy Auth Pass
      * @param string $type
+     * @return self
      */
-    final public function setBasicAuth($user, $pass, $type = 'any')
+    final public function setBasicAuth(string $user, string $pass, string $type = 'any'): self
     {
         if (is_string($user) && !empty($user) && is_string($pass)) {
             $this->basicAuth['userpwd'] = "{$user}:{$pass}";
             $this->basicAuth['type'] = $type;
         }
+        return $this;
     }
 
     /**
@@ -232,10 +240,16 @@ final class Rpc
      * @param string $user Proxy Auth User
      * @param string $pass Proxy Auth Pass
      * @param string $serviceName
-     * @param $header
+     * @param ?array $header
      * @param int $socketType
+     * @return self
      */
-    final public function setProxy($proxyAddress, $user = '', $pass = '', $serviceName = '', $header = null, $socketType = 0)
+    final public function setProxy(string $proxyAddress,
+                                   string $user = '',
+                                   string $pass = '',
+                                   string $serviceName = '',
+                                   ?array $header = null,
+                                   int $socketType = 0): self
     {
         if (is_string($proxyAddress) && !empty($proxyAddress)) {
             $this->proxy['proxy'] = $proxyAddress;
@@ -248,53 +262,57 @@ final class Rpc
             if (is_int($socketType) && !empty($socketType))
                 $this->proxy['sockettype'] = $socketType;
         }
+        return $this;
     }
 
     /**
      * Set Request Body Content
      * @param string $cert File
+     * @return self
      */
-    final public function setCACert($cert)
+    final public function setCACert(string $cert): self
     {
         $cert = realpath($cert);
-        if (is_string($cert) && !empty($cert) && file_exists($cert)) {
+        if (is_string($cert) && !empty($cert) && file_exists($cert))
             $this->CACert = $cert;
-        }
+        return $this;
     }
 
     /**
      * Add A GET/POST param
-     * @param $name
-     * @param $value
+     * @param string $name
+     * @param mixed $value
+     * @return self
      */
-    final public function bindingParam($name, $value)
+    final public function bindingParam(string $name, mixed $value): self
     {
-        if (!empty($name) && (is_string($value) || is_numeric($value))) {
+        if (!empty($name) && (is_string($value) || is_numeric($value)))
             $this->bindingParams[$name] = $value;
-        }
+        return $this;
     }
 
     /**
      * Add A GET/POST param
-     * @param $name
-     * @param $value
+     * @param string $name
+     * @param mixed $value
+     * @return self
      */
-    final public function bindingParams($name, $value)
+    final public function bindingParams(string $name, mixed $value): self
     {
-        if (!empty($name) && (is_string($value) || is_numeric($value))) {
+        if (!empty($name) && (is_string($value) || is_numeric($value)))
             $this->bindingParams[$name] = $value;
-        }
+        return $this;
     }
 
     /**
      * Add Multiple Get/Set Params
-     * @param $name
-     * @param $fileName
-     * @param null $contentType
-     * @return bool
+     * @param string $name
+     * @param string $fileName
+     * @param ?string $contentType
+     * @return self
      * @internal param array $values
      */
-    final public function addFile($name, $fileName, $contentType = null)
+    final public function addFile(string $name, string $fileName, ?string $contentType = null): self
     {
         if (is_string($name) && !empty($name) && is_string($fileName) && !empty($fileName) && file_exists($fileName) && !is_dir($fileName)) {
             if (empty($contentType)) {
@@ -307,91 +325,98 @@ final class Rpc
                 $cFile = "@{$fileName};filename=" . basename($fileName) . ($contentType ? ";type=$contentType" : '');
             $this->fileUpload = true;
             $this->params[$name] = $cFile;
-            return true;
-        } else
-            return false;
+        }
+        return $this;
     }
 
     /**
      * Add Cookie to response
-     * @param $name
-     * @param $content
+     * @param string $name
+     * @param string $content
+     * @return self
      */
-    final public function addCookie($name, $content)
+    final public function addCookie(string $name, string $content): self
     {
-        if (is_string($name) && !empty($name) && is_string($content) && !empty($content)) {
+        if (is_string($name) && !empty($name) && is_string($content) && !empty($content))
             $this->cookie[$name] = $content;
-        }
+        return $this;
     }
 
     /**
      * Add Cookie to response
-     * @param $cookies
+     * @param array $cookies
+     * @return self
      */
-    final public function addCookies($cookies)
+    final public function addCookies(array $cookies): self
     {
-        if (is_array($cookies) && !empty($cookies)) {
+        if (is_array($cookies) && !empty($cookies))
             $this->cookie = array_merge($this->cookie, $cookies);
-        }
+        return $this;
     }
 
     /**
      * Add a curl option
      * @param int $optId
-     * @param $value
+     * @param int|float|bool|string|array $value
+     * @return self
      */
-    final public function addOption($optId, $value)
+    final public function addOption(int $optId, int|float|bool|string|array $value): self
     {
-        if (!empty($optId) && is_int($optId)) {
+        if (!empty($optId) && is_int($optId))
             $this->curlOpt[$optId] = $value;
-        }
+        return $this;
     }
 
     /**
      * Add multiple request header
      * @param array $options
+     * @return self
      */
-    final public function addOptions(array $options)
+    final public function addOptions(array $options): self
     {
-        if (is_array($options) && !empty($options)) {
+        if (is_array($options) && !empty($options))
             $this->curlOpt += $options;
-        }
+        return $this;
     }
 
     /**
      * Added a request header
      * @param string $name
      * @param string $content
+     * @return Rpc
      */
-    final public function addHeader($name, $content)
+    final public function addHeader(string $name, string $content): self
     {
-        if (is_string($name) && !empty($name) && is_string($content) && !empty($content)) {
+        if (is_string($name) && !empty($name) && is_string($content) && !empty($content))
             $this->headers[$name] = $content;
-        }
+        return $this;
     }
 
     /**
      * Add multiple request header
      * @param array $headers
+     * @return self
      */
-    final public function addHeaders(array $headers)
+    final public function addHeaders(array $headers): self
     {
-        if (is_array($headers) && !empty($headers)) {
+        if (is_array($headers) && !empty($headers))
             $this->headers = array_merge($this->headers, $headers);
-        }
+        return $this;
     }
 
     /**
      * Add A GET/POST param
-     * @param $name
-     * @param $value
+     * @param string $name
+     * @param string $value
+     * @return self
      */
-    final public function addParam($name, $value)
+    final public function addParam(string $name, string $value): self
     {
         if (!empty($name) && (is_string($value) || is_numeric($value))) {
             $this->params[$name] = $value;
             $this->content = '';
         }
+        return $this;
     }
 
     /**
@@ -410,39 +435,39 @@ final class Rpc
      * Get Response Header
      * @return array
      */
-    final public function getResponse()
+    final public function getResponse(): array
     {
         return $this->response;
     }
 
     /**
      * Get Response Header
-     * @param $name
-     * @return mixed|null
+     * @param string $name
+     * @return ?string
      */
-    final public function getResponseHeader($name)
+    final public function getResponseHeader(string $name): ?string
     {
         if (is_string($name) && !empty($name)) {
             if ($name === '*')
                 return $this->response['header'];
             else
-                return isset($this->response['header'][$name]) ? $this->response['header'][$name] : null;
+                return $this->response['header'][$name] ?? null;
         } else
             return null;
     }
 
     /**
      * Get Response Cookie
-     * @param $name
-     * @return mixed|null
+     * @param string $name
+     * @return ?string
      */
-    final public function getResponseCookie($name)
+    final public function getResponseCookie(string $name): ?string
     {
         if (is_string($name) && !empty($name)) {
             if ($name === '*')
                 return $this->response['cookie'];
             else
-                return isset($this->response['cookie'][$name]) ? $this->response['cookie'][$name] : null;
+                return $this->response['cookie'][$name] ?? null;
         } else
             return null;
     }
@@ -451,7 +476,7 @@ final class Rpc
      * Get Response Body Content
      * @return string
      */
-    final public function getResponseContent()
+    final public function getResponseContent(): string
     {
         return $this->response['body'];
     }
@@ -460,7 +485,7 @@ final class Rpc
      * Get Response Status Code
      * @return string
      */
-    final public function getResponseStatus()
+    final public function getResponseStatus(): string
     {
         return $this->response['status'];
     }
@@ -469,18 +494,18 @@ final class Rpc
      * Get Response Status Code
      * @return int
      */
-    final public function getResponseStatusCode()
+    final public function getResponseStatusCode(): int
     {
         return (int)$this->response['code'];
     }
 
     /**
      * Process Response Header
-     * @param $ch
+     * @param CurlHandle $ch
      * @param string $headerLine
      * @return int
      */
-    final public function processResponseHeader($ch, $headerLine)
+    final public function processResponseHeader(mixed $ch, string $headerLine): int
     {
         $matches = [];
         if (preg_match('/^Set-Cookie:\s*([^;]*)/mi', $headerLine, $matches) == 1) {
@@ -501,9 +526,9 @@ final class Rpc
 
     /**
      * Process Response Header
-     * @param $cookieData
+     * @param string $cookieData
      */
-    final public function importCookieData($cookieData)
+    final public function importCookieData(string $cookieData)
     {
         $this->internalCookie = $cookieData;
     }
@@ -512,16 +537,16 @@ final class Rpc
      * Process Response Header
      * @return string
      */
-    final public function exportCookieData()
+    final public function exportCookieData(): string
     {
         return $this->internalCookie;
     }
 
     /**
      * For public to execute
-     * @return bool|string|null
+     * @return string
      */
-    final public function execute()
+    final public function execute(): string
     {
         return $this->_execute();
     }
@@ -530,7 +555,7 @@ final class Rpc
      * @param bool $fresh
      * @return false|resource
      */
-    final public function createHandle($fresh = false)
+    final public function createHandle(bool $fresh = false): CurlHandle|bool
     {
         //Prepare Data
         $this->clearResponse();
@@ -587,17 +612,17 @@ final class Rpc
     /**
      * @return mixed
      */
-    final public function getHandle()
+    final public function getHandle(): mixed
     {
         return $this->handle;
     }
 
     /**
      * Execute a request, & process response
-     * @param null $outputHandle
-     * @return bool|string|null
+     * @param mixed $outputHandle
+     * @return mixed
      */
-    private function _execute($outputHandle = null)
+    private function _execute(mixed $outputHandle = null): mixed
     {
         $this->createHandle();
 
@@ -673,7 +698,7 @@ final class Rpc
     /**
      * Clear Response
      */
-    private function clearResponse()
+    private function clearResponse(): void
     {
         $this->response = [
             'errno' => 0,
@@ -696,7 +721,7 @@ final class Rpc
         if ($this->method === 'GET') {
             if (is_array($this->params) && !empty($this->params)) {
                 $content = http_build_query($this->params);
-                $this->url .= (strpos($this->url, "?") === false ? "?" : "&") . $content;
+                $this->url .= (!str_contains($this->url, "?") ? "?" : "&") . $content;
             }
             $this->content = '';
             $this->params = [];
@@ -713,7 +738,7 @@ final class Rpc
      * Process Request Body
      * @return array
      */
-    private function processRequestHeader()
+    private function processRequestHeader(): array
     {
         $result = [];
         if (is_array($this->headers) && !empty($this->headers)) {
@@ -726,14 +751,18 @@ final class Rpc
 
     /**
      * Process Request Proxy
-     * @param resource $cHandle
+     * @param CurlHandle $cHandle
      */
-    private function processRequestProxy($cHandle)
+    private function processRequestProxy(mixed $cHandle)
     {
         if (is_array($this->proxy) && !empty($this->proxy) && isset($this->proxy['proxy'])) {
             curl_setopt($cHandle, CURLOPT_PROXY, $this->proxy['proxy']);
             if (isset($this->proxy['auth']))
                 curl_setopt($cHandle, CURLOPT_PROXYUSERPWD, $this->proxy['auth']);
+            if (isset($this->proxy['header']))
+                curl_setopt($cHandle, CURLOPT_PROXYHEADER, $this->proxy['header']);
+            if (isset($this->proxy['service']))
+                curl_setopt($cHandle, CURLOPT_PROXY_SERVICE_NAME, $this->proxy['service']);
             if (isset($this->proxy['sockettype']))
                 curl_setopt($cHandle, CURLOPT_PROXYTYPE, $this->proxy['sockettype']);
             $this->proxy = null;
@@ -742,9 +771,9 @@ final class Rpc
 
     /**
      * Process Request Basic Auth
-     * @param resource $cHandle
+     * @param CurlHandle $cHandle
      */
-    private function processRequestBasicAuth($cHandle)
+    private function processRequestBasicAuth(CurlHandle $cHandle)
     {
         if (is_array($this->basicAuth) && !empty($this->basicAuth) && isset($this->basicAuth['userpwd'])) {
             curl_setopt($cHandle, CURLOPT_USERPWD, $this->basicAuth['userpwd']);
@@ -772,9 +801,9 @@ final class Rpc
 
     /**
      * Process Request Cookie
-     * @param resource $cHandle
+     * @param CurlHandle $cHandle
      */
-    private function processRequestCookie($cHandle)
+    private function processRequestCookie(CurlHandle $cHandle)
     {
         $result = [];
         if (is_array($this->cookie) && !empty($this->cookie)) {
@@ -809,13 +838,13 @@ final class Rpc
     }
 
     /**
-     * @param $url
+     * @param string $url
      * @param string $method
-     * @param $content
+     * @param mixed $content
      * @param array $headers
      * @param array $cookies
      */
-    final public function prepare($url, $method = "GET", $content = null, array $headers = [], array $cookies = [])
+    final public function prepare(string $url, string $method = "GET", mixed $content = null, array $headers = [], array $cookies = [])
     {
         $this->setUrl($url);
         $this->setMethod($method);
@@ -844,20 +873,22 @@ final class Rpc
     /**
      * Setup Request Method, default is auto
      * @param string $method
+     * @return self
      */
-    final public function setMethod($method)
+    final public function setMethod(string $method): self
     {
-        if (is_string($method) && !empty($method) && in_array($method, $this->availableMethod, true)) {
+        if (is_string($method) && !empty($method) && in_array($method, $this->availableMethod, true))
             $this->method = strtoupper($method);
-        }
+        return $this;
     }
 
     /**
      * Set Request Body Content
      * @param string $content
      * @param string $contentType
+     * @return self
      */
-    final public function setContent($content, $contentType = 'plain/text')
+    final public function setContent(string $content, string $contentType = 'plain/text'): self
     {
         if (is_string($content) && !empty($content)) {
             $this->params = [];
@@ -865,30 +896,39 @@ final class Rpc
             $this->method = 'POST';
             $this->addHeader("Content-Type", $contentType);
         }
+        return $this;
     }
 
     /**
-     * @param $url
+     * @param string $url
      * @param string $method
-     * @param $content
+     * @param string|array|null $content
      * @param array $headers
      * @param array $cookies
-     * @return bool|string|null
+     * @return mixed
      */
-    final public function __invoke($url, $method = "GET", $content = null, array $headers = [], array $cookies = [])
+    final public function __invoke(string $url,
+                                   string $method = "GET",
+                                   string|array|null $content = null,
+                                   array $headers = [],
+                                   array $cookies = []): mixed
     {
         return $this->run($url, $method, $content, $headers, $cookies);
     }
 
     /**
-     * @param $url
+     * @param string $url
      * @param string $method
-     * @param $content
+     * @param string|array|null $content
      * @param array $headers
      * @param array $cookies
-     * @return bool|string|null
+     * @return mixed
      */
-    final public function run($url, $method = "GET", $content = null, array $headers = [], array $cookies = [])
+    final public function run(string $url,
+                              string $method = "GET",
+                              string|array|null $content = null,
+                              array $headers = [],
+                              array $cookies = []): mixed
     {
         $this->setUrl($url);
         $this->setMethod($method);
@@ -903,13 +943,17 @@ final class Rpc
 
     /**
      * Request Only, not waiting for response
-     * @param $url
+     * @param string $url
      * @param string $method
-     * @param $content
+     * @param string|array|null $content
      * @param array $headers
      * @param array $cookies
      */
-    final public function requestOnly($url, $method = "GET", $content = null, array $headers = [], array $cookies = [])
+    final public function requestOnly(string $url,
+                                      string $method = "GET",
+                                      string|array|null $content = null,
+                                      array $headers = [],
+                                      array $cookies = []): void
     {
         $this->setUrl($url);
         $this->setMethod($method);
@@ -928,19 +972,23 @@ final class Rpc
 
     /**
      * Download a file to Local
-     * @param $url
-     * @param $saveFileName
+     * @param string $url
+     * @param string $saveFileName
      * @param string $method
-     * @param null $content
+     * @param string|array|null $content
      * @param array $headers
      * @param array $cookies
      * @return bool
      */
-    final public function downloadFile($url, $saveFileName, $method = "GET", $content = NULL, array $headers = [], array $cookies = [])
+    final public function downloadFile(string $url,
+                                       string $saveFileName,
+                                       string $method = "GET",
+                                       string|array|null $content = null,
+                                       array $headers = [],
+                                       array $cookies = []): bool
     {
-        if (file_exists($saveFileName)) {
+        if (file_exists($saveFileName))
             @unlink($saveFileName);
-        }
         $fp = fopen($saveFileName, 'w');
         $this->setUrl($url);
         $this->setMethod($method);
@@ -957,17 +1005,19 @@ final class Rpc
 
     /**
      * @param bool $enable
+     * @return self
      */
-    final public function verboseDebug($enable = true)
+    final public function verboseDebug(bool $enable = true): self
     {
         $this->verboseDebug = $enable;
+        return $this;
     }
 
     /**
      * Return Verbose Log
      * @return string
      */
-    final public function verboseLog()
+    final public function verboseLog(): string
     {
         return $this->verboseDebugLog;
     }
@@ -975,22 +1025,21 @@ final class Rpc
     /**
      * Print out verbose log
      */
-    final public function printVerboseLog()
+    final public function printVerboseLog(): void
     {
         echo "<pre>" . $this->verboseDebugLog . "</pre>";
     }
 
     /**
-     * @param Rpc $rpcThread
+     * @param self $rpcThread
      * @param string $name
-     * @return false|resource
+     * @return bool|resource
      */
-    final public function addNewThread(Rpc $rpcThread, $name = '')
+    final public function addNewThread(self $rpcThread, string $name = ''): CurlHandle|bool
     {
         $handle = $rpcThread->createHandle(true);
         if ($handle === false)
             return false;
-        $name = (string)$name;
         if (!empty($name))
             $this->rpcThread[$name] = $rpcThread;
         else
@@ -1001,13 +1050,12 @@ final class Rpc
     /**
      * @return array
      */
-    final public function multiThread()
+    final public function multiThread(): array
     {
         $mh = curl_multi_init();
         foreach ($this->rpcThread as $rpc)
-            if ($rpc instanceof Rpc) {
+            if ($rpc instanceof self)
                 curl_multi_add_handle($mh, $rpc->getHandle());
-            }
 
         // execute the handles
         $running = null;

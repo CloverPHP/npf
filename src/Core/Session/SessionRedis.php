@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core\Session {
 
@@ -14,23 +15,13 @@ namespace Npf\Core\Session {
      */
     class SessionRedis implements SessionHandlerInterface
     {
-
-        /**
-         * @var App
-         */
-        private $app;
-
-        private $keyPrefix;
-        private $lockAttempt = 3;
-        private $lockTime = 60;
-        private $lockStatus = false;
-        private $lockKey = null;
-        private $sessionId = null;
-        private $fingerprint = null;
-        /**
-         * @var Container
-         */
-        private $config;
+        private string $keyPrefix;
+        private int $lockAttempt = 3;
+        private int $lockTime = 60;
+        private bool $lockStatus = false;
+        private string $lockKey = '';
+        private string $sessionId = '';
+        private ?string $fingerprint = null;
 
         // ------------------------------------------------------------------------
 
@@ -39,10 +30,8 @@ namespace Npf\Core\Session {
          * @param App $app
          * @param Container $config
          */
-        public function __construct(App $app, Container &$config)
+        public function __construct(private App $app, private Container $config)
         {
-            $this->app = &$app;
-            $this->config = &$config;
             $this->keyPrefix = $config->get('prefix', 'sess');
         }
 
@@ -53,7 +42,7 @@ namespace Npf\Core\Session {
          * @param string $name Session cookie name, unused
          * @return    bool
          */
-        public function open($path, $name)
+        public function open($path, $name): bool
         {
             return true;
         }
@@ -65,17 +54,14 @@ namespace Npf\Core\Session {
          * @return    string    Serialized session data
          * @throws InternalError
          */
-        public function read($id)
+        public function read($id): string
         {
             if ($this->_acquire_lock($id)) {
                 $this->sessionId = $id;
                 $data = $this->app->redis->get($this->keyPrefix . $id);
-                if ($data === null) {
-                    $this->fingerprint = null;
-                    $this->app->redis->set($this->keyPrefix . $id, '', $this->config->get('sessionTtl', 10800));
-                } else
+                if ($data !== null)
                     $this->fingerprint = sha1($data);
-                return $data;
+                return (string)$data;
             } else
                 throw new InternalError("Unable to read session");
         }
@@ -86,7 +72,7 @@ namespace Npf\Core\Session {
          * @param string $sessionId Session ID
          * @return    bool
          */
-        private function _acquire_lock($sessionId)
+        private function _acquire_lock(string $sessionId): bool
         {
             if (!empty($this->lockKey))
                 return $this->app->redis->expire($this->lockKey, $this->lockTime);
@@ -96,7 +82,7 @@ namespace Npf\Core\Session {
             $attempt = 0;
             do {
                 if (($ttl = $this->app->redis->ttl($lockKey)) > 0)
-                    sleep(1);
+                    usleep(mt_rand(1000000, 2000000));
 
                 $ret = $this->app->redis->setnx($lockKey, time(), $this->config->get('lockTime', 600));
                 if ($ret) {
@@ -108,8 +94,9 @@ namespace Npf\Core\Session {
             if ($attempt === $this->lockAttempt) {
                 $this->app->profiler->logInfo('Session', 'Session: Unable to obtain lock for ' . $this->keyPrefix . $sessionId . ' after attempts, aborting.');
                 return false;
-            } elseif ($ttl === -1)
+            } elseif ($ttl === -1) {
                 $this->app->profiler->logInfo('Session', 'Session: Lock for ' . $this->keyPrefix . $sessionId . ' had no TTL, overriding.');
+            }
 
             $this->lockStatus = true;
             return true;
@@ -122,7 +109,7 @@ namespace Npf\Core\Session {
          * @param string $data Serialized session data
          * @return    bool
          */
-        public function write($id, $data)
+        public function write($id, $data): bool
         {
             // Was the ID regenerated?
             if ($id !== $this->sessionId) {
@@ -141,8 +128,9 @@ namespace Npf\Core\Session {
                         return true;
                     }
                     return false;
-                }
-                return $this->app->redis->expire($this->keyPrefix . $id, $this->config->get('sessionTtl', 10800));
+                } else
+                    $this->app->redis->expire($this->keyPrefix . $id, $this->config->get('sessionTtl', 10800));
+                return true;
             }
             return false;
         }
@@ -152,14 +140,14 @@ namespace Npf\Core\Session {
          * Releases a previously acquired lock
          * @return    bool
          */
-        private function _release_lock()
+        private function _release_lock(): bool
         {
             if (!empty($this->lockKey) && $this->lockStatus) {
                 if (!$this->app->redis->del($this->lockKey)) {
                     $this->app->profiler->logInfo('Session', 'Session: Error while trying to free lock for ' . $this->lockKey);
                     return false;
                 }
-                $this->lockKey = NULL;
+                $this->lockKey = '';
                 $this->lockStatus = false;
             }
             return true;
@@ -170,16 +158,15 @@ namespace Npf\Core\Session {
          * Releases locks and closes connection.
          * @return    bool
          */
-        public function close()
+        public function close(): bool
         {
             try {
                 if ($this->lockStatus === true)
                     $this->_release_lock();
-                return true;
             } catch (Exception $e) {
                 $this->app->profiler->logInfo('Session', 'Session: Got Exception on close(): ' . $e->getMessage());
             }
-            return false;
+            return true;
         }
 
         /**
@@ -188,14 +175,14 @@ namespace Npf\Core\Session {
          * @param string $id Session ID
          * @return    bool
          */
-        public function destroy($id)
+        public function destroy($id): bool
         {
             if ($this->lockStatus === true && !empty($this->lockKey)) {
                 if (($result = $this->app->redis->del($this->keyPrefix . $id)) !== 1) {
                     $this->app->profiler->logInfo('Session', 'Session: Redis::del() expected to return 1, got ' . var_export($result, true) . ' instead.');
                 }
             }
-            return true;
+            return false;
         }
 
         /**
@@ -204,7 +191,7 @@ namespace Npf\Core\Session {
          * @param int $max_lifetime Maximum lifetime of sessions
          * @return    bool
          */
-        public function gc($max_lifetime)
+        public function gc($max_lifetime): bool
         {
             // Not necessary, Redis takes care of that.
             return true;
@@ -216,7 +203,6 @@ namespace Npf\Core\Session {
         {
             if ($this->lockStatus === true)
                 $this->_release_lock();
-            return true;
         }
     }
 }

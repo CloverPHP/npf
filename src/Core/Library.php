@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
@@ -27,31 +28,25 @@ namespace Npf\Core {
     class Library
     {
         /**
-         * @var App
-         */
-        private $app;
-
-        /**
          * @var array
          */
-        private $component;
+        private array $component = [];
 
         /**
          * Session constructor.
          * @param App $app
          */
-        final public function __construct(App $app)
+        final public function __construct(private App $app)
         {
-            $this->app = &$app;
         }
 
         /**
          * Session constructor.
-         * @param $name
+         * @param string $name
          * @return mixed
          * @throws InternalError
          */
-        final public function create($name)
+        final public function create(string $name): mixed
         {
             $className = "Npf\\Library\\" . ucfirst($name);
             if (!class_exists($className))
@@ -61,11 +56,11 @@ namespace Npf\Core {
 
         /**
          * Session constructor.
-         * @param $name
+         * @param string $name
          * @return mixed
          * @throws InternalError
          */
-        final public function __get($name)
+        final public function __get(string $name): mixed
         {
             if (!isset($this->component[$name]))
                 $this->component[$name] = $this->create($name);

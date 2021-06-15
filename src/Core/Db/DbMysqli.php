@@ -1,4 +1,5 @@
-<?PHP
+<?php
+declare(strict_types=1);
 
 namespace Npf\Core\Db {
 
@@ -20,21 +21,14 @@ namespace Npf\Core\Db {
      */
     class DbMysqli extends DbDriver
     {
-        public $connected = false;
-        /**
-         * @var App
-         */
-        private $app;
-        /**
-         * @var Container
-         */
-        private $config;
-        private $queryMode = 'store';
-        private $resLink;
-        private $resResult;
-        private $tranEnable = false;
-        private $tranStarted = false;
-        private $persistent = false;
+        public bool $connected = false;
+
+        private string $queryMode = 'store';
+        private null|bool|mysqli $resLink;
+        private null|bool|mysqli_result $resResult;
+        private bool $tranEnable = false;
+        private bool $tranStarted = false;
+        private bool $persistent = false;
         #----------------------------------------------------------------------#
         # Class Initialize
         #----------------------------------------------------------------------#
@@ -44,17 +38,15 @@ namespace Npf\Core\Db {
          * @param App $app
          * @param Container $config
          */
-        final public function __construct(App &$app, Container &$config)
+        final public function __construct(private App $app, private Container $config)
         {
-            $this->app = &$app;
-            $this->config = &$config;
         }
 
         /**
-         * @param $name
-         * @return null
+         * @param string $name
+         * @return mixed
          */
-        final public function __get($name)
+        final public function __get(string $name): mixed
         {
             if (isset($this->{$name}))
                 return $this->{$name};
@@ -75,9 +67,9 @@ namespace Npf\Core\Db {
         #----------------------------------------------------------------------#
 
         /**
-         * Destructor
+         * Is Connected
          */
-        final public function isConnected()
+        final public function isConnected(): bool
         {
             return $this->connected;
         }
@@ -86,12 +78,12 @@ namespace Npf\Core\Db {
          * Kill the mysqli thread and disconnect from the mysqli
          * @return bool
          */
-        final public function disconnect()
+        final public function disconnect(): bool
         {
             if (!$this->connected)
                 return false;
             if ($this->isResLink($this->resLink)) {
-                $this->app->profiler->timerStart("db");
+                $this->app->profiler->timerStart("redis");
                 if (!$this->persistent) {
                     $threadId = @mysqli_thread_id($this->resLink);
                     if ($threadId > 0) {
@@ -115,7 +107,7 @@ namespace Npf\Core\Db {
          * @param mysqli|mixed $resLink Resource Link
          * @return bool
          */
-        private function isResLink($resLink)
+        private function isResLink(?mysqli $resLink): bool
         {
             return $resLink instanceof mysqli;
         }
@@ -126,10 +118,10 @@ namespace Npf\Core\Db {
         /**
          * Make a connection and store connect id : RETURN RESOURCE LINK
          * @param string $host
-         * @return bool
+         * @return bool|mysqli|null
          * @throws DBQueryError
          */
-        final public function connect($host = 'localhost')
+        final public function connect(string $host = 'localhost'): bool|mysqli|null
         {
             if (extension_loaded("mysqli") == false)
                 throw new DBQueryError('Driver Mysqli is not exist.');
@@ -154,7 +146,7 @@ namespace Npf\Core\Db {
          * @param string $collate
          * @param int $timeOut
          */
-        private function init($characterSet = 'UTF8MB4', $collate = 'UTF8MB4_UNICODE_CI', $timeOut = 1000)
+        private function init(string $characterSet = 'UTF8MB4', string $collate = 'UTF8MB4_UNICODE_CI', int $timeOut = 1000): void
         {
             $this->resLink = mysqli_init();
             $this->option(MYSQLI_OPT_CONNECT_TIMEOUT, $timeOut);
@@ -164,13 +156,13 @@ namespace Npf\Core\Db {
         }
 
         /**
-         * @param $Option
-         * @param $Data
+         * @param string|int $option
+         * @param string|int|float|bool $value
          * @return bool
          */
-        final public function option($Option, $Data)
+        final public function option(string|int $option, string|int|float|bool $value): bool
         {
-            return mysqli_options($this->resLink, $Option, $Data);
+            return mysqli_options($this->resLink, $option, $value);
         }
         #----------------------------------------------------------------------#
         #Select or Listing from Db
@@ -178,11 +170,12 @@ namespace Npf\Core\Db {
 
         /**
          * Return escaped string with the mysqli
-         * @param $queryStr
-         * @return array|string|string[]
+         * @param int|float|string $queryStr
+         * @return ?string
          */
-        final public function escapeStr($queryStr)
+        final public function escapeStr(int|float|string $queryStr): ?string
         {
+            $queryStr = (string)$queryStr;
             if (!$this->connected)
                 return str_replace(["'", '`'], ["\\'", '\\`'], $queryStr);
             return mysqli_real_escape_string($this->resLink, $queryStr);
@@ -195,7 +188,7 @@ namespace Npf\Core\Db {
          * Db Connection Error Message
          * @return string
          */
-        final public function connectError()
+        final public function connectError(): string
         {
             return mysqli_connect_error();
         }
@@ -203,7 +196,7 @@ namespace Npf\Core\Db {
         /**
          * @return bool|string
          */
-        final public function info()
+        final public function info(): bool|string
         {
             if (!$this->connected)
                 return false;
@@ -213,7 +206,7 @@ namespace Npf\Core\Db {
         /**
          * @return bool
          */
-        final public function ping()
+        final public function ping(): bool
         {
             if (!$this->connected)
                 return false;
@@ -225,10 +218,10 @@ namespace Npf\Core\Db {
 
         /**
          * Select Database by the function : RETURN BOOLEAN
-         * @param $name
+         * @param string $name
          * @return bool
          */
-        final public function selectDB($name)
+        final public function selectDB(string $name): bool
         {
             if (!$this->connected)
                 return false;
@@ -238,7 +231,7 @@ namespace Npf\Core\Db {
         /**
          * Transaction Start
          */
-        final public function tranStart()
+        final public function tranStart(): void
         {
             $this->tranEnable = true;
         }
@@ -246,7 +239,7 @@ namespace Npf\Core\Db {
         /**
          * @return bool
          */
-        final public function isTranOn()
+        final public function isTranOn(): bool
         {
             return $this->tranStarted;
         }
@@ -254,7 +247,7 @@ namespace Npf\Core\Db {
         /**
          * Transaction End
          */
-        final public function tranEnd()
+        final public function tranEnd(): void
         {
             $this->tranEnable = false;
         }
@@ -262,7 +255,7 @@ namespace Npf\Core\Db {
         /**
          * @param string $mode
          */
-        final public function queryMode($mode = 'store')
+        final public function queryMode(string $mode = 'store'): void
         {
             $mode = strtolower($mode);
             if (in_array($mode, ['store', 'use'], true))
@@ -275,52 +268,51 @@ namespace Npf\Core\Db {
          * @return array
          * @throws DBQueryError
          */
-        final public function multiQuery(array $queryStr)
+        final public function multiQuery(array $queryStr): array
         {
-            $ret = [];
-            foreach ($queryStr as $k => $sql) {
-                $ret[$k] = $this->query($sql);
-            }
-            return $ret;
+            $result = [];
+            foreach ($queryStr as $k => $sql)
+                $result[$k] = $this->query($sql);
+            return $result;
         }
 
         /**
          * Db Query
-         * @param $queryStr
-         * @return bool|mysqli_result
+         * @param string $queryStr
+         * @return mysqli_result|bool|null
          * @throws DBQueryError
          */
-        final public function query($queryStr)
+        final public function query(string $queryStr): mysqli_result|bool|null
         {
             if (!$this->connected)
                 return false;
-            $this->resResult = false;
+            $this->resResult = null;
             if ($this->tranQuery($queryStr))
                 return $this->realQuery($queryStr);
             else {
-                $this->resResult = false;
-                return $this->resResult;
+                $this->resResult = null;
+                return false;
             }
 
         }
 
         /**
-         * Start Transaction if dbtranenable = true and have DML Query
-         * @param $queryStr
-         * @param bool $Multi
-         * @return bool
+         * Start Transaction if tranStarted = true and have DML Query
+         * @param string $queryStr
+         * @param bool $multi
+         * @return mysqli_result|bool|null
          * @throws DBQueryError
          */
-        final public function tranQuery($queryStr, $Multi = false)
+        final public function tranQuery(string $queryStr, bool $multi = false): mysqli_result|bool|null
         {
             if (!empty($queryStr) && $this->tranEnable === true && $this->tranStarted === false) {
-                $queries = ($Multi === true) ? $this->querySplit($queryStr) : [$queryStr];
+                $queries = ($multi === true) ? $this->querySplit($queryStr) : [$queryStr];
                 foreach ($queries as $query)
                     if ((strtoupper(substr($query, 0, 6)) !== 'SELECT' && strtoupper(substr($query,
                                 0, 3)) !== 'SET' && strtoupper(substr($query, 0, 5)) !== 'FLUSH') || strtoupper
                         (substr($query, -10)) === 'FOR UPDATE'
                     ) {
-                        $this->tranStarted = $this->realQuery("begin");
+                        $this->tranStarted = (bool)$this->realQuery("begin");
                         return $this->tranStarted;
                     }
                 return true;
@@ -333,10 +325,10 @@ namespace Npf\Core\Db {
 
         /**
          * Return the Split MultiQuery SQL to []
-         * @param $queryStr
-         * @return array|mixed
+         * @param string $queryStr
+         * @return array|string
          */
-        private function querySplit($queryStr)
+        private function querySplit(string $queryStr): array|string
         {
             $pattern = '%\s*((?:\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*\'|"[^"\\\\]*(?:\\\\.[^"\\\\]*)*"|/*[^*]*\*+([^*/][^*]*\*+)*/|\#.*|--.*|[^"\';#])+(?:;|$))%x';
             $matches = [];
@@ -346,11 +338,11 @@ namespace Npf\Core\Db {
         }
 
         /**
-         * @param $queryStr
-         * @return bool|mysqli_result
+         * @param string $queryStr
+         * @return mysqli_result|bool|null
          * @throws DBQueryError
          */
-        final public function realQuery($queryStr)
+        final public function realQuery(string $queryStr): mysqli_result|bool|null
         {
             if (!$this->connected)
                 return false;
@@ -363,8 +355,8 @@ namespace Npf\Core\Db {
             if ($errNo !== 0) {
                 $errorMsg = mysqli_error($this->resLink);
                 $queryStr = "Query error: {$errorMsg} - {$queryStr}";
-                $this->app->profiler->saveQuery($queryStr, "db");
-                throw new DBQueryError($queryStr, $errNo);
+                $this->app->profiler->saveQuery("*error {$queryStr}", "db");
+                throw new DBQueryError($queryStr, (string)$errNo);
             } else
                 $this->app->profiler->saveQuery($queryStr, "db");
             $this->lastQuery = $queryStr;
@@ -375,7 +367,7 @@ namespace Npf\Core\Db {
          * Return Update Affected Row
          * @return bool|int
          */
-        final public function affectedRow()
+        final public function affectedRow(): bool|int
         {
             if (!$this->connected)
                 return false;
@@ -386,7 +378,7 @@ namespace Npf\Core\Db {
          * Get more result from the current result set (for big result set)
          * @return bool
          */
-        final public function resultSetMore()
+        final public function resultSetMore(): bool
         {
             if (!$this->connected)
                 return false;
@@ -400,7 +392,7 @@ namespace Npf\Core\Db {
          * Clear the result set to release the memory
          * @return bool
          */
-        final public function resultSetClear()
+        final public function resultSetClear(): bool
         {
             if (!$this->connected)
                 return false;
@@ -414,7 +406,7 @@ namespace Npf\Core\Db {
          * Use Next Result Set, once query return
          * @return bool
          */
-        final public function resultSetNext()
+        final public function resultSetNext(): bool
         {
             if (!$this->connected)
                 return false;
@@ -426,9 +418,9 @@ namespace Npf\Core\Db {
 
         /**
          * Once query, store the current result set from db.
-         * @return bool|mysqli_result
+         * @return mysqli_result|bool|null
          */
-        final public function resultSetStore()
+        final public function resultSetStore(): mysqli_result|bool|null
         {
             if (!$this->connected)
                 return false;
@@ -438,10 +430,10 @@ namespace Npf\Core\Db {
 
         /**
          * Free the mysqli result set
-         * @param null $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return bool
          */
-        final public function free($resResult = null)
+        final public function free(mysqli_result|bool|null $resResult = null): bool
         {
             if (!$this->connected)
                 return false;
@@ -457,30 +449,30 @@ namespace Npf\Core\Db {
 
         /**
          * Get the current result set resource object
-         * @param $resResult
-         * @return mysqli_result
+         * @param mysqli_result|bool|null $resResult
+         * @return mysqli_result|bool|null
          */
-        private function getResResult($resResult)
+        private function getResResult(mysqli_result|bool|null $resResult): mysqli_result|bool|null
         {
             return $resResult instanceof mysqli_result ? $resResult : $this->resResult;
         }
 
         /**
          * check is it the result set
-         * @param $resResult
-         * @return boolean
+         * @param mysqli_result|bool|null $resResult
+         * @return bool
          */
-        private function isResResult($resResult)
+        private function isResResult(mysqli_result|bool|null $resResult): bool
         {
             return $resResult instanceof mysqli_result;
         }
 
         /**
          * Get the Number of Fields from the current result set.
-         * @param null $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return bool|int
          */
-        final public function numFields($resResult = null)
+        final public function numFields(mysqli_result|bool|null $resResult = null): bool|int
         {
             $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_num_fields($resResult) : false;
@@ -488,11 +480,11 @@ namespace Npf\Core\Db {
 
         /**
          * Fetch the Field from the current result set, return object
-         * @param $column
-         * @param null $resResult
+         * @param int $column
+         * @param mysqli_result|bool|null $resResult
          * @return bool|object
          */
-        final public function fetchField($column, $resResult = null)
+        final public function fetchField(int $column, mysqli_result|bool|null $resResult = null): object|bool
         {
             $resResult = $this->getResResult($resResult);
             if ($this->isResResult($resResult)) {
@@ -506,26 +498,26 @@ namespace Npf\Core\Db {
          * Fetch one of cell from the current result set, default is first row, first field.
          * @param int $column
          * @param int $row
-         * @param null $resResult
-         * @return bool|string|int|float
+         * @param mysqli_result|bool|null $resResult
+         * @return array|string|int|float|bool|null
          */
-        final public function fetchCell($column = 0, $row = 0, $resResult = null)
+        final public function fetchCell(int $column = 0, int $row = 0, mysqli_result|bool|null $resResult = null): float|int|bool|array|string|null
         {
             $resResult = $this->getResResult($resResult);
             if ($this->isResResult($resResult)) {
                 mysqli_data_seek($resResult, $row);
                 $result = mysqli_fetch_row($resResult);
-                return is_array($result) ? $result[$column] : $result;
+                return $result[$column];
             } else
                 return false;
         }
 
         /**
          * Return 1 row of the current result set, return index array
-         * @param null $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return array|bool|null
          */
-        final public function fetchRow($resResult = null)
+        final public function fetchRow(mysqli_result|bool|null $resResult = null): bool|array|null
         {
             $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_fetch_row($resResult) : null;
@@ -536,10 +528,10 @@ namespace Npf\Core\Db {
 
         /**
          * Return 1 row of the current result set, return assoc array
-         * @param null $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return array|null
          */
-        final public function fetchAssoc($resResult = null)
+        final public function fetchAssoc(mysqli_result|bool|null $resResult = null): ?array
         {
             $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_fetch_assoc($resResult) : null;
@@ -551,10 +543,10 @@ namespace Npf\Core\Db {
 
         /**
          * Get the Number of rows from the current result set.
-         * @param null $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return bool|int
          */
-        final public function numRows($resResult = null)
+        final public function numRows(mysqli_result|bool|null $resResult = null): bool|int
         {
             $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_num_rows($resResult) : false;
@@ -562,14 +554,14 @@ namespace Npf\Core\Db {
 
         /**
          * Seek the current result set positioning
-         * @param $Row
-         * @param null $resResult
+         * @param int $row
+         * @param mysqli_result|bool|null $resResult
          * @return bool
          */
-        final public function seek($Row, $resResult = null)
+        final public function seek(int $row, mysqli_result|bool|null $resResult = null): bool
         {
             $resResult = $this->getResResult($resResult);
-            return $this->isResResult($resResult) && mysqli_data_seek($resResult, $Row);
+            return $this->isResResult($resResult) && mysqli_data_seek($resResult, $row);
         }
         #----------------------------------------------------------------------#
         #Session of the Error handling
@@ -577,9 +569,9 @@ namespace Npf\Core\Db {
 
         /**
          * Get Db Last Insert Id
-         * @return int|string
+         * @return bool|int|string
          */
-        final public function insertId()
+        final public function insertId(): bool|int|string
         {
             return mysqli_insert_id($this->resLink);
         }
@@ -589,7 +581,7 @@ namespace Npf\Core\Db {
          * @return bool
          * @throws DBQueryError
          */
-        final public function rollback()
+        final public function rollback(): bool
         {
             if (!$this->connected)
                 return false;
@@ -602,7 +594,7 @@ namespace Npf\Core\Db {
          * @return bool
          * @throws DBQueryError
          */
-        final public function commit()
+        final public function commit(): bool
         {
             if (!$this->connected)
                 return false;
@@ -617,7 +609,7 @@ namespace Npf\Core\Db {
          * Db Connection Error Number
          * @return int
          */
-        final public function connectErrorNo()
+        final public function connectErrorNo(): int
         {
             return mysqli_connect_errno();
         }
@@ -629,7 +621,7 @@ namespace Npf\Core\Db {
          * Db Query Error Number
          * @return bool|int
          */
-        final public function errorNo()
+        final public function errorNo(): bool|int
         {
             if (!$this->connected)
                 return false;
@@ -640,7 +632,7 @@ namespace Npf\Core\Db {
          * Db Query Error Message
          * @return bool|string
          */
-        final public function error()
+        final public function error(): bool|string
         {
             if (!$this->connected)
                 return false;

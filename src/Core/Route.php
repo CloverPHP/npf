@@ -1,7 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace Npf\Core {
 
+    use JetBrains\PhpStorm\Pure;
     use Npf\Exception\DBQueryError;
     use Npf\Exception\InternalError;
     use Npf\Exception\NextTick;
@@ -19,51 +21,44 @@ namespace Npf\Core {
     class Route
     {
         /**
-         * @var App
+         * @var Container
          */
-        private $app;
+        private Container $generalConfig;
         /**
          * @var Container
          */
-        private $generalConfig;
-        /**
-         * @var Container
-         */
-        private $routeConfig;
+        private Container $routeConfig;
         /**
          * @var string
          */
-        private $appFile = '';
+        private string $appFile;
         /**
          * @var array
          */
-        private $appPath = [];
+        private array $appPath = [];
         /**
          * @var string Root Directory
          */
-        private $indexFile;
+        private string $indexFile;
         /**
          * @var string Root Directory
          */
-        private $homeDirectory;
+        private string $homeDirectory;
         /**
          * @var string Root Directory
          */
-        private $rootDirectory;
+        private string $rootDirectory;
         /**
          * @var string Default Web Route
          */
-        private $defaultWebRoute;
+        private string $defaultWebRoute;
 
         /**
          * @var bool Is Static Route
          */
-        private $isStatic = false;
+        private bool $isStatic = false;
 
-        /**
-         * @var array
-         */
-        private $routeTable;
+        private ?array $routeTable = null;
 
         /**
          * Route constructor.
@@ -74,9 +69,8 @@ namespace Npf\Core {
          * @throws RuntimeError
          * @throws SyntaxError
          */
-        final public function __construct(App &$app)
+        final public function __construct(private App $app)
         {
-            $this->app = &$app;
             $this->generalConfig = $this->app->config('General');
             $this->routeConfig = $this->app->config('Route');
             if (
@@ -98,9 +92,9 @@ namespace Npf\Core {
         }
 
         /**
-         * @param $pathInfo
+         * @param string $pathInfo
          */
-        private function proceedAppPath($pathInfo)
+        private function proceedAppPath(string $pathInfo)
         {
             $this->appPath = array_values(explode("\\", str_replace('/', '\\', $pathInfo)));
             if (empty($this->appPath))
@@ -126,6 +120,7 @@ namespace Npf\Core {
                 ) {
                     array_shift($this->appPath);
                     $this->appFile = implode("\\", $this->appPath);
+                    $this->routeTableMap();
                 }
             }
             if (
@@ -157,25 +152,16 @@ namespace Npf\Core {
                     $this->appPath = explode("\\", $appFile);
                     break;
                 }
-                $lowerCase = substr($lowerCase, 0, strrpos($lowerCase, "\\", -2)) . "\\";
+                $lowerCase = substr($lowerCase, 0, (int)strrpos($lowerCase, "\\", -2)) . "\\";
             } while ($lowerCase != '\\');
         }
 
         /**
          * @throws InternalError
-         * @throws ReflectionException
          * @throws UnknownClass
          */
         final public function __invoke()
         {
-            //CORS Support
-            if ($this->app->request->getMethod() === 'OPTIONS') {
-                $this->app->view->setNone();
-                $this->app->response->statusCode(200);
-                $this->app->view->lock();
-                return;
-            }
-
             //App Router
             $routePath = explode("\\", "{$this->rootDirectory}\\{$this->appFile}");
             $routerFound = false;
@@ -197,6 +183,14 @@ namespace Npf\Core {
 
             $this->app->request->setUri($this->appFile);
 
+            //CORS Support
+            if ($this->app->request->getMethod() === 'OPTIONS') {
+                $this->app->view->setNone();
+                $this->app->view->lock();
+                $this->app->response->statusCode($this->isExistsAppClass($this->appFile) ? 200 : 404);
+                return;
+            }
+
             //Route Static File
             if ($this->isStatic)
                 $this->routeStatic();
@@ -216,6 +210,7 @@ namespace Npf\Core {
                 elseif (!empty($params) && is_array($params))
                     foreach ($params as &$item)
                         $parameters[] = &$item;
+
                 //Launch App Class
                 $this->launchApp($parameters);
             }
@@ -225,7 +220,7 @@ namespace Npf\Core {
          * @throws InternalError
          * @throws UnknownClass
          */
-        private function routeStatic()
+        private function routeStatic(): void
         {
             if ($this->isExistsStaticFile($this->appFile)) {
                 $staticFile = file_exists($this->appFile) ?
@@ -241,10 +236,9 @@ namespace Npf\Core {
         /**
          * @param array $parameters
          * @throws InternalError
-         * @throws ReflectionException
          * @throws UnknownClass
          */
-        private function launchApp(array $parameters = [])
+        private function launchApp(array $parameters = []): void
         {
             $this->app->request->setUri($this->appFile);
             $refClass = new ReflectionClass("{$this->rootDirectory}\\{$this->appFile}");
@@ -267,22 +261,25 @@ namespace Npf\Core {
         /**
          * @param ReflectionClass $refClass
          * @param array $parameters
-         * @throws InternalError
-         * @throws ReflectionException
          * @throws UnknownClass
+         * @throws InternalError
          */
         private function launchCronjob(ReflectionClass $refClass, array $parameters = [])
         {
             $cronLock = $this->app->config('Redis')->get('enable', false) && $this->generalConfig->get('cronLock', false);
-            $cronBlock = sha1($this->app->request);
-            $lockName = "cronjob:{$this->app->getEnv()}:{$this->app->getAppName()}:{$this->rootDirectory}\\{$this->appFile}:{$cronBlock}";
+            $cronBlock = sha1(Common::getServerIp());
+            $lockName = "cronjob:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$this->rootDirectory}\\{$this->appFile}:{$cronBlock}";
             if ($cronLock && !$this->app->lock->waitAcquireDone($lockName, 60, $this->generalConfig->get('cronMaxWait', 60)))
                 return;
             if ($cronLock)
                 $this->app->on('appBeforeClean', function (App $app) use ($lockName) {
                     $app->lock->release($lockName, true);
                 });
-            $actionObj = $refClass->newInstanceArgs($parameters);
+            try {
+                $actionObj = $refClass->newInstanceArgs($parameters);
+            } catch (ReflectionException $ex) {
+                throw new UnknownClass($ex->getMessage());
+            }
             $cronjobTtl = property_exists($actionObj, 'cronjobTtl') ? (int)$actionObj->cronjobTtl : (int)$this->generalConfig->get('cronjobTtl', 300);
             if ($cronLock && !empty($cronjobTtl))
                 $this->app->lock->expire($lockName, $cronjobTtl);
@@ -296,15 +293,13 @@ namespace Npf\Core {
         /**
          * @param ReflectionClass $refClass
          * @param array $parameters
-         * @throws InternalError
-         * @throws ReflectionException
-         * @throws UnknownClass
+         * @throws InternalError|UnknownClass
          */
         private function launchDaemon(ReflectionClass $refClass, array $parameters = [])
         {
             set_time_limit(0);
-            $daemonBlock = sha1($this->app->request);
-            $lockName = "daemon:{$this->app->getEnv()}:{$this->app->getAppName()}:{$this->rootDirectory}\\{$this->appFile}:{$daemonBlock}";
+            $daemonBlock = sha1(Common::getServerIp());
+            $lockName = "daemon:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$this->rootDirectory}\\{$this->appFile}:{$daemonBlock}";
             $daemonLock = $this->app->config('Redis')->get('enable', false) && $this->generalConfig->get('daemonLock', false);
             if ($daemonLock && !$this->app->lock->waitAcquireDone($lockName, 60, $this->generalConfig->get('daemonMaxWait', 180)))
                 return;
@@ -315,7 +310,11 @@ namespace Npf\Core {
                 $app->lock->release($lockName, true);
             });
 
-            $actionObj = $refClass->newInstanceArgs($parameters);
+            try {
+                $actionObj = $refClass->newInstanceArgs($parameters);
+            } catch (ReflectionException $ex) {
+                throw new UnknownClass($ex->getMessage());
+            }
             $daemonTtl = property_exists($actionObj, 'daemonTtl') ? (int)$actionObj->daemonTtl : (int)$this->generalConfig->get('daemonTtl', 300);
             $daemonInterval = property_exists($actionObj, 'daemonInterval') ? (int)$actionObj->daemonInterval : (int)$this->generalConfig->get('daemonInterval', 1000);
             if (method_exists($actionObj, '__invoke')) {
@@ -325,7 +324,7 @@ namespace Npf\Core {
                         $this->app->dbCommit();
                         if ($daemonLock)
                             $this->app->lock->expire($lockName, $daemonTtl);
-                    } catch (NextTick $ex) {
+                    } catch (NextTick) {
                         $this->app->dbRollback();
                     }
                 }, 1, 'loop');
@@ -340,12 +339,22 @@ namespace Npf\Core {
         /**
          * @param ReflectionClass $refClass
          * @param array $parameters
-         * @throws ReflectionException
-         * @throws UnknownClass
+         * @throws UnknownClass|
          */
         private function launchWeb(ReflectionClass $refClass, array $parameters = [])
         {
-            $actionObj = $refClass->newInstanceArgs($parameters);
+            try {
+                //CORS Support
+                if ($this->app->request->getMethod() === 'OPTIONS') {
+                    $this->app->view->setNone();
+                    $this->app->response->statusCode(200);
+                    $this->app->view->lock();
+                    return;
+                }
+                $actionObj = $refClass->newInstanceArgs($parameters);
+            } catch (ReflectionException $ex) {
+                throw new UnknownClass($ex->getMessage());
+            }
             if (method_exists($actionObj, '__invoke')) {
                 call_user_func_array([$actionObj, '__invoke'], $parameters);
                 unset($actionObj);
@@ -357,7 +366,7 @@ namespace Npf\Core {
          * @param $className
          * @return bool
          */
-        final public function isExistsAppClass($className)
+        final public function isExistsAppClass($className): bool
         {
             return class_exists("{$this->rootDirectory}\\{$className}");
         }
@@ -366,7 +375,7 @@ namespace Npf\Core {
          * @param $fileName
          * @return bool
          */
-        final public function isExistsStaticFile($fileName)
+        final public function isExistsStaticFile($fileName): bool
         {
             if (file_exists($fileName) && !is_dir($fileName))
                 return true;
@@ -377,7 +386,7 @@ namespace Npf\Core {
         /**
          * @return string
          */
-        final public function getRequestUri()
+        final public function getRequestUri(): string
         {
             return '/' . str_replace('\\', '/', $this->appFile);
         }
@@ -385,7 +394,7 @@ namespace Npf\Core {
         /**
          * @return string
          */
-        final public function getStaticFile()
+        final public function getStaticFile(): string
         {
             return $this->isStatic ? $this->appFile : "";
         }
@@ -393,33 +402,37 @@ namespace Npf\Core {
         /**
          * @return string
          */
-        final public function getAppClass()
+        final public function getAppClass(): string
         {
             return $this->isStatic ? "" : $this->appFile;
         }
 
         /**
-         * @param $className
+         * @param string $className
+         * @return self
          */
-        final public function setAppClass($className)
+        final public function setAppClass(string $className): self
         {
             $this->appFile = $className;
             $this->isStatic = false;
+            return $this;
         }
 
         /**
-         * @param $fileName
+         * @param string $fileName
+         * @return self
          */
-        final public function setStaticFile($fileName)
+        final public function setStaticFile(string $fileName): self
         {
             $this->appFile = $fileName;
             $this->isStatic = true;
+            return $this;
         }
 
         /**
          * @return string
          */
-        final public function getAppPath()
+        #[Pure] final public function getAppPath(): string
         {
             return implode('\\', $this->appPath);
         }

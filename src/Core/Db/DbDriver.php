@@ -1,12 +1,5 @@
-<?PHP
-
-/* * ********************************************************************
-* PHP CLASS
-* CLASS AUTHOR : LYK
-* DESCRIPTION : Use the Class to Connect to Database
-* DATABASE API : MYSQL
-* DEVELOPMENT DATE : 2007-08-15
-* ******************************************************************** */
+<?php
+declare(strict_types=1);
 
 namespace Npf\Core\Db {
 
@@ -16,6 +9,6 @@ namespace Npf\Core\Db {
      */
     abstract class DbDriver
     {
-        public $lastQuery = '';
+        public string $lastQuery = '';
     }
 }
