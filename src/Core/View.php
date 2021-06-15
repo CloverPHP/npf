@@ -536,7 +536,7 @@ class View
             $routeConfig = $this->app->config('Route');
             $fileExt = pathinfo($this->data, PATHINFO_EXTENSION);
             $staticFileContentType = $routeConfig->get('staticFileContentType', []);
-            $fileSize = filesize($this->data);
+            $fileSize = (int)filesize($this->data);
             $lastModified = filemtime($this->data);
             $eTag = sprintf('"%s-%s"', $lastModified, sha1_file($this->data));
             $requestLastModified = !empty($this->app->request->header("if_modified_since")) ? strtotime($this->app->request->header("if_modified_since")) : false;
@@ -564,7 +564,7 @@ class View
                 "Last-Modified" => gmdate("D, d M Y H:i:s", $lastModified) . " GMT",
                 "Cache-Control" => $cacheControl,
                 "Expires" => gmdate("D, d M Y H:i:s", (int)Common::timestamp() + $expireTime) . " GMT",
-                'Content-Range' => "bytes {$range['start']}-{$range['end']}/{$fileSize}",
+                "Content-Range" => "bytes {$range['start']}-{$range['end']}/{$fileSize}",
                 "Content-Length" => $method === 'OPTIONS' ? 0 : $range['length'],
             ], true);
             $output = true;
@@ -605,11 +605,11 @@ class View
     }
 
     /**
-     * @param $fileSize
+     * @param int $fileSize
      * @return array
      * @throws InternalError
      */
-    private function staticRange($fileSize): array
+    private function staticRange(int $fileSize): array
     {
         $downloadResume = $this->app->config('Route')->get('downloadResume', false);
         if ($downloadResume) {
@@ -618,16 +618,18 @@ class View
             if (count($range) < 2)
                 $range[1] = $fileSize;
             $range = array_combine(['start', 'end'], $range);
-            if ((int)$range['start'] < 0)
+            $range['start'] = (int)$range[0];
+            $range['end'] = (int)$range[1];
+            if ($range['start'] < 0)
                 $range['start'] = 0;
-            if (empty($range['end']) || (int)$range['end'] > $fileSize - 1)
+            if (empty($range['end']) || $range['end'] > $fileSize - 1)
                 $range['end'] = $fileSize - 1;
             if ($range['start'] >= $range['end']) {
                 $range['start'] = 0;
                 $range['end'] = $fileSize - 1;
             }
             $range['length'] = $range['end'] - $range['start'] + 1;
-            $range['resume'] = !((int)$range['start'] === 0 && (int)$range['end'] === $fileSize - 1);
+            $range['resume'] = !($range['start'] === 0 && $range['end'] === $fileSize - 1);
         } else
             $range = [
                 'start' => 0,
