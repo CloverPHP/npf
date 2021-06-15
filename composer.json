@@ -7,7 +7,6 @@
         "framework",
         "library"
     ],
-    "type": "package",
     "license": "MIT",
     "authors": [
         {
