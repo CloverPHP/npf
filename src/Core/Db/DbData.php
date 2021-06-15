@@ -253,13 +253,11 @@ namespace Npf\Core\Db {
             $resResult = $this->select($table, $column, $cond, $order, $limit, $group, $having);
 
             if (!$key) {
-                while ($row = $this->driver->fetchAssoc($resResult)) {
+                while ($row = $this->driver->fetchAssoc($resResult))
                     $results[] = $row;
-                }
             } else {
-                while ($row = $this->driver->fetchAssoc($resResult)) {
+                while ($row = $this->driver->fetchAssoc($resResult))
                     $results[$row[$key]] = $row;
-                }
             }
             $this->driver->free($resResult);
             return $results;

@@ -298,13 +298,13 @@ namespace Npf\Core {
          * @param int $id
          * @param string|array|null $orderBy
          * @param int $seek
-         * @return mixed
+         * @return string|int|bool|array|float|null
          * @throws DBQueryError
          */
         protected function getCellById(string $field,
                                        int $id,
                                        string|array|null $orderBy = null,
-                                       int $seek = 0): mixed
+                                       int $seek = 0): string|int|bool|array|null|float
         {
             return $this->db->cell(
                 $this->getTableName(),
@@ -450,13 +450,13 @@ namespace Npf\Core {
          * @param ?array $cond
          * @param string|array|null $orderBy
          * @param int $seek
-         * @return mixed
+         * @return string|int|bool|array|float|null
          * @throws DBQueryError
          */
         protected function getCellByCond(array|string $field,
                                          ?array $cond = null,
                                          string|array|null $orderBy = null,
-                                         int $seek = 0): mixed
+                                         int $seek = 0): string|int|bool|array|null|float
         {
             return $this->db->cell(
                 $this->getTableName(),

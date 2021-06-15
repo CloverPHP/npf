@@ -279,10 +279,10 @@ namespace Npf\Core\Db {
         /**
          * Db Query
          * @param string $queryStr
-         * @return bool|mysqli_result
+         * @return mysqli_result|bool|null
          * @throws DBQueryError
          */
-        final public function query(string $queryStr): bool|mysqli_result
+        final public function query(string $queryStr): mysqli_result|bool|null
         {
             if (!$this->connected)
                 return false;
@@ -312,7 +312,7 @@ namespace Npf\Core\Db {
                                 0, 3)) !== 'SET' && strtoupper(substr($query, 0, 5)) !== 'FLUSH') || strtoupper
                         (substr($query, -10)) === 'FOR UPDATE'
                     ) {
-                        $this->tranStarted = $this->realQuery("begin");
+                        $this->tranStarted = (bool)$this->realQuery("begin");
                         return $this->tranStarted;
                     }
                 return true;
@@ -339,10 +339,10 @@ namespace Npf\Core\Db {
 
         /**
          * @param string $queryStr
-         * @return bool|mysqli_result
+         * @return mysqli_result|bool|null
          * @throws DBQueryError
          */
-        final public function realQuery(string $queryStr): bool|mysqli_result
+        final public function realQuery(string $queryStr): mysqli_result|bool|null
         {
             if (!$this->connected)
                 return false;
@@ -430,10 +430,10 @@ namespace Npf\Core\Db {
 
         /**
          * Free the mysqli result set
-         * @param mysqli_result|null $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return bool
          */
-        final public function free(?mysqli_result $resResult = null): bool
+        final public function free(mysqli_result|bool|null $resResult = null): bool
         {
             if (!$this->connected)
                 return false;
@@ -449,30 +449,30 @@ namespace Npf\Core\Db {
 
         /**
          * Get the current result set resource object
-         * @param mysqli_result|null $resResult
-         * @return mysqli_result|null
+         * @param mysqli_result|bool|null $resResult
+         * @return mysqli_result|bool|null
          */
-        private function getResResult(?mysqli_result $resResult): ?mysqli_result
+        private function getResResult(mysqli_result|bool|null $resResult): mysqli_result|bool|null
         {
             return $resResult instanceof mysqli_result ? $resResult : $this->resResult;
         }
 
         /**
          * check is it the result set
-         * @param ?mysqli_result $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return bool
          */
-        private function isResResult(?mysqli_result $resResult): bool
+        private function isResResult(mysqli_result|bool|null $resResult): bool
         {
             return $resResult instanceof mysqli_result;
         }
 
         /**
          * Get the Number of Fields from the current result set.
-         * @param mysqli_result|null $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return bool|int
          */
-        final public function numFields(?mysqli_result $resResult = null): bool|int
+        final public function numFields(mysqli_result|bool|null $resResult = null): bool|int
         {
             $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_num_fields($resResult) : false;
@@ -481,10 +481,10 @@ namespace Npf\Core\Db {
         /**
          * Fetch the Field from the current result set, return object
          * @param int $column
-         * @param ?mysqli_result $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return bool|object
          */
-        final public function fetchField(int $column, ?mysqli_result $resResult = null): object|bool
+        final public function fetchField(int $column, mysqli_result|bool|null $resResult = null): object|bool
         {
             $resResult = $this->getResResult($resResult);
             if ($this->isResResult($resResult)) {
@@ -498,10 +498,10 @@ namespace Npf\Core\Db {
          * Fetch one of cell from the current result set, default is first row, first field.
          * @param int $column
          * @param int $row
-         * @param mysqli_result|null $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return array|string|int|float|bool|null
          */
-        final public function fetchCell(int $column = 0, int $row = 0, mysqli_result $resResult = null): float|int|bool|array|string|null
+        final public function fetchCell(int $column = 0, int $row = 0, mysqli_result|bool|null $resResult = null): float|int|bool|array|string|null
         {
             $resResult = $this->getResResult($resResult);
             if ($this->isResResult($resResult)) {
@@ -514,10 +514,10 @@ namespace Npf\Core\Db {
 
         /**
          * Return 1 row of the current result set, return index array
-         * @param ?mysqli_result $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return array|bool|null
          */
-        final public function fetchRow(?mysqli_result $resResult = null): bool|array|null
+        final public function fetchRow(mysqli_result|bool|null $resResult = null): bool|array|null
         {
             $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_fetch_row($resResult) : null;
@@ -528,10 +528,10 @@ namespace Npf\Core\Db {
 
         /**
          * Return 1 row of the current result set, return assoc array
-         * @param mysqli_result|null $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return array|null
          */
-        final public function fetchAssoc(?mysqli_result $resResult = null): ?array
+        final public function fetchAssoc(mysqli_result|bool|null $resResult = null): ?array
         {
             $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_fetch_assoc($resResult) : null;
@@ -543,10 +543,10 @@ namespace Npf\Core\Db {
 
         /**
          * Get the Number of rows from the current result set.
-         * @param ?mysqli_result $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return bool|int
          */
-        final public function numRows(?mysqli_result $resResult = null): bool|int
+        final public function numRows(mysqli_result|bool|null $resResult = null): bool|int
         {
             $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) ? mysqli_num_rows($resResult) : false;
@@ -555,10 +555,10 @@ namespace Npf\Core\Db {
         /**
          * Seek the current result set positioning
          * @param int $row
-         * @param mysqli_result|null $resResult
+         * @param mysqli_result|bool|null $resResult
          * @return bool
          */
-        final public function seek(int $row, ?mysqli_result $resResult = null): bool
+        final public function seek(int $row, mysqli_result|bool|null $resResult = null): bool
         {
             $resResult = $this->getResResult($resResult);
             return $this->isResResult($resResult) && mysqli_data_seek($resResult, $row);
