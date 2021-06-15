@@ -6,6 +6,7 @@
         "framework",
         "library"
     ],
+    "type": "library",
     "license": "MIT",
     "authors": [
         {
@@ -13,8 +14,6 @@
             "email": "lykillerl@gmail.com"
         }
     ],
-    "minimum-stability": "stable",
-    "prefer-stable": true,
     "require": {
         "php": ">=7.4",
         "paragonie/random_compat": "2.0",
