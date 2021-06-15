@@ -3,13 +3,11 @@ declare(strict_types=1);
 
 namespace Npf\Core {
 
-    use Throwable;
-
     /**
      * Class ExceptionNormal
      * @package Core
      */
-    class Exception implements Throwable
+    class Exception extends \Exception
     {
         /**
          * @var Response
@@ -45,6 +43,7 @@ namespace Npf\Core {
                                     string $status = 'error',
                                     array $extra = [])
         {
+            parent::__construct($desc);
             $stack = debug_backtrace(0);
             $this->stats = [
                 'desc' => (string)$desc,
@@ -122,54 +121,6 @@ namespace Npf\Core {
         public function getSeverity(): int
         {
             return $this->severity;
-        }
-
-        /**
-         * @return string
-         */
-        public function getMessage(): string
-        {
-            return $this->stats['desc'];
-        }
-
-        /**
-         * @return string
-         */
-        public function getFile():string
-        {
-            return $this->stats['file'];
-        }
-
-        /**
-         * @return int
-         */
-        public function getLine():int
-        {
-            return $this->stats['line'];
-        }
-
-        /**
-         * @return array
-         */
-        public function getTrace(): array
-        {
-            return $this->stats['trace'];
-        }
-
-        /**
-         * @return string
-         */
-        public function getTraceAsString(): string
-        {
-            return $this->stats['trace'];
-        }
-
-        /**
-         * @return Throwable|null
-         */
-        public function getPrevious(): ?Throwable
-        {
-            return null;
         }
 
         /**
