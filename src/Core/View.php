@@ -564,7 +564,7 @@ class View
                 "Last-Modified" => gmdate("D, d M Y H:i:s", $lastModified) . " GMT",
                 "Cache-Control" => $cacheControl,
                 "Expires" => gmdate("D, d M Y H:i:s", (int)Common::timestamp() + $expireTime) . " GMT",
-                'Content-Range', "bytes {$range['start']}-{$range['end']}/{$fileSize}",
+                'Content-Range' => "bytes {$range['start']}-{$range['end']}/{$fileSize}",
                 "Content-Length" => $method === 'OPTIONS' ? 0 : $range['length'],
             ], true);
             $output = true;

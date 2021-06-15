@@ -94,7 +94,7 @@ namespace Npf\Core {
                 if (!is_array($this->headers))
                     $this->headers = [];
                 foreach ($array as $name => $value)
-                    $this->header($name, $value, $overwrite);
+                    $this->header((string)$name, $value, $overwrite);
             }
             return $this;
         }

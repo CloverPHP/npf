@@ -21,6 +21,14 @@
         "php": ">=8.0",
         "paragonie/random_compat": "2.0",
         "geoip2/geoip2": "~2.0",
+        "react/react": "1.0",
+        "react/http": "^0.8.4",
+        "react/mysql": "^0.5.4",
+        "clue/redis-react": "^2.3",
+        "mobiledetect/mobiledetectlib": "^2.8",
+        "twig/twig": "^3.1",
+        "twig/markdown-extra": "^3.1",
+        "erusev/parsedown": "^1.7",
         "ext-json": "*",
         "ext-simplexml": "*",
         "ext-zlib": "*",
@@ -33,16 +41,7 @@
         "ext-curl": "*",
         "ext-dom": "*",
         "ext-fileinfo": "*",
-        "ext-libxml": "*",
-        "react/react": "1.0",
-        "react/http": "^0.8.4",
-        "react/mysql": "^0.5.4",
-        "clue/redis-react": "^2.3",
-        "mobiledetect/mobiledetectlib": "^2.8",
-        "twig/twig": "^3.1",
-        "twig/markdown-extra": "^3.1",
-        "erusev/parsedown": "^1.7",
-        "ext-pcntl": "*"
+        "ext-libxml": "*"
     },
     "autoload": {
         "psr-4": {

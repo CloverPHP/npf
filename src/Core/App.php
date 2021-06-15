@@ -88,11 +88,6 @@ namespace Npf\Core {
             $this->roles = !empty($roles) ? $roles : 'web';
             $this->basePath = getcwd();
             $this->configPath = sprintf("Config\\%s\\%s\\", ucfirst($this->appEnv), ucfirst($this->appName));
-            $this->components = [
-                'request' => new Request(),
-                'response' => new Response(null),
-                'view' => new View($this),
-            ];
         }
 
         /**
@@ -263,12 +258,15 @@ namespace Npf\Core {
         final public function clean(): self
         {
             foreach ($this->components as $name => $component) {
-                if (!in_array($name, ['request', 'response', 'profiler'], true)) {
+                if (!in_array($name, ['request', 'response', 'profiler', 'view'], true)) {
                     if (method_exists($component, '__destruct'))
                         $component->__destruct();
                     unset($this->components[$name]);
                 }
             }
+            $this->config = [];
+            $this->models = [];
+            $this->modules = [];
             return $this;
         }
 
