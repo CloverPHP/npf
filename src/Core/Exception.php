@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Npf\Core {
 
+    use Npf\Exception\GeneralException;
+    use \Throwable;
+
     /**
      * Class ExceptionNormal
      * @package Core
@@ -29,6 +32,11 @@ namespace Npf\Core {
          * @var array
          */
         private array $stats;
+
+        /**
+         * @var Throwable
+         */
+        protected static Throwable $previous;
 
         /**
          * ExceptionNormal constructor.
@@ -129,6 +137,47 @@ namespace Npf\Core {
         public function __toString(): string
         {
             return json_encode($this->response->fetch());
+        }
+
+        /**
+         * @param null $ex
+         * @return array
+         */
+        final public static function trace($ex = null): array
+        {
+            $result = [];
+            if (!$ex instanceof \ErrorException && !$ex instanceof GeneralException) {
+                $trace = explode("\n", $ex->getTraceAsString());
+                array_pop($trace);
+                $length = count($trace);
+                for ($i = 0; $i < $length; $i++)
+                    $result[] = ($i + 1) . '.' . substr($trace[$i], strpos($trace[$i], ' '));
+            }
+            if ($previous = $ex->getPrevious())
+                $result = array_merge($result, self::trace($previous));
+            return $result;
+        }
+
+        /**
+         * @param null $ex
+         * @return array|false|string
+         */
+        final public static function desc($ex = null): array|false|string
+        {
+            $results = [];
+            if (!$ex instanceof GeneralException)
+                $results[] = "{$ex->getMessage()} at {$ex->getFile()} on line {$ex->getLine()}";
+            if ($previous = $ex->getPrevious()) {
+                $result = self::desc($previous);
+                if (!empty($result)) {
+                    if (!is_array($result))
+                        $result = [$result];
+                    $results = array_merge($results, $result);
+                }
+            }
+            if (count($results) <= 1)
+                $results = reset($results);
+            return $results;
         }
     }
 

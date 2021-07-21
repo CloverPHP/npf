@@ -6,6 +6,7 @@ namespace Npf\Core {
     use Composer\Autoload\ClassLoader;
     use JetBrains\PhpStorm\NoReturn;
     use Npf\Exception\DBQueryError;
+    use Npf\Exception\GeneralException;
     use Npf\Exception\InternalError;
     use Npf\Exception\UnknownClass;
     use ReflectionClass;
@@ -68,9 +69,9 @@ namespace Npf\Core {
         private string $basePath;
 
         /**
-         * @var bool Ignore Error
+         * @var int Ignore Error
          */
-        private bool $ignoreException = false;
+        private int $exceptionRetry = 0;
 
         /**
          * App constructor.
@@ -449,66 +450,42 @@ namespace Npf\Core {
         }
 
         /**
-         * @param array $trace
          * @param Throwable $exception
          * @param bool $event
          */
-        final public function handleException(array $trace, Throwable $exception, bool $event = false): void
+        final public function handleException(Throwable $exception, bool $event = false): void
         {
             try {
-                if ($exception instanceof Exception) {
-                    $this->response = $exception->response();
-                    $this->rollback();
-                    $this->view->error();
-                    $this->response->add('profiler', $this->profiler->fetch());
-                    $profiler = $this->response->get('profiler');
-                    if ($exception->sysLog()) {
-                        $desc = is_string($profiler['desc']) ? $profiler['desc'] : json_encode($profiler['desc'], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-                        $this->profiler->logError($this->response->get('error', ''), "{$desc}\nTrace:\n" . implode(",", $profiler['trace']));
-                        if ($event)
-                            $this->emit('sysReport', [&$this, $profiler]);
-                    }
-                    if ($event) {
-                        $this->emit('appException', [&$this, $profiler]);
-                        $this->emit('exception', [&$this, $profiler]);
-                    }
-                    $exitCode = 2;
-                } else {
-                    $message = '';
-                    if (method_exists($exception, 'getMessage'))
-                        $message = $exception->getMessage();
-                    $profiler = [
-                            'desc' => $message,
-                            'trace' => $trace,
-                            'params' => $this->request->get("*"),
-                            'headers' => $this->request->header("*"),
-                        ] + $this->profiler->fetch();
-                    $output = [
-                        'status' => 'error',
-                        'error' => 'unexpected_error',
-                        'code' => get_class($exception),
-                        'profiler' => $profiler,
-                    ];
-                    $this->response = new Response($output);
-                    $this->rollback();
-                    $this->view->error();
-                    $this->profiler->logError('PHP Exception', "Message: " . implode("\n", $trace));
-                    if ($event) {
-                        $this->emit('sysReport', [&$this, $profiler]);
-                        $this->emit('codeException', [&$this, $profiler]);
-                        $this->emit('exception', [&$this, $profiler]);
-                    }
+                $exitCode = 2;
+                if (!$exception instanceof Exception) {
                     $exitCode = 3;
+                    $exception = new GeneralException($exception);
+                }
+                $this->response = $exception->response();
+                $this->corsSupport();
+                $this->rollback();
+                $this->view->error();
+                $this->response->add('profiler', $this->profiler->fetch());
+                $profiler = $this->response->get('profiler');
+                if ($exception->sysLog()) {
+                    $desc = is_string($profiler['desc']) ? $profiler['desc'] : json_encode($profiler['desc'], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                    $this->profiler->logError($this->response->get('error', ''), "{$desc}\nTrace:\n" . implode(",", $profiler['trace']));
+                    if ($event)
+                        $this->emit('sysReport', [&$this, $profiler]);
+                }
+                if ($event) {
+                    $this->emit('appException', [&$this, $profiler]);
+                    $this->emit('exception', [&$this, $profiler]);
                 }
                 if ($event)
                     $this->emit('appBeforeClean', [&$this, $profiler]);
                 $this->clean();
                 $this->view->render();
                 exit($exitCode);
-            } catch (Throwable $ex) {
-                if (!$this->ignoreException) {
-                    $this->ignoreException = true;
-                    $this->handleException($this->trace($ex), $ex);
+            } catch (\Exception $ex) {
+                if ($this->exceptionRetry < 10) {
+                    $this->exceptionRetry++;
+                    $this->handleException($ex);
                 } else {
                     if ($ex instanceof Exception) {
                         $profiler = $this->response->get('profiler');
@@ -521,6 +498,7 @@ namespace Npf\Core {
                         $exitCode = 3;
                     }
                     echo($message);
+                    echo("stack trace:\n" . implode("\n", Exception::trace($ex)));
                     exit($exitCode);
                 }
             }
