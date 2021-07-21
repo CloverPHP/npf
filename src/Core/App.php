@@ -311,9 +311,9 @@ namespace Npf\Core {
             foreach ($results as $key => &$result) {
                 if (str_ends_with($result, "Router.php"))
                     unset($results[$key]);
-                $result = str_replace(["\\", $appPath, "/", ".php"], ["/", "", "\\", ""], $result);
+                $result = str_replace(['\\', $appPath, '/', '.php'], ['/', '', '\\', ''], $result);
             }
-            return array_values($results);
+            return array_values(array_unique($results));
         }
 
         /**
@@ -330,16 +330,17 @@ namespace Npf\Core {
                 $results = [];
             if (is_dir($path)) {
                 $files = scandir($path);
-                foreach ($files as $value) {
-                    $scanValue = realpath($path . DIRECTORY_SEPARATOR . $value);
-                    if (!is_dir($scanValue) && fnmatch($search, $scanValue, FNM_CASEFOLD))
-                        $results[] = $scanValue;
-                    else if ($value != "." && $value != "..") {
-                        if ($includePath)
-                            $results[] = "{$scanValue}/";
-                        $this->searchFile($scanValue, $search, $results, $includePath, true);
+                foreach ($files as $value)
+                    if ($value != "." && $value != "..") {
+                        $scanValue = realpath($path . DIRECTORY_SEPARATOR . $value);
+                        if (!is_dir($scanValue) && fnmatch($search, $scanValue, FNM_CASEFOLD))
+                            $results[] = $scanValue;
+                        else {
+                            if ($includePath)
+                                $results[] = "{$scanValue}/";
+                            $this->searchFile($scanValue, $search, $results, $includePath, true);
+                        }
                     }
-                }
             }
             if (!$statCache)
                 clearstatcache();
