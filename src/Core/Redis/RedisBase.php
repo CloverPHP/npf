@@ -741,10 +741,10 @@ namespace Npf\Core\Redis {
          * @param int|null $expired
          * @return bool
          */
-        public function setNx(string $name, string $value, ?int $expired = null): mixed
+        public function setNx(string $name, string $value, ?int $expired = null): bool
         {
             $expired = (int)$expired;
-            return $this->set($name, $value, $expired, true);
+            return (bool)$this->set($name, $value, $expired, true);
         }
 
         /**
