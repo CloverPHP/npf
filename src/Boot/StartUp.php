@@ -40,7 +40,6 @@ final class StartUp
                                       string $name = 'default'
     )
     {
-        new Polyfill();
         define('INIT_MEMORY', memory_get_usage());
         define('INIT_TIMESTAMP', microtime(true));
         $this->appInfo = [

@@ -48,6 +48,8 @@
         "psr-4": {
             "Npf\\": "src/"
         },
-        "files": ["src/bootstrap.php"]
+        "files": [
+            "src/bootstrap.php"
+        ]
     }
 }
