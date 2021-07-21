@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Npf\Core {
 
     use Npf\Exception\GeneralException;
-    use \Throwable;
+    use Throwable;
 
     /**
      * Class ExceptionNormal

@@ -16,7 +16,7 @@ namespace Npf\Core {
          */
         private array $data = [];
 
-        private bool $lock = false;
+        private bool $lock;
 
         /**
          * Container constructor.

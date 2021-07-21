@@ -5,7 +5,6 @@ namespace Npf\Boot;
 use Exception;
 use Npf\Core\App;
 use Npf\Core\Kernel;
-use Npf\Core\Polyfill;
 use Throwable;
 
 /**
