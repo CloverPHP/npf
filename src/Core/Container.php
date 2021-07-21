@@ -28,6 +28,7 @@ namespace Npf\Core {
                                     bool $lock = FALSE,
                                     private bool $__firstOnly = false)
         {
+            $this->lock = false;
             $this->import($data);
             $this->lock = $lock;
         }

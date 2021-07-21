@@ -43,7 +43,7 @@ namespace Npf\Core {
          */
         final public function createApp(): App
         {
-            if ($this->app === null) {
+            if (empty($this->app)) {
                 $app = new App(self::$appInfo['role'], self::$appInfo['env'], self::$appInfo['name']);
                 $this->app = &$app;
             }
