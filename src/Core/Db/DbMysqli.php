@@ -507,7 +507,7 @@ namespace Npf\Core\Db {
             if ($this->isResResult($resResult)) {
                 mysqli_data_seek($resResult, $row);
                 $result = mysqli_fetch_row($resResult);
-                return $result[$column];
+                return $result[$column] ?? null;
             } else
                 return false;
         }

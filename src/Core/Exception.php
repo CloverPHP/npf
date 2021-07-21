@@ -43,7 +43,7 @@ namespace Npf\Core {
                                     string $status = 'error',
                                     array $extra = [])
         {
-            parent::__construct($desc, is_numeric($code) ? (int)$code : 0, self::$previous);
+            parent::__construct($desc, is_numeric($code) ? (int)$code : 0, self::$previous ?? null);
             self::$previous = $this;
             if (empty($status))
                 $status = 'error';
