@@ -33,17 +33,17 @@ namespace Npf\Core {
         /**
          * ExceptionNormal constructor.
          * @param null|string $desc
-         * @param string|int $code
+         * @param string $code
          * @param string $status
          * @param array $extra
          * @internal param string $error
          */
         public function __construct(?string $desc = '',
-                                    string|int $code = '',
+                                    string $code = '',
                                     string $status = 'error',
                                     array $extra = [])
         {
-            parent::__construct($desc, is_numeric($code) ? $code : 0, self::$previous);
+            parent::__construct($desc, is_numeric($code) ? (int)$code : 0, self::$previous);
             self::$previous = $this;
             if (empty($status))
                 $status = 'error';
