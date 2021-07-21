@@ -20,7 +20,7 @@ class GeneralException extends Exception
     {
         $this->error = $this->updateCode(get_class($exception));
         self::$previous = $exception;
-        parent::__construct($exception->getMessage(), $exception->getCode());
+        parent::__construct($exception->getMessage(), (string)$exception->getCode());
     }
 
     private function updateCode(string $code): string

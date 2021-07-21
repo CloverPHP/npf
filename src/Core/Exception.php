@@ -24,14 +24,6 @@ namespace Npf\Core {
          * @var bool
          */
         protected bool $sysLog = false;
-        /**
-         * @var int
-         */
-        protected int $severity = 0;
-        /**
-         * @var array
-         */
-        private array $stats;
 
         /**
          * @var Throwable
@@ -41,49 +33,33 @@ namespace Npf\Core {
         /**
          * ExceptionNormal constructor.
          * @param null|string $desc
-         * @param string $code
+         * @param string|int $code
          * @param string $status
          * @param array $extra
          * @internal param string $error
          */
         public function __construct(?string $desc = '',
-                                    string $code = '',
+                                    string|int $code = '',
                                     string $status = 'error',
                                     array $extra = [])
         {
-            parent::__construct($desc);
-            $stack = debug_backtrace(0);
-            $this->stats = [
-                'desc' => (string)$desc,
-                'error' => $this->error,
+            parent::__construct($desc, is_numeric($code) ? $code : 0, self::$previous);
+            self::$previous = $this;
+            if (empty($status))
+                $status = 'error';
+            $output = [
                 'status' => $status,
-                'code' => $code,
+                'error' => !empty($this->error) ? $this->error : 'error',
+                'profiler' => [
+                    'desc' => self::desc($this),
+                    'trace' => self::trace($this),
+                ],
             ];
-            $iPos = 0;
-            for ($i = 0; $i < count($stack); $i++) {
-                $iPos++;
-                if (empty($this->stats['file'])) {
-                    $this->stats['line'] = $stack[$i]['line'];
-                    $this->stats['file'] = $stack[$i]['file'];
-                }
-                $this->stats['trace'][] = !empty($stack[$i]['file']) ?
-                    "#{$iPos}. {$stack[$i]['file']}:{$stack[$i]['line']}" :
-                    (
-                    !empty($stack[$i]['class']) ?
-                        "#{$iPos}. {$stack[$i]['class']}->{$stack[$i]['function']}" :
-                        "#{$iPos}. Closure"
-                    );
-            }
-            $this->response = new Response([
-                    'status' => $this->stats['status'] ?? 'error',
-                    'error' => $this->stats['error'] ?? '',
-                    'code' => $this->stats['code'] ?? '',
-                    'profiler' => [
-                        'desc' => $this->stats['desc'],
-                        'trace' => $this->stats['trace'],
-                        'extra' => $extra,
-                    ],
-                ] + $extra);
+            if (!empty($code))
+                $output['code'] = $code;
+            $output['profiler'] += $extra;
+            $output += $extra;
+            $this->response = new Response($output);
         }
 
         /**
@@ -121,14 +97,6 @@ namespace Npf\Core {
         public function getErrorCode(): string
         {
             return $this->error;
-        }
-
-        /**
-         * @return int
-         */
-        public function getSeverity(): int
-        {
-            return $this->severity;
         }
 
         /**

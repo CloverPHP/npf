@@ -637,13 +637,14 @@ namespace Npf\Core\Redis {
         }
 
         /**
-         * @param string $json
+         * @param string|null $json
          * @return mixed
          */
-        private function varUnserialise(string $json): mixed
+        private function varUnserialise(?string $json): mixed
         {
-            $Data = json_decode($json, true);
-            return json_last_error() !== 0 ? $json : $Data;
+            $json = (string)$json;
+            $data = json_decode($json, true);
+            return json_last_error() !== 0 ? $json : $data;
         }
 
         /**
