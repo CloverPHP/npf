@@ -345,8 +345,7 @@ namespace Npf\Core {
          */
         private function timerEmit(float $timestamp, int $offset): void
         {
-            $eventName = 'timerTick';
-            if (is_string('timerTick') && !empty($eventName) && isset($this->timerListener['timerTick'])) {
+            if (isset($this->timerListener['timerTick'])) {
                 foreach ($this->timerListener['timerTick'] as $key => $event)
                     if (isset($event['listener']) && is_callable($event['listener'])) {
                         if (!isset($event['tick']) || (int)$event['tick'] < 1)

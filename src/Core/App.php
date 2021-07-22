@@ -89,6 +89,7 @@ namespace Npf\Core {
             $this->roles = !empty($roles) ? $roles : 'web';
             $this->basePath = getcwd();
             $this->configPath = sprintf("Config\\%s\\%s\\", ucfirst($this->appEnv), ucfirst($this->appName));
+            $this->request = new Request();
         }
 
         /**

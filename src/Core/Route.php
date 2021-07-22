@@ -284,7 +284,7 @@ namespace Npf\Core {
             if ($cronLock && !empty($cronjobTtl))
                 $this->app->lock->expire($lockName, $cronjobTtl);
             if (method_exists($actionObj, '__invoke')) {
-                call_user_func_array([$actionObj, '__invoke'], $parameters);
+                $actionObj->__invoke(...$parameters);
                 unset($actionObj);
             } else
                 throw new UnknownClass('Class(' . get_class($actionObj) . ') __invoke Not Found');
@@ -320,20 +320,18 @@ namespace Npf\Core {
             if (method_exists($actionObj, '__invoke')) {
                 $this->app->onTick(function () use ($daemonLock, $lockName, $daemonTtl, $actionObj, $parameters) {
                     try {
-                        call_user_func_array([$actionObj, '__invoke'], $parameters);
-                        $this->app->dbCommit();
                         if ($daemonLock)
                             $this->app->lock->expire($lockName, $daemonTtl);
+                        $actionObj->__invoke(...$parameters);
+                        $this->app->dbCommit();
                     } catch (NextTick) {
                         $this->app->dbRollback();
                     }
                 }, 1, 'loop');
-                if ($daemonLock)
-                    $this->app->lock->expire($lockName, $daemonTtl);
                 $this->app->launchTimer($daemonTtl, $daemonInterval);
                 unset($actionObj);
             } else
-                throw new UnknownClass('Class(' . get_class($actionObj) . ') __invoke Not Found');
+                throw new InternalError('Class(' . get_class($actionObj) . ') __invoke Not Found');
         }
 
         /**
