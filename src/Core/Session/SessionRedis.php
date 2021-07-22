@@ -58,10 +58,9 @@ namespace Npf\Core\Session {
         {
             if ($this->_acquire_lock($id)) {
                 $this->sessionId = $id;
-                $data = $this->app->redis->get($this->keyPrefix . $id);
-                if ($data !== null)
-                    $this->fingerprint = sha1($data);
-                return (string)$data;
+                $data = (string)$this->app->redis->get($this->keyPrefix . $id);
+                $this->fingerprint = empty($data) ? null : sha1($data);
+                return $data;
             } else
                 throw new InternalError("Unable to read session");
         }
