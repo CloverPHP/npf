@@ -128,7 +128,7 @@ namespace Npf\Core {
                     $this->view->lock();
                 }
             }
-            $this->finishingApp();
+            $this->end();
         }
 
         /**
@@ -141,7 +141,7 @@ namespace Npf\Core {
             $route = new Route($this);
             $this->corsSupport();
             $route();
-            $this->finishingApp();
+            $this->end();
         }
 
         /**
@@ -151,7 +151,7 @@ namespace Npf\Core {
          * @throws RuntimeError
          * @throws SyntaxError
          */
-        #[NoReturn] private function finishingApp(): void
+        #[NoReturn] final public function end(): void
         {
             $profiler = $this->profiler->fetch();
             $this->response->add('profiler', $profiler);

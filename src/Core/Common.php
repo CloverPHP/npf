@@ -1287,7 +1287,8 @@ namespace Npf\Core {
         {
             ksort($array, $sort_flags);
             foreach ($array as &$item)
-                self::kSortRecursive($item, $sort_flags);
+                if (is_array($item))
+                    self::kSortRecursive($item, $sort_flags);
         }
 
         /**
