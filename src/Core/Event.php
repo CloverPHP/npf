@@ -266,7 +266,7 @@ namespace Npf\Core {
                 $now = ceil(Common::timestamp(true));
                 $this->emitSchedule();
                 $offset = $now - $this->timerLastTimestamp - 1;
-                $this->timerEmit($now, $offset);
+                $this->timerEmit($now, (int)$offset);
                 $this->timerLastTimestamp = $now;
                 $this->tick++;
                 return true;
