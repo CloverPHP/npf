@@ -10,8 +10,8 @@ use JetBrains\PhpStorm\Pure;
 class Gd
 {
     private ?GdImage $imgResource = null;
-    private int $imgWidth;
-    private int $imgHeight;
+    private int $imgWidth = 0;
+    private int $imgHeight = 0;
 
     /**
      * Is GD Resource
