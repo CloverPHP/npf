@@ -9,7 +9,7 @@ use JetBrains\PhpStorm\Pure;
 
 class Gd
 {
-    private GdImage $imgResource;
+    private ?GdImage $imgResource = null;
     private int $imgWidth;
     private int $imgHeight;
 
