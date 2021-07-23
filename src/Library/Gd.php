@@ -27,10 +27,10 @@ class Gd
 
     /**
      * Initial Load and Initial Save and Check Resource
-     * @param GdImage|null $img
+     * @param bool|GdImage|null $img
      * @return void
      */
-    private function initImage(?GdImage $img = null): void
+    private function initImage(bool|null|GdImage $img = null): void
     {
         if ($img && $this->isGDResource($img)) {
             imagepalettetotruecolor($img);
