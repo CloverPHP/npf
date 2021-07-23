@@ -1051,12 +1051,12 @@ namespace Npf\Core {
          * Get Specify datetime by timezone
          * @param string $timeZone
          * @param string $format
-         * @param int|float|null $time
+         * @param string|int|float|null $time
          * @return string|bool
          */
         public static function specifyTimeZone(string $timeZone,
                                                string $format = 'Y-m-d H:i:s',
-                                               int|float|null $time = null): string|bool
+                                               string|int|float|null $time = null): string|bool
         {
             try {
                 $dateTime = new DateTime(is_string($time) ? $time : 'now', new DateTimeZone($timeZone));
@@ -1073,13 +1073,13 @@ namespace Npf\Core {
          * @param string $fromTimeZone
          * @param string $targetTimeZone
          * @param string $format
-         * @param int|float|null $time
+         * @param string|int|float|null $time
          * @return string|bool
          */
         public static function convertTimeZone(string $fromTimeZone,
                                                string $targetTimeZone,
                                                string $format = 'Y-m-d H:i:s',
-                                               float|int|null $time = null): bool|string
+                                               string|int|float|null $time = null): bool|string
         {
             try {
                 $dateTime = new DateTime(is_string($time) ? $time : 'now', new DateTimeZone($fromTimeZone));
@@ -1133,9 +1133,9 @@ namespace Npf\Core {
 
         /**
          * Delay the timestamp
-         * @param float|string $second
+         * @param int|float|string $second
          */
-        public static function delay(float|string $second = 0): void
+        public static function delay(int|float|string $second = 0): void
         {
             sleep($second);
             self::initial(self::$timezone);
