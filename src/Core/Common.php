@@ -230,7 +230,7 @@ namespace Npf\Core {
                 $factor = (double)($item['factor'] ?? $defaultFactor);
                 $oddNow = (double)($item['odd'] ?? $item);
                 $rate = empty($oddNow) ? 1 : round((1 / $oddNow) * (1 - $commission) * $factor, 7);
-                $decimalLengths[] = strlen(substr(strrchr((string)$rate, "."), 1));
+                $decimalLengths[] = strlen(substr((string)strrchr((string)$rate, "."), 1));
                 $rates[$key] = $rate;
             }
             $power = pow(10, max($decimalLengths));
