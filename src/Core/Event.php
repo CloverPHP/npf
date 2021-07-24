@@ -86,41 +86,41 @@ namespace Npf\Core {
         }
 
         /**
-         * @param string $event Event Name to register
+         * @param string $eventName Event Name to register
          * @param callable $listener Event Listener to register
          * @param int|string $times Event available fire times, 0 = not limit.
          * @param int $priority Event Priority
          * @return Event
          */
-        final public function on(string $event,
+        final public function on(string $eventName,
                                  callable $listener,
                                  int|string $times = 0,
                                  int $priority = 0): self
         {
-            if (!empty($event)) {
-                if (!isset($this->listeners[$event]))
-                    $this->listeners[$event] = [];
-                $this->listeners[$event][] = ["listener" => $listener, "times" => $times, "priority" => $priority];
-                Common::multiArraySort($this->listeners[$event], ["priority" => [SORT_DESC, SORT_NATURAL]]);
+            if (!empty($eventName)) {
+                if (!isset($this->listeners[$eventName]))
+                    $this->listeners[$eventName] = [];
+                $this->listeners[$eventName][] = ["listener" => $listener, "times" => $times, "priority" => $priority];
+                Common::multiArraySort($this->listeners[$eventName], ["priority" => [SORT_DESC, SORT_NATURAL]]);
             }
             return $this;
         }
 
         /**
          * Turn off one off event listener if listener is same.
-         * @param string $event Event Name to turn off
+         * @param string $eventName Event Name to turn off
          * @param callable $listener Event Listener to turn off
          * @param bool $all Remove only match or all match event listener
          * @return Event
          */
-        final public function off(string $event,
+        final public function off(string $eventName,
                                   callable $listener,
                                   bool $all = true): self
         {
-            if (!empty($event) && isset($this->listeners[$event])) {
-                foreach ($this->listeners[$event] as $key => $event)
-                    if ($event['listener'] === $listener) {
-                        unset($this->listeners[$event][$key]);
+            if (!empty($eventName) && isset($this->listeners[$eventName])) {
+                foreach ($this->listeners[$eventName] as $key => $eventName)
+                    if ($eventName['listener'] === $listener) {
+                        unset($this->listeners[$eventName][$key]);
                         if (!$all)
                             break;
                     }
@@ -130,13 +130,13 @@ namespace Npf\Core {
 
         /**
          * Remove Event
-         * @param string $event Event Name to remove
+         * @param string $eventName Event Name to remove
          * @return Event
          */
-        final public function removeEvent(string $event): self
+        final public function removeEvent(string $eventName): self
         {
-            if (!empty($event) && isset($this->listeners[$event]))
-                unset($this->listeners[$event]);
+            if (!empty($eventName) && isset($this->listeners[$eventName]))
+                unset($this->listeners[$eventName]);
             return $this;
         }
 
