@@ -235,7 +235,7 @@ namespace Npf\Core {
                         $result = $this->eventFire($event['listener'], $args);
                         $event['times']--;
                         if ($event['times'] === 0)
-                            unset($this->listeners[$event][$key]);
+                            unset($this->listeners[$eventName][$key]);
                         if ($result === false)
                             break;
                     }
