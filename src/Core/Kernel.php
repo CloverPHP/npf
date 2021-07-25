@@ -98,7 +98,7 @@ namespace Npf\Core {
         final public function handleException(Throwable $exception): void
         {
             $this->createApp();
-            $this->app->handleException($exception);
+            $this->app->handleException($exception, true);
         }
 
         /**
@@ -113,7 +113,7 @@ namespace Npf\Core {
             // This error code is not included in error_reporting
             if (!(error_reporting() & $severity))
                 return;
-            $this->app->handleException(new ErrorException($message, 0, $severity, $file, $line));
+            $this->app->handleException(new ErrorException($message, 0, $severity, $file, $line), true);
         }
 
         /**
