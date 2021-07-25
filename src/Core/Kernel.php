@@ -98,7 +98,7 @@ namespace Npf\Core {
         final public function handleException(Throwable $exception): void
         {
             $this->createApp();
-            $this->app->handleException($exception, true);
+            $this->app->handleException($exception);
         }
 
         /**

@@ -453,9 +453,8 @@ namespace Npf\Core {
 
         /**
          * @param Throwable $exception
-         * @param bool $event
          */
-        final public function handleException(Throwable $exception, bool $event = false): void
+        final public function handleException(Throwable $exception): void
         {
             try {
                 $exitCode = 2;
@@ -469,18 +468,14 @@ namespace Npf\Core {
                 $this->view->error();
                 $this->response->add('profiler', $this->profiler->fetch());
                 $profiler = $this->response->get('profiler');
-                if ($exception->sysLog() || $exception instanceof \ErrorException) {
+                if ($exception->sysLog()) {
                     $desc = is_string($profiler['desc']) ? $profiler['desc'] : json_encode($profiler['desc'], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
                     $this->profiler->logError($this->response->get('error', ''), "{$desc}\nTrace:\n" . implode(",", $profiler['trace']));
-                    if ($event)
-                        $this->emit('sysReport', [&$this, $profiler]);
+                    $this->emit('sysReport', [&$this, $profiler]);
                 }
-                if ($event) {
-                    $this->emit('appException', [&$this, $profiler]);
-                    $this->emit('exception', [&$this, $profiler]);
-                }
-                if ($event)
-                    $this->emit('appBeforeClean', [&$this, $profiler]);
+                $this->emit('appException', [&$this, $profiler]);
+                $this->emit('exception', [&$this, $profiler]);
+                $this->emit('appBeforeClean', [&$this, $profiler]);
                 $this->clean();
                 $this->view->render();
                 exit($exitCode);
