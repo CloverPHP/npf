@@ -267,8 +267,8 @@ namespace Npf\Core {
         private function launchCronjob(ReflectionClass $refClass, array $parameters = [])
         {
             $cronLock = $this->app->config('Redis')->get('enable', false) && $this->generalConfig->get('cronLock', false);
-            $cronBlock = sha1(Common::getServerIp());
-            $lockName = "cronjob:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$this->rootDirectory}\\{$this->appFile}:{$cronBlock}";
+            $cronBlock = sha1($refClass->getFileName() . $this->app->request);
+            $lockName = "cronjob:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$cronBlock}";
             if ($cronLock && !$this->app->lock->waitAcquireDone($lockName, 60, $this->generalConfig->get('cronMaxWait', 60)))
                 return;
             if ($cronLock)
@@ -298,8 +298,8 @@ namespace Npf\Core {
         private function launchDaemon(ReflectionClass $refClass, array $parameters = [])
         {
             set_time_limit(0);
-            $daemonBlock = sha1(Common::getServerIp());
-            $lockName = "daemon:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$this->rootDirectory}\\{$this->appFile}:{$daemonBlock}";
+            $daemonBlock = sha1($refClass->getFileName() . $this->app->request);
+            $lockName = "daemon:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$daemonBlock}";
             $daemonLock = $this->app->config('Redis')->get('enable', false) && $this->generalConfig->get('daemonLock', false);
             if ($daemonLock && !$this->app->lock->waitAcquireDone($lockName, 60, $this->generalConfig->get('daemonMaxWait', 180)))
                 return;
