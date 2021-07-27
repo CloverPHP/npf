@@ -499,9 +499,9 @@ namespace Npf\Core\Db {
          * @param int $column
          * @param int $row
          * @param mysqli_result|bool|null $resResult
-         * @return array|string|int|float|bool|null
+         * @return mixed
          */
-        final public function fetchCell(int $column = 0, int $row = 0, mysqli_result|bool|null $resResult = null): float|int|bool|array|string|null
+        final public function fetchCell(int $column = 0, int $row = 0, mysqli_result|bool|null $resResult = null): mixed
         {
             $resResult = $this->getResResult($resResult);
             if ($this->isResResult($resResult)) {

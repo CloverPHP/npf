@@ -76,10 +76,10 @@ namespace Npf\Core {
         /**
          * @param array $params
          * @param bool $ignore
-         * @return bool|int|mysqli_result
+         * @return bool|int|string
          * @throws DBQueryError
          */
-        protected function addOne(array $params, bool $ignore = false): bool|int|mysqli_result
+        protected function addOne(array $params, bool $ignore = false): bool|int|string
         {
             $data = $this->buildOne($params);
             $ret = $this->db->insert($this->getTableName(), $data, $ignore);
@@ -110,12 +110,12 @@ namespace Npf\Core {
          * @param array $fields
          * @param array $params
          * @param bool $ignore
-         * @return bool|int|mysqli_result
+         * @return bool|int|string
          * @throws DBQueryError
          */
         protected function addMulti(array $fields,
                                     array $params,
-                                    bool $ignore = false): bool|int|mysqli_result
+                                    bool $ignore = false): bool|int|string
         {
             $fields = $this->buildField($fields);
             $ret = $this->db->inserts($this->getTableName(), $fields, $params, $ignore);
@@ -140,7 +140,7 @@ namespace Npf\Core {
          * @param int $seek
          * @param string|array|null $groupBy
          * @param string|array|null $having
-         * @return array
+         * @return array|null
          * @throws DBQueryError
          */
         protected function getOneById(string|array $field,
@@ -148,7 +148,7 @@ namespace Npf\Core {
                                       null|string|array $orderBy = null,
                                       int $seek = 0,
                                       null|string|array $groupBy = null,
-                                      null|string|array $having = null): array
+                                      null|string|array $having = null): ?array
         {
             $data = $this->db->one(
                 $this->getTableName(),
@@ -382,7 +382,7 @@ namespace Npf\Core {
          */
         protected function updateOneById(array $data,
                                          int $id,
-                                         bool $ignore = false): bool|int|mysqli_result
+                                         bool $ignore = false): mysqli_result|bool|int
         {
             return $this->db->update($this->getTableName(), $this->buildOne($data), $this->buildIdField($id), null, 1, $ignore);
         }
@@ -394,7 +394,7 @@ namespace Npf\Core {
          * @param int $seek
          * @param string|array|null $groupBy
          * @param string|array|null $having
-         * @return bool|array
+         * @return array|null
          * @throws DBQueryError
          */
         protected function getOneByCond(string|array $field = '*',
@@ -402,7 +402,7 @@ namespace Npf\Core {
                                         string|array|null $orderBy = null,
                                         int $seek = 0,
                                         string|array|null $groupBy = null,
-                                        string|array|null $having = null): bool|array
+                                        string|array|null $having = null): ?array
         {
             $data = $this->db->one(
                 $this->getTableName(),

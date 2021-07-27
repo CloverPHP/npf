@@ -128,10 +128,10 @@ namespace Npf\Core\Db {
          * Alias with Query
          * @param string $queryStr
          * @param int $resultMode
-         * @return array|float|int|bool|null
+         * @return mixed
          * @throws DBQueryError
          */
-        public function special(string $queryStr, int $resultMode = 0): array|float|int|bool|null
+        public function special(string $queryStr, int $resultMode = 0): mixed
         {
             return $this->query($queryStr, $resultMode);
         }
@@ -140,10 +140,10 @@ namespace Npf\Core\Db {
          * Query DB and return the result instant
          * @param string $queryStr
          * @param int $resultMode
-         * @return array|float|int|bool|null
+         * @return mixed
          * @throws DBQueryError
          */
-        final public function query(string $queryStr, int $resultMode = 0): array|float|int|bool|null
+        final public function query(string $queryStr, int $resultMode = 0): mixed
         {
             $results = null;
             if (!empty($queryStr)) {
@@ -210,7 +210,6 @@ namespace Npf\Core\Db {
 
         /**
          * Get the sql insert id
-         * @return bool|int|string
          */
         final public function getInsertId(): bool|int|string
         {
@@ -220,9 +219,9 @@ namespace Npf\Core\Db {
         /**
          * Query Select get result set.
          * @param mysqli_result $resultSet
-         * @return bool|array
+         * @return array|null
          */
-        final public function fetchRow(mysqli_result $resultSet): bool|array
+        final public function fetchRow(mysqli_result $resultSet): ?array
         {
             return $this->driver->fetchAssoc($resultSet);
         }
@@ -272,7 +271,7 @@ namespace Npf\Core\Db {
          * @param string|int|float|array|null $limit
          * @param string|int|float|array|null $group
          * @param string|int|float|array|null $having
-         * @return bool|mysqli_result
+         * @return bool|mysqli_result|null
          * @throws DBQueryError
          */
         final public function select(string $table,
@@ -281,7 +280,7 @@ namespace Npf\Core\Db {
                                      string|int|float|array|null $order = null,
                                      string|int|float|array|null $limit = null,
                                      string|int|float|array|null $group = null,
-                                     string|int|float|array|null $having = null): mysqli_result|bool
+                                     string|int|float|array|null $having = null): mysqli_result|bool|null
         {
             $resultSet = $this->driver->query($this->getSelectSQL($table, $column, $cond, $order, $limit, $group, $having));
             $this->queryLock = '';
@@ -808,7 +807,7 @@ namespace Npf\Core\Db {
          * @param int|float|string|array|null $limit
          * @param string|array|null $group
          * @param string|array|null $having
-         * @return array|bool
+         * @return bool|array
          * @throws DBQueryError
          */
         final public function column(string $table,
@@ -817,7 +816,7 @@ namespace Npf\Core\Db {
                                      string|array|null $order = null,
                                      int|float|string|array|null $limit = 0,
                                      string|array|null $group = null,
-                                     string|array|null $having = null): array|bool
+                                     string|array|null $having = null): bool|array
         {
             if (!empty($table) && !empty($column)) {
                 $resResult = $this->select($table, $column, $cond, $order, $limit, $group, $having);
@@ -857,7 +856,7 @@ namespace Npf\Core\Db {
                                   string|array|null $order = null,
                                   int $seek = 0,
                                   string|array|null $group = null,
-                                  string|array|null $having = null): array|null
+                                  string|array|null $having = null): ?array
         {
             if (!empty($table)) {
                 return $this->driver->fetchAssoc($this->select($table, $column, $cond, $order,
