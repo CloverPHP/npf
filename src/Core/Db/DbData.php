@@ -919,13 +919,13 @@ namespace Npf\Core\Db {
          * @param array $fields
          * @param array $values
          * @param bool $ignore
-         * @return bool|int|mysqli_result
+         * @return bool|mysqli_result
          * @throws DBQueryError
          */
         final public function inserts(string $table,
                                       array $fields,
                                       array $values,
-                                      bool $ignore = false): bool|int|mysqli_result
+                                      bool $ignore = false): bool|mysqli_result
         {
             if (!is_array($fields) || !is_array($values) || empty($fields) || empty($values))
                 return false;
@@ -957,32 +957,6 @@ namespace Npf\Core\Db {
         }
 
         /**
-         * Insert/Update via condition
-         * @param string $table
-         * @param array $colData
-         * @param array|null $cond
-         * @param bool $check
-         * @param bool $ignore
-         * @return bool|mysqli_result
-         * @throws DBQueryError
-         */
-        final public function action(string $table,
-                                     array $colData,
-                                     array|null $cond = null,
-                                     bool $check = false,
-                                     bool $ignore = false): mysqli_result|bool
-        {
-            if (!empty($cond) && $check === true)
-                if ($this->count($table, $cond) === 0)
-                    $cond = null;
-            $this->queryLock = '';
-            if (!empty($cond))
-                return $this->update($table, $colData, $cond, null, null, $ignore);
-            else
-                return $this->insert($table, $colData, $ignore);
-        }
-
-        /**
          * Query and get the row count.
          * @param string $table
          * @param array|null $cond
@@ -1010,48 +984,16 @@ namespace Npf\Core\Db {
         }
 
         /**
-         * Update(s) Query
-         * @param string $table
-         * @param array $colDatas
-         * @param array|null $cond
-         * @param string|array|null $order
-         * @param int|float|string|array|null $limit
-         * @param bool $ignore
-         * @return mysqli_result|int|bool
-         * @throws DBQueryError
-         */
-        final public function update(string $table,
-                                     array $colDatas,
-                                     array|null $cond = null,
-                                     string|array|null $order = null,
-                                     int|float|string|array|null $limit = null,
-                                     bool $ignore = false): mysqli_result|int|bool
-        {
-            if (!empty($table) && is_array($colDatas) && !empty($colDatas)) {
-                $this->queryLock = '';
-                $tableStr = $this->convertSplit($this->driver->escapeStr($table));
-                $setCol = '';
-                foreach ($colDatas as $colName => $colData)
-                    $setCol .= (!empty($setCol) ? ", " : "") . $this->getColNm($colName) . " = " . $this->
-                        getColVal($colData, $colName);
-
-                return $this->driver->query("UPDATE" . ($ignore ? " IGNORE" : "") . " {$this->colLiteral}{$tableStr}{$this->colLiteral} SET {$setCol}" .
-                    $this->getCondition($cond) . $this->getOrder($order) . $this->getLimit($limit));
-            } else
-                return false;
-        }
-
-        /**
          * Insert Query and get last insert id
          * @param string $table
          * @param array $colDatas
          * @param bool $ignore
-         * @return mysqli_result|int|bool
+         * @return int|bool
          * @throws DBQueryError
          */
         final public function insert(string $table,
                                      array $colDatas,
-                                     bool $ignore = false): mysqli_result|int|bool
+                                     bool $ignore = false): int|bool
         {
             if (!empty($table) && is_array($colDatas) && !empty($colDatas)) {
                 $this->queryLock = '';
@@ -1070,13 +1012,45 @@ namespace Npf\Core\Db {
         }
 
         /**
+         * Update(s) Query
+         * @param string $table
+         * @param array $colDatas
+         * @param array|null $cond
+         * @param string|array|null $order
+         * @param int|float|string|array|null $limit
+         * @param bool $ignore
+         * @return bool
+         * @throws DBQueryError
+         */
+        final public function update(string $table,
+                                     array $colDatas,
+                                     array|null $cond = null,
+                                     string|array|null $order = null,
+                                     int|float|string|array|null $limit = null,
+                                     bool $ignore = false): bool
+        {
+            if (!empty($table) && is_array($colDatas) && !empty($colDatas)) {
+                $this->queryLock = '';
+                $tableStr = $this->convertSplit($this->driver->escapeStr($table));
+                $setCol = '';
+                foreach ($colDatas as $colName => $colData)
+                    $setCol .= (!empty($setCol) ? ", " : "") . $this->getColNm($colName) . " = " . $this->
+                        getColVal($colData, $colName);
+
+                return $this->driver->query("UPDATE" . ($ignore ? " IGNORE" : "") . " {$this->colLiteral}{$tableStr}{$this->colLiteral} SET {$setCol}" .
+                    $this->getCondition($cond) . $this->getOrder($order) . $this->getLimit($limit));
+            } else
+                return false;
+        }
+
+        /**
          * Insert/Update via sql
          * @param string $table
          * @param array $colDatas
-         * @return mysqli_result|bool
+         * @return bool
          * @throws DBQueryError
          */
-        final public function insertUpdate(string $table, array $colDatas): mysqli_result|bool
+        final public function insertUpdate(string $table, array $colDatas): bool
         {
             if (!empty($table) && is_array($colDatas) && !empty($colDatas)) {
                 $this->queryLock = '';
@@ -1098,12 +1072,12 @@ namespace Npf\Core\Db {
          * @param string $table
          * @param array $fields
          * @param array $values
-         * @return bool|mysqli_result
+         * @return bool
          * @throws DBQueryError
          */
         final public function insertsUpdate(string $table,
                                             array $fields,
-                                            array $values): bool|mysqli_result
+                                            array $values): bool
         {
             if (!is_array($fields) || !is_array($values) || empty($fields) || empty($values))
                 return false;
@@ -1138,18 +1112,44 @@ namespace Npf\Core\Db {
         }
 
         /**
+         * Insert/Update via condition
+         * @param string $table
+         * @param array $colData
+         * @param array|null $cond
+         * @param bool $check
+         * @param bool $ignore
+         * @return bool|int
+         * @throws DBQueryError
+         */
+        final public function action(string $table,
+                                     array $colData,
+                                     array|null $cond = null,
+                                     bool $check = false,
+                                     bool $ignore = false): bool|int
+        {
+            if (!empty($cond) && $check === true)
+                if ($this->count($table, $cond) === 0)
+                    $cond = null;
+            $this->queryLock = '';
+            if (!empty($cond))
+                return $this->update($table, $colData, $cond, null, null, $ignore);
+            else
+                return $this->insert($table, $colData, $ignore);
+        }
+
+        /**
          * SQL Delete row(s)
          * @param string $table
          * @param array|null $cond
          * @param string|array|null $order
          * @param int|float|string|array|null $limit
-         * @return bool|int|mysqli_result
+         * @return bool
          * @throws DBQueryError
          */
         final public function delete(string $table,
                                      array|null $cond = null,
                                      string|array|null $order = null,
-                                     int|float|string|array|null $limit = null): mysqli_result|bool|int
+                                     int|float|string|array|null $limit = null): bool
         {
             if (!empty($table)) {
                 $this->queryLock = '';
@@ -1213,7 +1213,7 @@ namespace Npf\Core\Db {
          * @param string|array|null $group
          * @param string|array|null $having
          * @param bool $ignore
-         * @return bool|mysqli_result
+         * @return bool
          * @throws DBQueryError
          * @throws Exception
          */
@@ -1225,7 +1225,7 @@ namespace Npf\Core\Db {
                                       int|float|string|array|null $limit = null,
                                       string|array|null $group = null,
                                       string|array|null $having = null,
-                                      bool $ignore = false): mysqli_result|bool
+                                      bool $ignore = false): bool
         {
             if (!empty($tableScr) && !empty($tableDes) && !empty($colData) && is_array($colData)) {
                 $this->queryLock = '';
@@ -1248,7 +1248,7 @@ namespace Npf\Core\Db {
          * SQL Affected Row
          * @return int
          */
-        final public function affectedRow():int
+        final public function affectedRow(): int
         {
             return $this->driver->affectedRow();
         }

@@ -24,8 +24,8 @@ namespace Npf\Core\Db {
         public bool $connected = false;
 
         private string $queryMode = 'store';
-        private null|bool|mysqli $resLink;
-        private null|bool|mysqli_result $resResult;
+        private bool|mysqli $resLink;
+        private bool|mysqli_result $resResult;
         private bool $tranEnable = false;
         private bool $tranStarted = false;
         private bool $persistent = false;
@@ -83,7 +83,7 @@ namespace Npf\Core\Db {
             if (!$this->connected)
                 return false;
             if ($this->isResLink($this->resLink)) {
-                $this->app->profiler->timerStart("redis");
+                $this->app->profiler->timerStart("db");
                 if (!$this->persistent) {
                     $threadId = @mysqli_thread_id($this->resLink);
                     if ($threadId > 0) {
@@ -92,7 +92,7 @@ namespace Npf\Core\Db {
                 }
                 @mysqli_close($this->resLink);
                 $this->app->profiler->saveQuery("close", "db");
-                $this->resLink = null;
+                $this->resLink = false;
                 $this->connected = false;
                 return true;
             }
@@ -279,18 +279,18 @@ namespace Npf\Core\Db {
         /**
          * Db Query
          * @param string $queryStr
-         * @return mysqli_result|bool|null
+         * @return mysqli_result|bool
          * @throws DBQueryError
          */
-        final public function query(string $queryStr): mysqli_result|bool|null
+        final public function query(string $queryStr): mysqli_result|bool
         {
             if (!$this->connected)
                 return false;
-            $this->resResult = null;
+            $this->resResult = false;
             if ($this->tranQuery($queryStr))
                 return $this->realQuery($queryStr);
             else {
-                $this->resResult = null;
+                $this->resResult = false;
                 return false;
             }
 
@@ -339,10 +339,10 @@ namespace Npf\Core\Db {
 
         /**
          * @param string $queryStr
-         * @return mysqli_result|bool|null
+         * @return bool|mysqli_result
          * @throws DBQueryError
          */
-        final public function realQuery(string $queryStr): mysqli_result|bool|null
+        final public function realQuery(string $queryStr): bool|mysqli_result
         {
             if (!$this->connected)
                 return false;
@@ -441,7 +441,7 @@ namespace Npf\Core\Db {
             if ($this->isResResult($resResult)) {
                 mysqli_free_result($resResult);
                 if ($resResult === $this->resResult)
-                    $this->resResult = null;
+                    $this->resResult = false;
                 return true;
             } else
                 return false;
