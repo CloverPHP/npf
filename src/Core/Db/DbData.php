@@ -807,7 +807,7 @@ namespace Npf\Core\Db {
          * @param int|float|string|array|null $limit
          * @param string|array|null $group
          * @param string|array|null $having
-         * @return bool|array
+         * @return null|array
          * @throws DBQueryError
          */
         final public function column(string $table,
@@ -816,12 +816,12 @@ namespace Npf\Core\Db {
                                      string|array|null $order = null,
                                      int|float|string|array|null $limit = 0,
                                      string|array|null $group = null,
-                                     string|array|null $having = null): bool|array
+                                     string|array|null $having = null): ?array
         {
             if (!empty($table) && !empty($column)) {
                 $resResult = $this->select($table, $column, $cond, $order, $limit, $group, $having);
                 if (!$resResult)
-                    return false;
+                    return null;
                 else {
                     $results = [];
                     $NumCol = $this->driver->numFields($resResult);
@@ -835,7 +835,7 @@ namespace Npf\Core\Db {
                     return $results;
                 }
             } else
-                return false;
+                return null;
         }
 
         /**
@@ -847,7 +847,7 @@ namespace Npf\Core\Db {
          * @param int $seek
          * @param string|array|null $group
          * @param string|array|null $having
-         * @return array|null
+         * @return null|array
          * @throws DBQueryError
          */
         final public function one(string $table,
