@@ -1636,7 +1636,8 @@ class Gd
 
     final public function close()
     {
-        imagedestroy($this->imgResource);
+        if (isset($this->imgResource) && $this->isGDResource($this->imgResource))
+            @imagedestroy($this->imgResource);
         $this->imgWidth = 0;
         $this->imgHeight = 0;
         $this->imgResource = null;
