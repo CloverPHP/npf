@@ -542,7 +542,7 @@ namespace Npf\Core {
 
                     case 'regexp':
                     case 'regex':
-                        $pass = (boolean)preg_match($extend, $value);
+                        $pass = (boolean)preg_match($extend, (string)$value);
                         break;
 
                     default:

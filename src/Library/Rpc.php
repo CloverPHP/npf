@@ -564,7 +564,7 @@ final class Rpc
         $this->handle = curl_init($this->url);
         //Prepare CURL
         $this->curlOpt = [
-                CURLOPT_FOLLOWLOCATION => TRUE,
+                CURLOPT_FOLLOWLOCATION => $this->followLocation,
                 CURLOPT_AUTOREFERER => $this->followLocation,
                 CURLOPT_MAXREDIRS => 100,
                 CURLOPT_URL => $this->url,
@@ -627,7 +627,7 @@ final class Rpc
         $this->createHandle();
 
         //Prepare Cookie Data
-        $tmpCookie = tempnam(sys_get_temp_dir(), 'library.class.rpc');
+        $tmpCookie = tempnam(sys_get_temp_dir(), 'npf.rpc.cookie');
         if (!empty($this->internalCookie))
             file_put_contents($tmpCookie, $this->internalCookie);
 
@@ -648,7 +648,8 @@ final class Rpc
         //Record Verbose Log
         $verbose = null;
         if ($this->verboseDebug) {
-            $verbose = fopen('php://temp', 'w+');
+            $tmpVerbose = tempnam(sys_get_temp_dir(), 'npf.rpc.verbose');
+            $verbose = fopen($tmpVerbose, 'w+');
             curl_setopt($this->handle, CURLOPT_STDERR, $verbose);
             $this->verboseDebugLog = '';
         }
