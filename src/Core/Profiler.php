@@ -99,14 +99,20 @@ namespace Npf\Core {
         #[ArrayShape(['memusage' => "string", 'cpuusage' => "false|string", 'timeusage' => "array", 'uri' => "string", 'params' => "mixed", 'headers' => "mixed", 'debug' => "array", 'query' => "array", 'detail' => "array"])]
         public function fetch(): array|bool
         {
-            $Uri = $this->app->request->getUri();
+            $uri = $this->app->request->getUri();
+            list($requestSec, $requestUsec) = explode('.', (string)$this->initTime);
+            $requestUsec = substr($requestUsec, 0, 3);
             $profiler = [
-                'memusage' => $this->memUsage(),
-                'cpuusage' => file_exists('/proc/loadavg') ? substr(file_get_contents('/proc/loadavg'), 0, 4) : false,
-                'timeusage' => [
+                'memoryUsage' => [
+                    'current' => $this->memUsage(),
+                    'peak' => $this->memPeakUsage(),
+                ],
+                'cpuUsage' => file_exists('/proc/loadavg') ? substr(file_get_contents('/proc/loadavg'), 0, 4) : false,
+                'requestTime' => date("H:i:s", (int)$requestSec) . ".{$requestUsec}",
+                'timeUsage' => [
                     'total' => $this->elapsed() . "ms",
                 ],
-                'uri' => !empty($Uri) ? $Uri : '',
+                'uri' => !empty($uri) ? $uri : '',
                 'params' => $this->app->request->get("*"),
                 'headers' => $this->app->request->header("*"),
                 'debug' => $this->debug,
@@ -125,6 +131,14 @@ namespace Npf\Core {
         #[Pure] public function memUsage(): string
         {
             return Common::fileSize2Unit(memory_get_usage());
+        }
+
+        /**
+         * @return string
+         */
+        #[Pure] public function memPeakUsage(): string
+        {
+            return Common::fileSize2Unit(memory_get_peak_usage());
         }
 
         /**
