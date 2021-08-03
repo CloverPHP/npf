@@ -86,7 +86,7 @@ namespace Npf\Core {
             $this->app->request->setPathInfo($pathInfo);
             $pathInfo = preg_replace('#^/\w+\.php#', '', $pathInfo);
             $pathInfo = (!$pathInfo || $pathInfo === '/') ?
-                $this->indexFile : (substr($pathInfo, 0, 1) === '/' ? substr($pathInfo, 1) : $pathInfo);
+                $this->indexFile : (str_starts_with($pathInfo, '/') ? substr($pathInfo, 1) : $pathInfo);
             $this->proceedAppPath($pathInfo);
             clearstatcache();
         }
@@ -146,7 +146,7 @@ namespace Npf\Core {
             do {
                 if (!empty($this->routeTable[$lowerCase])) {
                     $appFile = $this->routeTable[$lowerCase];
-                    if (substr($appFile, -1) === "\\")
+                    if (str_ends_with($appFile, "\\"))
                         $appFile .= $this->indexFile;
                     $this->appFile = $appFile;
                     $this->appPath = explode("\\", $appFile);

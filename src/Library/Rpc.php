@@ -201,7 +201,7 @@ final class Rpc
      */
     final public function setUserAgent(string $userAgent): self
     {
-        if (is_string($userAgent) && !empty($userAgent))
+        if (!empty($userAgent))
             $this->userAgent = $userAgent;
         return $this;
     }
@@ -227,7 +227,7 @@ final class Rpc
      */
     final public function setBasicAuth(string $user, string $pass, string $type = 'any'): self
     {
-        if (is_string($user) && !empty($user) && is_string($pass)) {
+        if (!empty($user)) {
             $this->basicAuth['userpwd'] = "{$user}:{$pass}";
             $this->basicAuth['type'] = $type;
         }
@@ -251,7 +251,7 @@ final class Rpc
                                    ?array $header = null,
                                    int $socketType = 0): self
     {
-        if (is_string($proxyAddress) && !empty($proxyAddress)) {
+        if (!empty($proxyAddress)) {
             $this->proxy['proxy'] = $proxyAddress;
             if (is_string($user) && !empty($user) && is_string($pass))
                 $this->proxy['auth'] = "{$user}:{$pass}";
@@ -314,7 +314,7 @@ final class Rpc
      */
     final public function addFile(string $name, string $fileName, ?string $contentType = null): self
     {
-        if (is_string($name) && !empty($name) && is_string($fileName) && !empty($fileName) && file_exists($fileName) && !is_dir($fileName)) {
+        if (!empty($name) && !empty($fileName) && file_exists($fileName) && !is_dir($fileName)) {
             if (empty($contentType)) {
                 $fifo = new finfo(FILEINFO_MIME);
                 $contentType = $fifo->file($fileName);
@@ -337,7 +337,7 @@ final class Rpc
      */
     final public function addCookie(string $name, string $content): self
     {
-        if (is_string($name) && !empty($name) && is_string($content) && !empty($content))
+        if (!empty($name) && !empty($content))
             $this->cookie[$name] = $content;
         return $this;
     }
@@ -349,7 +349,7 @@ final class Rpc
      */
     final public function addCookies(array $cookies): self
     {
-        if (is_array($cookies) && !empty($cookies))
+        if (!empty($cookies))
             $this->cookie = array_merge($this->cookie, $cookies);
         return $this;
     }
@@ -362,7 +362,7 @@ final class Rpc
      */
     final public function addOption(int $optId, int|float|bool|string|array $value): self
     {
-        if (!empty($optId) && is_int($optId))
+        if (!empty($optId))
             $this->curlOpt[$optId] = $value;
         return $this;
     }
@@ -374,7 +374,7 @@ final class Rpc
      */
     final public function addOptions(array $options): self
     {
-        if (is_array($options) && !empty($options))
+        if (!empty($options))
             $this->curlOpt += $options;
         return $this;
     }
@@ -387,7 +387,7 @@ final class Rpc
      */
     final public function addHeader(string $name, string $content): self
     {
-        if (is_string($name) && !empty($name) && is_string($content) && !empty($content))
+        if (!empty($name) && !empty($content))
             $this->headers[$name] = $content;
         return $this;
     }
@@ -399,7 +399,7 @@ final class Rpc
      */
     final public function addHeaders(array $headers): self
     {
-        if (is_array($headers) && !empty($headers))
+        if (!empty($headers))
             $this->headers = array_merge($this->headers, $headers);
         return $this;
     }
@@ -412,7 +412,7 @@ final class Rpc
      */
     final public function addParam(string $name, string $value): self
     {
-        if (!empty($name) && (is_string($value) || is_numeric($value))) {
+        if (!empty($name)) {
             $this->params[$name] = $value;
             $this->content = '';
         }
@@ -425,7 +425,7 @@ final class Rpc
      */
     final public function addParams(array $values)
     {
-        if (is_array($values) && !empty($values)) {
+        if (!empty($values)) {
             $this->params = array_merge($this->params, $values);
             $this->content = '';
         }
@@ -447,7 +447,7 @@ final class Rpc
      */
     final public function getResponseHeader(string $name): ?string
     {
-        if (is_string($name) && !empty($name)) {
+        if (!empty($name)) {
             if ($name === '*')
                 return $this->response['header'];
             else
@@ -463,7 +463,7 @@ final class Rpc
      */
     final public function getResponseCookie(string $name): ?string
     {
-        if (is_string($name) && !empty($name)) {
+        if (!empty($name)) {
             if ($name === '*')
                 return $this->response['cookie'];
             else
@@ -513,7 +513,7 @@ final class Rpc
             parse_str($matches[1], $cookie);
             $this->response['cookie'] = array_merge($this->response['cookie'], $cookie);
         } else {
-            if (substr($headerLine, 0, 4) === 'HTTP') {
+            if (str_starts_with($headerLine, 'HTTP')) {
                 list($this->response['http'], $this->response['code'], $this->response['status']) = explode(" ", $headerLine, 3);
                 $this->response['status'] = trim($this->response['status']);
             } elseif (trim($headerLine) !== '') {
@@ -878,7 +878,7 @@ final class Rpc
      */
     final public function setMethod(string $method): self
     {
-        if (is_string($method) && !empty($method) && in_array($method, $this->availableMethod, true))
+        if (!empty($method) && in_array($method, $this->availableMethod, true))
             $this->method = strtoupper($method);
         return $this;
     }
@@ -891,7 +891,7 @@ final class Rpc
      */
     final public function setContent(string $content, string $contentType = 'plain/text'): self
     {
-        if (is_string($content) && !empty($content)) {
+        if (!empty($content)) {
             $this->params = [];
             $this->content = $content;
             $this->method = 'POST';

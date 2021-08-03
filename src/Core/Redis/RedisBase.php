@@ -163,14 +163,14 @@ namespace Npf\Core\Redis {
          * @param bool $allowReconnect
          * @param bool $persistent
          */
-        final public function __construct(private App $app,
-                                          private array $hosts,
+        final public function __construct(private App    $app,
+                                          private array  $hosts,
                                           private string $authPass,
-                                          private int $db,
-                                          private int $timeout = 10,
-                                          int $rwTimeout = 0,
-                                          private bool $allowReconnect = true,
-                                          private bool $persistent = false)
+                                          private int    $db,
+                                          private int    $timeout = 10,
+                                          int            $rwTimeout = 0,
+                                          private bool   $allowReconnect = true,
+                                          private bool   $persistent = false)
         {
             if ($rwTimeout != 0)
                 $this->rwTimeout = $rwTimeout;
@@ -241,13 +241,10 @@ namespace Npf\Core\Redis {
          */
         private function __write(array $arguments): bool|int
         {
-            if (is_array($arguments)) {
-                $raw = '';
-                $reqlen = $this->__request($raw, $arguments);
-                $raw = "*{$reqlen}\r\n{$raw}";
-                return $this->__socketWrite($raw);
-            } else
-                return false;
+            $raw = '';
+            $reqlen = $this->__request($raw, $arguments);
+            $raw = "*{$reqlen}\r\n{$raw}";
+            return $this->__socketWrite($raw);
         }
 
         /**
@@ -288,7 +285,7 @@ namespace Npf\Core\Redis {
                     return false;
                 $rv = $bytes_written == 0 ? fwrite($this->socket, $data) : fwrite($this->socket,
                     substr($data, $bytes_written));
-                if ($rv === false || $rv == 0) {
+                if ($rv == 0) {
                     if ($rv === false) {
                         $this->lastError = 'Error while writing data to server.';
                         $this->__errorHandle($this->lastError);
@@ -457,7 +454,7 @@ namespace Npf\Core\Redis {
                             $this->mode = $role[0];
                             if ($this->mode === 'master')
                                 return true;
-                            elseif ($this->mode !== 'master' && $masterOnly) {
+                            elseif ($masterOnly) {
                                 for ($i = 0; $i < 10; $i++) {
                                     if ($role[3] === 'connected') {
                                         $this->close();
@@ -471,8 +468,7 @@ namespace Npf\Core\Redis {
                                 }
                             } else
                                 return true;
-                        } else
-                            continue;
+                        }
                     }
                 }
                 if ($retry > 0) {

@@ -200,7 +200,7 @@ namespace Npf\Core {
         final public function setPostHash(string $postHash): self
         {
             if (!empty($postHash))
-                $this->postHash = substr($postHash, 0, 1) === "{" ? $postHash : "{{$postHash}}";
+                $this->postHash = str_starts_with($postHash, "{") ? $postHash : "{{$postHash}}";
             return $this;
         }
 
@@ -226,7 +226,7 @@ namespace Npf\Core {
         {
             $tempHash = (string )$tempHash;
             if (!empty($tempHash))
-                $this->tempHash = substr($tempHash, 0, 1) === "{" ? $tempHash : "{{$tempHash}}";
+                $this->tempHash = str_starts_with($tempHash, "{") ? $tempHash : "{{$tempHash}}";
             return $this;
         }
 

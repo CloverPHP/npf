@@ -1036,7 +1036,7 @@ class Gd
                                int $alpha = 0): self
     {
         if (!$this->isGDResource($this->imgResource)) return $this;
-        if (empty($red) && empty($green) && empty($blue) && empty($blue)) return $this;
+        if (empty($red) && empty($green) && empty($blue)) return $this;
         if (!function_exists('imagefilter') || !imagefilter($this->imgResource, IMG_FILTER_COLORIZE, $red, $green, $blue,
                 $alpha)
         ) {

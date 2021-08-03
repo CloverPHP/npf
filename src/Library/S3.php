@@ -1385,7 +1385,7 @@ class S3
     {
         $rest->getResponse();
         if ($rest->response->error === false && isset($rest->response->body) &&
-            is_string($rest->response->body) && substr($rest->response->body, 0, 5) == '<?xml') {
+            is_string($rest->response->body) && str_starts_with($rest->response->body, '<?xml')) {
             $rest->response->body = simplexml_load_string($rest->response->body);
             // Grab CloudFront errors
             if (isset($rest->response->body->Error, $rest->response->body->Error->Code,

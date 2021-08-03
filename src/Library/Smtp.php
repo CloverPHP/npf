@@ -76,7 +76,7 @@ class Smtp
     {
         if (empty($host) || !is_string($host) || strlen($host) > 256 || !preg_match('/^([a-zA-Z\d.-]*|\[[a-fA-F\d:]+])$/', $host))
             return false;
-        if (strlen($host) > 2 && substr($host, 0, 1) === '[' && substr($host, -1, 1) === ']')
+        if (strlen($host) > 2 && str_starts_with($host, '[') && substr($host, -1, 1) === ']')
             return filter_var(substr($host, 1, -1), FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false;
         if (is_numeric(str_replace('.', '', $host)))
             return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;
@@ -120,7 +120,7 @@ class Smtp
      */
     #[Pure] public function isEmail(string $email): bool
     {
-        return is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL);
+        return filter_var($email, FILTER_VALIDATE_EMAIL);
     }
 
     /**

@@ -48,10 +48,7 @@ namespace Npf\Core\Db {
          */
         final public function __get(string $name): mixed
         {
-            if (isset($this->{$name}))
-                return $this->{$name};
-            else
-                return null;
+            return $this->{$name} ?? null;
         }
 
         /**

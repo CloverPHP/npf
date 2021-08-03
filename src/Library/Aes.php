@@ -38,7 +38,7 @@ namespace Npf\Library {
          */
         public function setIV(string $iv): self
         {
-            if (!empty($iv) && is_string($iv)) {
+            if (!empty($iv)) {
                 if (strlen($iv) !== $this->ivLen())
                     $this->iv = substr(sha1($iv), -1 * $this->ivLen());
                 else

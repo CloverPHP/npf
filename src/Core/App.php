@@ -279,7 +279,7 @@ namespace Npf\Core {
         {
             if (empty($this->rootPath)) {
                 $reflection = new ReflectionClass(ClassLoader::class);
-                $rootPath = explode('/', str_replace('\\', '/', dirname(dirname($reflection->getFileName()))));
+                $rootPath = explode('/', str_replace('\\', '/', dirname($reflection->getFileName(), 2)));
                 array_pop($rootPath);
                 $this->rootPath = implode("/", $rootPath) . '/';
             }

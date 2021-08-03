@@ -58,7 +58,7 @@ namespace Npf\Core {
          */
         public static function unCompressContent(string $compressed): string
         {
-            if (substr($compressed, 0, 9) === 'base64://') {
+            if (str_starts_with($compressed, 'base64://')) {
                 $compressed = base64_decode(substr($compressed, 9));
 
                 $errLvl = error_reporting(0);
@@ -1149,7 +1149,7 @@ namespace Npf\Core {
         {
             if (empty(self::$timestamp))
                 self::$timestamp = microtime(true);
-            if (!empty($timezone) && is_string($timezone) && in_array($timezone, timezone_identifiers_list(), true)) {
+            if (!empty($timezone) && in_array($timezone, timezone_identifiers_list(), true)) {
                 date_default_timezone_set($timezone);
                 self::$timezone = $timezone;
                 self::$datetime = date("Y-m-d H:i:s");
