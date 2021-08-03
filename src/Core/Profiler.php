@@ -108,7 +108,7 @@ namespace Npf\Core {
                     'peak' => $this->memPeakUsage(),
                 ],
                 'cpuUsage' => file_exists('/proc/loadavg') ? substr(file_get_contents('/proc/loadavg'), 0, 4) : false,
-                'requestTime' => date("H:i:s", (int)$requestSec) . ".{$requestUsec}",
+                'requestTime' => date("Y-m-d H:i:s", (int)$requestSec) . ".{$requestUsec}",
                 'timeUsage' => [
                     'total' => $this->elapsed() . "ms",
                 ],
