@@ -74,7 +74,7 @@ class Gd
      */
     #[Pure] public function getPixelColor(int $x = 0, int $y = 0, bool $assoc = false): array|bool|int
     {
-        if(!$this->isGDResource($this->imgResource))
+        if (!$this->isGDResource($this->imgResource))
             return false;
         $color = imagecolorat($this->imgResource, $x, $y);
         if ($assoc !== true)
@@ -326,8 +326,8 @@ class Gd
      * @return self
      */
     public function copyImageFromFile(string|GdImage $file,
-                                      array $rect = null,
-                                      float $percent = 100): self
+                                      array          $rect = null,
+                                      float          $percent = 100): self
     {
         if ($this->isGDResource($this->imgResource)) {
             $percent = (int)$percent;
@@ -365,9 +365,9 @@ class Gd
      * @param int $color
      * @return $this
      */
-    public function autoCrop(int $mode = IMG_CROP_DEFAULT,
+    public function autoCrop(int   $mode = IMG_CROP_DEFAULT,
                              float $threshold = .5,
-                             int $color = -1): self
+                             int   $color = -1): self
     {
         if ($this->isGDResource($this->imgResource)) {
             $cropped = imagecropauto($this->imgResource, $mode, $threshold, $color);
@@ -386,8 +386,8 @@ class Gd
      * @param bool $ignoreTrans
      * @return self
      */
-    public function rotateImage(int $angle = 0,
-                                int $bgColor = 0,
+    public function rotateImage(int  $angle = 0,
+                                int  $bgColor = 0,
                                 bool $ignoreTrans = false): self
     {
         if ($this->isGDResource($this->imgResource) && !empty($angle)) {
@@ -453,7 +453,7 @@ class Gd
      * @param bool $bottomRight
      * @return self
      */
-    public function roundedCorner(int $radius = 10,
+    public function roundedCorner(int  $radius = 10,
                                   bool $topLeft = true,
                                   bool $topRight = true,
                                   bool $bottomLeft = true,
@@ -493,11 +493,11 @@ class Gd
      * @param bool $fill
      * @return self
      */
-    public function drawRectangle(int $x1 = 0,
-                                  int $y1 = 0,
-                                  int $x2 = 0,
-                                  int $y2 = 0,
-                                  int $color = 0,
+    public function drawRectangle(int  $x1 = 0,
+                                  int  $y1 = 0,
+                                  int  $x2 = 0,
+                                  int  $y2 = 0,
+                                  int  $color = 0,
                                   bool $fill = false): self
     {
         if ($this->isGDResource($this->imgResource)) {
@@ -969,7 +969,7 @@ class Gd
     public function fxColorFilter(bool $red = false,
                                   bool $green = false,
                                   bool $blue = false,
-                                  int $compare = 0): self
+                                  int  $compare = 0): self
     {
         if (!$this->isGDResource($this->imgResource)) return $this;
         $imageX = $this->imgWidth;
@@ -1319,11 +1319,11 @@ class Gd
     #[ArrayShape(['X' => "int", 'Y' => "float|int", 'Width' => "float|int", 'Height' => "float|int", 'Font' => "", 'Size' => "int", 'Color' => "int", 'Angle' => "float", 'Content' => ""])]
     public function ttfBox(string $content,
                            string $font,
-                           int $size = 10,
-                           int $x = 0,
-                           int $y = 0,
-                           int $color = 0,
-                           int $angle = 0): array
+                           int    $size = 10,
+                           int    $x = 0,
+                           int    $y = 0,
+                           int    $color = 0,
+                           int    $angle = 0): array
     {
         $tBox = imagettfbbox($size, $angle, $font, $content);
         return [
@@ -1384,14 +1384,14 @@ class Gd
      * @param int $blur
      * @return void
      */
-    private function drawTtfText(int $size,
-                                 int $angle,
-                                 int $x,
-                                 int $y,
-                                 int $color,
+    private function drawTtfText(int    $size,
+                                 int    $angle,
+                                 int    $x,
+                                 int    $y,
+                                 int    $color,
                                  string $font,
                                  string $text,
-                                 int $blur = 0): void
+                                 int    $blur = 0): void
     {
         if ($this->isGDResource($this->imgResource)) {
             $angle = (double)$angle;
@@ -1438,9 +1438,9 @@ class Gd
      * @param string $direction
      * @return self
      */
-    public function ttfTextShadow(array $ttfBox,
-                                  int $shadow = 10,
-                                  int $color = 0,
+    public function ttfTextShadow(array  $ttfBox,
+                                  int    $shadow = 10,
+                                  int    $color = 0,
                                   string $direction = 'rb'): self
     {
         if (!$this->isTTFBox($ttfBox)) return $this;
@@ -1534,6 +1534,25 @@ class Gd
     }
 
     /**
+     * @param int|float $a
+     * @param int|float $b
+     * @return float|int
+     */
+    private function gcd(int|float $a, int|float $b): float|int
+    {
+        return ($a % $b) ? $this->gcd($b, $a % $b) : $b;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRatio(): string
+    {
+        $gcd = $this->gcd($this->imgWidth, $this->imgHeight);
+        return ($this->imgWidth / $gcd) . ':' . ($this->imgHeight / $gcd);
+    }
+
+    /**
      * @param string $outputType
      * @param string $imageType
      * @param string $file
@@ -1543,7 +1562,7 @@ class Gd
     public function output(string $outputType = 'o',
                            string $imageType = 'png',
                            string $file = '',
-                           array $params = []): string|self|GdImage
+                           array  $params = []): string|self|GdImage
     {
         if ($this->isGDResource($this->imgResource)) {
             switch (strtolower($imageType)) {

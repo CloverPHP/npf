@@ -127,11 +127,15 @@ final class Rpc
      * @var bool
      */
     private bool $followLocation = true;
+
     /**
      * @var CurlHandle
      */
-    private mixed $handle;
+    private CurlHandle $handle;
 
+    /**
+     * @var array
+     */
     private array $rpcThread = [];
 
     /**
@@ -249,7 +253,7 @@ final class Rpc
                                    string $pass = '',
                                    string $serviceName = '',
                                    ?array $header = null,
-                                   int $socketType = 0): self
+                                   int    $socketType = 0): self
     {
         if (!empty($proxyAddress)) {
             $this->proxy['proxy'] = $proxyAddress;
@@ -505,7 +509,7 @@ final class Rpc
      * @param string $headerLine
      * @return int
      */
-    final public function processResponseHeader(mixed $ch, string $headerLine): int
+    final public function processResponseHeader(CurlHandle $ch, string $headerLine): int
     {
         $matches = [];
         if (preg_match('/^Set-Cookie:\s*([^;]*)/mi', $headerLine, $matches) == 1) {
@@ -561,7 +565,11 @@ final class Rpc
         $this->clearResponse();
         $this->processRequestContent();
 
-        $this->handle = curl_init($this->url);
+        //Prepare Cookie Data
+        $tmpCookie = tempnam(sys_get_temp_dir(), 'npf.rpc.cookie');
+        if (!empty($this->internalCookie))
+            file_put_contents($tmpCookie, $this->internalCookie);
+
         //Prepare CURL
         $this->curlOpt = [
                 CURLOPT_FOLLOWLOCATION => $this->followLocation,
@@ -581,28 +589,33 @@ final class Rpc
                 CURLOPT_HEADERFUNCTION => [$this, 'processResponseHeader'],
                 CURLOPT_HTTPHEADER => $this->processRequestHeader(),
                 CURLOPT_COOKIESESSION => FALSE,
+                CURLOPT_COOKIEJAR => $tmpCookie,
+                CURLOPT_COOKIEFILE => $tmpCookie,
                 CURLOPT_VERBOSE => $this->verboseDebug,
             ] + $this->curlOpt;
         if (($this->timeout * 1000) + $this->timeoutMS < 1000)
             $this->curlOpt[CURLOPT_NOSIGNAL] = TRUE;
         if ($fresh) {
-            $this->curlOpt[CURLOPT_FORBID_REUSE] = TRUE;
-            $this->curlOpt[CURLOPT_FRESH_CONNECT] = TRUE;
+            $this->curlOpt += [
+                CURLOPT_FORBID_REUSE => TRUE,
+                CURLOPT_FRESH_CONNECT => TRUE,
+            ];
         }
         if ($this->port > 0)
             $this->curlOpt[CURLOPT_PORT] = $this->port;
         if (!empty($this->CACert))
             $this->curlOpt[CURLOPT_CAINFO] = $this->CACert;
 
-        //Setup Curl Option
-        curl_setopt_array($this->handle, $this->curlOpt);
-
-        if ($this->method !== 'GET') {
-            curl_setopt_array($this->handle, [
+        if ($this->method !== 'GET')
+            $this->curlOpt += [
                 CURLOPT_POST => TRUE,
                 CURLOPT_POSTFIELDS => $this->content,
-            ]);
-        }
+            ];
+
+        //Setup Curl
+        $this->handle = curl_init($this->url);
+        curl_setopt_array($this->handle, $this->curlOpt);
+
         $this->processRequestProxy($this->handle);
         $this->processRequestBasicAuth($this->handle);
         $this->processRequestCookie($this->handle);
@@ -610,9 +623,9 @@ final class Rpc
     }
 
     /**
-     * @return mixed
+     * @return CurlHandle
      */
-    final public function getHandle(): mixed
+    final public function getHandle(): CurlHandle
     {
         return $this->handle;
     }
@@ -626,18 +639,6 @@ final class Rpc
     {
         $this->createHandle();
 
-        //Prepare Cookie Data
-        $tmpCookie = tempnam(sys_get_temp_dir(), 'npf.rpc.cookie');
-        if (!empty($this->internalCookie))
-            file_put_contents($tmpCookie, $this->internalCookie);
-
-        //Prepare CURL
-        $this->curlOpt = [
-                CURLOPT_COOKIEJAR => $tmpCookie,
-                CURLOPT_COOKIEFILE => $tmpCookie,
-                CURLOPT_VERBOSE => $this->verboseDebug,
-            ] + $this->curlOpt;
-
         //Execute CURL Request & Getting Returning Response
         $outputReturn = true;
         if (is_resource($outputHandle) && get_resource_type($outputHandle) === 'stream') {
@@ -647,9 +648,10 @@ final class Rpc
 
         //Record Verbose Log
         $verbose = null;
+        $tmpVerbose = '';
         if ($this->verboseDebug) {
             $tmpVerbose = tempnam(sys_get_temp_dir(), 'npf.rpc.verbose');
-            $verbose = fopen($tmpVerbose, 'w+');
+            $verbose = fopen($tmpVerbose, 'wb+');
             curl_setopt($this->handle, CURLOPT_STDERR, $verbose);
             $this->verboseDebugLog = '';
         }
@@ -669,19 +671,19 @@ final class Rpc
         ];
 
         //Close Curl
-        curl_close($this->handle);
+        $this->closeHandle();
 
         //Retrieve Verbose Log
         if ($this->verboseDebug) {
             rewind($verbose);
             $this->verboseDebugLog = stream_get_contents($verbose);
+            unlink($tmpVerbose);
         }
 
-        #Export Cookie Jar to get the cookie
-        $this->internalCookie = file_get_contents($tmpCookie);
+        #Export/Unlink Cookie
+        $this->internalCookie = file_get_contents($this->curlOpt[CURLOPT_COOKIEJAR]);
+        unlink($this->curlOpt[CURLOPT_COOKIEJAR]);
 
-        //Clear Cooke File
-        unlink($tmpCookie);
         $this->clearRequest();
         return $this->response['body'];
     }
@@ -693,7 +695,7 @@ final class Rpc
     {
         if (!empty($this->handle) && is_resource($this->handle))
             curl_close($this->handle);
-        $this->handle = null;
+        unset($this->handle);
     }
 
     /**
@@ -908,11 +910,11 @@ final class Rpc
      * @param array $cookies
      * @return mixed
      */
-    final public function __invoke(string $url,
-                                   string $method = "GET",
+    final public function __invoke(string            $url,
+                                   string            $method = "GET",
                                    string|array|null $content = null,
-                                   array $headers = [],
-                                   array $cookies = []): mixed
+                                   array             $headers = [],
+                                   array             $cookies = []): mixed
     {
         return $this->run($url, $method, $content, $headers, $cookies);
     }
@@ -925,11 +927,11 @@ final class Rpc
      * @param array $cookies
      * @return mixed
      */
-    final public function run(string $url,
-                              string $method = "GET",
+    final public function run(string            $url,
+                              string            $method = "GET",
                               string|array|null $content = null,
-                              array $headers = [],
-                              array $cookies = []): mixed
+                              array             $headers = [],
+                              array             $cookies = []): mixed
     {
         $this->setUrl($url);
         $this->setMethod($method);
@@ -950,11 +952,11 @@ final class Rpc
      * @param array $headers
      * @param array $cookies
      */
-    final public function requestOnly(string $url,
-                                      string $method = "GET",
+    final public function requestOnly(string            $url,
+                                      string            $method = "GET",
                                       string|array|null $content = null,
-                                      array $headers = [],
-                                      array $cookies = []): void
+                                      array             $headers = [],
+                                      array             $cookies = []): void
     {
         $this->setUrl($url);
         $this->setMethod($method);
@@ -981,12 +983,12 @@ final class Rpc
      * @param array $cookies
      * @return bool
      */
-    final public function downloadFile(string $url,
-                                       string $saveFileName,
-                                       string $method = "GET",
+    final public function downloadFile(string            $url,
+                                       string            $saveFileName,
+                                       string            $method = "GET",
                                        string|array|null $content = null,
-                                       array $headers = [],
-                                       array $cookies = []): bool
+                                       array             $headers = [],
+                                       array             $cookies = []): bool
     {
         if (file_exists($saveFileName))
             @unlink($saveFileName);
