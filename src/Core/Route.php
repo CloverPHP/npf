@@ -145,7 +145,7 @@ namespace Npf\Core {
             $lowerCase = strtolower("{$this->rootDirectory}\\{$this->appFile}");
             do {
                 if (!empty($this->routeTable[$lowerCase])) {
-                    $appFile = $this->routeTable[$lowerCase];
+                    $appFile = str_replace("{$this->rootDirectory}\\", "", $this->routeTable[$lowerCase]);
                     if (str_ends_with($appFile, "\\"))
                         $appFile .= $this->indexFile;
                     $this->appFile = $appFile;
