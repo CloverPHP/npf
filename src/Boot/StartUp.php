@@ -40,7 +40,8 @@ final class StartUp
     )
     {
         define('INIT_MEMORY', memory_get_usage());
-        define('INIT_TIMESTAMP', microtime(true));
+        define('INIT_TIMESTAMP', microtime());
+        define('INIT_HRTIME', hrtime(true));
         $this->appInfo = [
             'role' => $role,
             'env' => $env,

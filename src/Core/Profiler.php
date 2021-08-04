@@ -18,11 +18,6 @@ namespace Npf\Core {
         private bool $enable = false;
 
         /**
-         * @var float|string
-         */
-        private float|string $initTime;
-
-        /**
          * @var array
          */
         private array $timeUsage = [];
@@ -59,7 +54,6 @@ namespace Npf\Core {
          */
         public function __construct(private App $app)
         {
-            $this->initTime = INIT_TIMESTAMP;
             try {
                 $this->config = $app->config('Profiler', true);
             } catch (Throwable) {
@@ -100,8 +94,8 @@ namespace Npf\Core {
         public function fetch(): array|bool
         {
             $uri = $this->app->request->getUri();
-            list($requestSec, $requestUsec) = explode('.', (string)$this->initTime);
-            $requestUsec = substr($requestUsec, 0, 3);
+            list($requestUsec, $requestSec) = explode(' ', INIT_TIMESTAMP);
+            $requestUsec = floor((float)$requestUsec * 1000);
             $profiler = [
                 'memoryUsage' => [
                     'current' => $this->memUsage(),
@@ -149,9 +143,9 @@ namespace Npf\Core {
         #[Pure] public function elapsed(bool $milliSec = true): float
         {
             if ($milliSec) {
-                return round(((microtime(true)) - $this->initTime) * 1000, 2);
+                return round((hrtime(true) - INIT_HRTIME) / 1e+6, 2);
             } else {
-                return round(microtime(true) - $this->initTime, 2);
+                return round((hrtime(true) - INIT_HRTIME) / 1e+9, 2);
             }
         }
 
@@ -164,7 +158,7 @@ namespace Npf\Core {
         public function timerStart(string $timer = 'default', bool $continue = false)
         {
             if (!$continue || !isset($this->timer[$timer]))
-                $this->timer[$timer] = -1 * round(microtime(true) * 1000, 2);
+                $this->timer[$timer] = hrtime(true);
         }
 
         /**
@@ -174,7 +168,7 @@ namespace Npf\Core {
          */
         public function timerRead(string $timer = 'default'): float
         {
-            return round(microtime(true) * 1000 + ($this->timer[$timer] ?? 0), 2);
+            return round((hrtime(true) - $this->timer[$timer]) / 1e+6, 2);
         }
 
         /**d

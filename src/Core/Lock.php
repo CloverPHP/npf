@@ -94,10 +94,10 @@ namespace Npf\Core {
          */
         final public function waitAcquireDone(string $name, int $ttl = 60, int $maxWait = 120): bool
         {
-            $start = -1 * (int)microtime(true);
+            $start = hrtime(true);
             while (!$this->acquire($name, $ttl)) {
                 usleep(Common::randomInt(300000, 1000000));
-                if ((int)microtime(true) + $start > $maxWait)
+                if (floor((hrtime(true) - $start) / 1e+9) > $maxWait)
                     return false;
             }
             return true;

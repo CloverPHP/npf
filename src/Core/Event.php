@@ -92,10 +92,10 @@ namespace Npf\Core {
          * @param int $priority Event Priority
          * @return Event
          */
-        final public function on(string $eventName,
-                                 callable $listener,
+        final public function on(string     $eventName,
+                                 callable   $listener,
                                  int|string $times = 0,
-                                 int $priority = 0): self
+                                 int        $priority = 0): self
         {
             if (!empty($eventName)) {
                 if (!isset($this->listeners[$eventName]))
@@ -113,9 +113,9 @@ namespace Npf\Core {
          * @param bool $all Remove only match or all match event listener
          * @return Event
          */
-        final public function off(string $eventName,
+        final public function off(string   $eventName,
                                   callable $listener,
-                                  bool $all = true): self
+                                  bool     $all = true): self
         {
             if (!empty($eventName) && isset($this->listeners[$eventName])) {
                 foreach ($this->listeners[$eventName] as $key => $eventName)
@@ -148,10 +148,10 @@ namespace Npf\Core {
          * @param int $priority
          * @return self
          */
-        final public function onTick(callable $listener,
-                                     int $tick = 1,
+        final public function onTick(callable   $listener,
+                                     int        $tick = 1,
                                      int|string $times = 0,
-                                     int $priority = 0): self
+                                     int        $priority = 0): self
         {
             $event = 'timerTick';
             if (!isset($this->timerListener[$event]) && !empty($interval))
@@ -171,10 +171,10 @@ namespace Npf\Core {
          * @param int $priority
          * @return self
          */
-        final public function onSchedule(string $schedule,
-                                         callable $listener,
+        final public function onSchedule(string     $schedule,
+                                         callable   $listener,
                                          int|string $times = 0,
-                                         int $priority = 0): self
+                                         int        $priority = 0): self
         {
             if (self::scheduleValidate($schedule)) {
                 if (!isset($this->scheduleListener[$schedule]))
@@ -283,8 +283,7 @@ namespace Npf\Core {
          */
         #[Pure] final public function elapsed(bool $milliSecond = false, bool $current = false): float
         {
-            $now = Common::timestamp($current);
-            return (true === $milliSecond) ? floor((microtime(true) - $now) * 1000) : floor(microtime(true) - $now);
+            return (true === $milliSecond) ? floor((hrtime(true) - INIT_HRTIME) / 1e+6) : floor((hrtime(true) - INIT_HRTIME) / 1e+9);
         }
 
         /**

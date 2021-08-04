@@ -39,7 +39,7 @@ namespace Npf\Core {
          * @internal param string $error
          */
         public function __construct(?string $desc = '',
-                                    string $code = '',
+                                    int|float|string $code = '',
                                     string $status = 'error',
                                     array $extra = [])
         {
