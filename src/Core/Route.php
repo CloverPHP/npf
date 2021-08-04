@@ -142,7 +142,7 @@ namespace Npf\Core {
                 if (is_file($routeTableFile) && ($routeTable = file($routeTableFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)))
                     $this->routeTable = array_combine(array_map('strtolower', $routeTable), $routeTable);
             }
-            $lowerCase = strtolower($this->appFile);
+            $lowerCase = strtolower("{$this->rootDirectory}\\{$this->appFile}");
             do {
                 if (!empty($this->routeTable[$lowerCase])) {
                     $appFile = $this->routeTable[$lowerCase];
