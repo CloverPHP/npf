@@ -303,16 +303,27 @@ namespace Npf\Core {
         }
 
         /**
+         * @param string|array $rootPaths
          * @return array
          */
-        public function genRouteTable(): array
+        public function genRouteTable(string|array $rootPaths = 'App'): array
         {
-            $appPath = $this->getRootPath() . "App/";
-            $this->searchFile($appPath, "*.php", $results, true);
-            foreach ($results as $key => &$result) {
-                if (str_ends_with($result, "Router.php"))
-                    unset($results[$key]);
-                $result = str_replace(['\\', $appPath, '/', '.php'], ['/', '', '\\', ''], $result);
+            $appPath = $this->getRootPath();
+            if (is_string($rootPaths))
+                $rootPaths = explode(",", $rootPaths);
+            $results = [];
+            foreach ($rootPaths as $rootPath) {
+                $rootPath = str_replace("\\", "/", $rootPath);
+                if (!str_ends_with($rootPath, "/"))
+                    $rootPath .= "/";
+                $searchs = [];
+                $this->searchFile($appPath . $rootPath, "*.php", $searchs, true);
+                foreach ($searchs as $key => &$search) {
+                    if (str_ends_with($search, "Router.php"))
+                        unset($searchs[$key]);
+                    $search = str_replace(['\\', $appPath, '/', '.php'], ['/', '', '\\', ''], $search);
+                }
+                $results = array_merge($results, $searchs);
             }
             return array_values(array_unique($results));
         }
@@ -617,10 +628,10 @@ namespace Npf\Core {
          * @throws UnknownClass
          */
         final public function createDb(string|Container $host = 'localhost',
-                                       int $port = 3306, string $user = 'root', string $pass = '',
-                                       string $name = '', bool $event = false,
-                                       int $timeOut = 10, string $characterSet = 'UTF8MB4',
-                                       string $collate = 'UTF8MB4_UNICODE_CI', bool $persistent = false): Db
+                                       int              $port = 3306, string $user = 'root', string $pass = '',
+                                       string           $name = '', bool $event = false,
+                                       int              $timeOut = 10, string $characterSet = 'UTF8MB4',
+                                       string           $collate = 'UTF8MB4_UNICODE_CI', bool $persistent = false): Db
         {
             if ($host instanceof Container)
                 $config = $host;
