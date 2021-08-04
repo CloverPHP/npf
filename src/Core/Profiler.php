@@ -103,18 +103,16 @@ namespace Npf\Core {
                 ],
                 'cpuUsage' => file_exists('/proc/loadavg') ? substr(file_get_contents('/proc/loadavg'), 0, 4) : false,
                 'requestTime' => date("Y-m-d H:i:s", (int)$requestSec) . ".{$requestUsec}",
-                'timeUsage' => [
-                    'total' => $this->elapsed() . "ms",
-                ],
+                'timeUsage' => [],
                 'uri' => !empty($uri) ? $uri : '',
                 'params' => $this->app->request->get("*"),
                 'headers' => $this->app->request->header("*"),
                 'debug' => $this->debug,
                 'query' => $this->query,
             ];
-
             foreach ($this->timeUsage as $key => $time)
-                $profiler['timeusage'][$key] = round($time, 2) . 'ms';
+                $profiler['timeusage'][$key] = "{$time}ms";
+            $profiler['timeusage']['total'] = "{$this->elapsed()}ms";
 
             return $profiler;
         }
