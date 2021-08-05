@@ -476,6 +476,8 @@ namespace Npf\Core\Db {
                         colLiteral;
                 } elseif($functionality === false)
                     $result = $this->driver->escapeStr($colName);
+                else
+                    $result = $colName;
                 if ($alias)
                     $result .= (!is_int($colAlias) && !empty($colAlias) ? " AS {$this->valLiteral}" .
                         $this->driver->escapeStr($colAlias) . $this->valLiteral : "");
