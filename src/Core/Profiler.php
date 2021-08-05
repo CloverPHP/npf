@@ -266,6 +266,18 @@ namespace Npf\Core {
             }
         }
 
+
+        /**
+         * @param int $reserve
+         */
+        public function clearQuery(int $reserve = 0)
+        {
+            if ($reserve <= 0)
+                $this->query = [];
+            else
+                $this->query = array_slice($this->query, -1 * $reserve);
+        }
+
         /**
          * @param string $name
          * @param array|null $arguments
