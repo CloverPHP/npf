@@ -80,10 +80,13 @@ namespace Npf\Core {
         }
 
         /**
+         * @param bool|null $enable
          * @return bool
          */
-        public function enable(): bool
+        public function enable(?bool $enable = null): bool
         {
+            if (is_bool($enable))
+                $this->enable = $enable;
             return $this->enable;
         }
 
@@ -249,7 +252,7 @@ namespace Npf\Core {
 
                 $now = $this->elapsed();
                 $elapsed = $this->timerRead($category);
-                $start = $now - $elapsed;
+                $start = round($now - $elapsed, 2);
                 if (!isset($this->timeUsage[$category]))
                     $this->timeUsage[$category] = 0;
                 $this->timeUsage[$category] += $elapsed;
