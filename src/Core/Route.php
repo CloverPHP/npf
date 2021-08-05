@@ -301,7 +301,7 @@ namespace Npf\Core {
             $daemonBlock = sha1($refClass->getFileName() . $this->app->request);
             $lockName = "daemon:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$daemonBlock}";
             $daemonLock = $this->app->config('Redis')->get('enable', false) && $this->generalConfig->get('daemonLock', false);
-            if ($daemonLock && !$this->app->lock->waitAcquireDone($lockName, 60, $this->generalConfig->get('daemonMaxWait', 180)))
+            if ($daemonLock && !$this->app->lock->waitAcquireDone($lockName, 60, $this->generalConfig->get('daemonMaxWait', 60)))
                 return;
             $this->app->on('appBeforeClean', function (App $app) use ($lockName) {
                 $app->lock->release($lockName, true);

@@ -43,7 +43,7 @@ namespace Npf\Core {
             if ($allow)
                 $this->uniqueValue = Common::getServerIp() . ":" . getmypid();
             else
-                $this->uniqueValue = Common::getServerIp() . ":" . getmypid() . ":" . floor(Common::timestamp() * 1000000);
+                $this->uniqueValue = Common::getServerIp() . ":" . getmypid() . ":" . hrtime(true);
         }
 
         /**
@@ -96,7 +96,7 @@ namespace Npf\Core {
         {
             $start = hrtime(true);
             while (!$this->acquire($name, $ttl)) {
-                usleep(Common::randomInt(300000, 1000000));
+                usleep(Common::randomInt(100000, 300000));
                 if (floor((hrtime(true) - $start) / 1e+9) > $maxWait)
                     return false;
             }
@@ -111,7 +111,6 @@ namespace Npf\Core {
          */
         final public function acquire(string $name, int $ttl = 60): bool|int
         {
-            usleep(Common::randomInt(10000, 300000));
             $redis = $this->app->redis;
             $name = "{$this->prefix}{$name}";
             if ($redis->get($name) === $this->uniqueValue)
