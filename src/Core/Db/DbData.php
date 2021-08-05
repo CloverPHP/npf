@@ -355,13 +355,13 @@ namespace Npf\Core\Db {
          * @param string $colName
          * @param int|string|null $colAlias
          * @param bool $alias
-         * @param bool $fnc
+         * @param bool $functionality
          * @return string
          */
         private function getColNm(string          $colName,
                                   null|int|string $colAlias = null,
                                   bool            $alias = true,
-                                  bool            $fnc = false): string
+                                  bool            $functionality = false): string
         {
             $result = '';
             $pattern = "/^{DB_([A-Z_]+)}/";
@@ -470,11 +470,11 @@ namespace Npf\Core\Db {
                             $result = $this->getColNm(str_replace($matches[0], "", $colName), null, false);
                             break;
                     }
-                } elseif ($fnc === false && !str_contains($colName, $this->colLiteral) && $colName !== '*') {
+                } elseif ($functionality === false && !str_contains($colName, $this->colLiteral) && $colName !== '*') {
                     $colName = $this->convertSplit($colName);
                     $result = $this->colLiteral . $this->driver->escapeStr($colName) . $this->
                         colLiteral;
-                } else
+                } elseif($functionality === false)
                     $result = $this->driver->escapeStr($colName);
                 if ($alias)
                     $result .= (!is_int($colAlias) && !empty($colAlias) ? " AS {$this->valLiteral}" .
