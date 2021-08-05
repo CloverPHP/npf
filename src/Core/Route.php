@@ -321,7 +321,7 @@ namespace Npf\Core {
                 $this->app->onTick(function () use ($daemonLock, $lockName, $daemonTtl, $actionObj, $parameters) {
                     try {
                         if ($daemonLock)
-                            $this->app->lock->expire($lockName, $daemonTtl);
+                            $this->app->lock->extend($lockName, $daemonTtl);
                         $actionObj->__invoke(...$parameters);
                         $this->app->dbCommit();
                     } catch (NextTick) {
