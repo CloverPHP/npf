@@ -29,7 +29,7 @@ namespace Npf\Core {
         {
             $config = $app->config('General');
             $prefix = $config->get('lockPrefix', 'lock');
-            $this->uniqueValue = Common::getServerIp() . ":" . getmypid();
+            $this->allowSameInstance();
             $this->prefix = !empty($prefix) ? "{$prefix}:" : '';
         }
 
@@ -41,9 +41,9 @@ namespace Npf\Core {
         final public function allowSameInstance(bool $allow = true): void
         {
             if ($allow)
-                $this->uniqueValue = Common::getServerIp() . ":" . getmypid();
+                $this->uniqueValue = Common::getServerIp();
             else
-                $this->uniqueValue = Common::getServerIp() . ":" . getmypid() . ":" . hrtime(true);
+                $this->uniqueValue = Common::getServerIp() . ":" . getmypid();
         }
 
         /**
