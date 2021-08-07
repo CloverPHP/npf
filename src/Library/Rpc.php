@@ -437,24 +437,24 @@ final class Rpc
 
     /**
      * Get Response Header
+     * @param string $name
+     * @return bool|int|float|string|array|null
+     */
+    final public function getResponseInfo(string $name): null|bool|int|float|string|array
+    {
+        if (empty($name) || $name === '*')
+            return $this->response['info'];
+        else
+            return $this->response['info'][$name] ?? null;
+    }
+
+    /**
+     * Get Response Header
      * @return array
      */
     final public function getResponse(): array
     {
         return $this->response;
-    }
-
-    /**
-     * Get Response Header
-     * @param string $name
-     * @return bool|int|float|string|array|null
-     */
-    final public function getResponseTime(string $name): null|bool|int|float|string|array
-    {
-        if (empty($name) || $name === '*')
-            return $this->response['time'];
-        else
-            return $this->response['time'][$name] ?? null;
     }
 
     /**
@@ -671,15 +671,7 @@ final class Rpc
             $this->response['body'] = $outputHandle;
         }
         //Statistics Request Time
-        $this->response['time'] = [
-            'nslookup' => (curl_getinfo($this->handle, CURLINFO_NAMELOOKUP_TIME) * 1000) . " ms",
-            'connect' => (curl_getinfo($this->handle, CURLINFO_CONNECT_TIME) * 1000) . " ms",
-            'ssl/ssh' => (curl_getinfo($this->handle, CURLINFO_APPCONNECT_TIME) * 1000) . " ms",
-            'pretransfer' => (curl_getinfo($this->handle, CURLINFO_PRETRANSFER_TIME) * 1000) . " ms",
-            'redirect' => (curl_getinfo($this->handle, CURLINFO_REDIRECT_TIME) * 1000) . " ms",
-            'starttransfer' => (curl_getinfo($this->handle, CURLINFO_STARTTRANSFER_TIME) * 1000) . " ms",
-            'total' => (curl_getinfo($this->handle, CURLINFO_TOTAL_TIME) * 1000) . " ms",
-        ];
+        $this->response['info'] = curl_getinfo($this->handle);
 
         //Close Curl
         $this->closeHandle();
@@ -722,7 +714,7 @@ final class Rpc
             'status' => 0,
             'header' => [],
             'cookie' => [],
-            'time' => [],
+            'info' => [],
             'body' => '',
         ];
     }
