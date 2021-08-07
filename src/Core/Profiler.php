@@ -252,7 +252,7 @@ namespace Npf\Core {
 
                 $now = $this->elapsed();
                 $elapsed = $this->timerRead($category);
-                $start = round($now - $elapsed, 2);
+                $start = round($now, 2) - round($elapsed, 2);
                 if (!isset($this->timeUsage[$category]))
                     $this->timeUsage[$category] = 0;
                 $this->timeUsage[$category] += $elapsed;

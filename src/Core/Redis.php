@@ -207,12 +207,10 @@ namespace Npf\Core {
         final public function __destruct()
         {
             if (!empty($this->redis)) {
-                $this->app->profiler->timerStart("redis");
                 foreach ($this->redis as $redis)
                     if (method_exists($redis, '__destruct'))
                         $redis->__destruct();
                 $this->redis = [];
-                $this->app->profiler->saveQuery("close", "redis");
             }
         }
 
