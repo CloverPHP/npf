@@ -592,7 +592,7 @@ final class Rpc
      */
     final public function createHandle(bool $reuseConnection = false): CurlHandle|bool
     {
-        if ($this->handle instanceof CurlHandle)
+        if (isset($this->handle) && $this->handle instanceof CurlHandle)
             return $this->handle;
 
         //Prepare Data
