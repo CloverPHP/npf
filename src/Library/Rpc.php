@@ -551,12 +551,11 @@ final class Rpc
     /**
      * For public to execute
      * @param bool $reuseConnection
-     * @param bool $autoClose
      * @return string
      */
-    final public function execute(bool $reuseConnection = false, bool $autoClose = true): string
+    final public function execute(bool $reuseConnection = false): string
     {
-        $this->_execute($reuseConnection, $autoClose);
+        $this->_execute($reuseConnection);
         return $this->response['body'];
     }
 
@@ -664,10 +663,9 @@ final class Rpc
     /**
      * Execute a request, & process response
      * @param bool $resueConnection
-     * @param bool $autoClose
      * @param mixed $outputHandle
      */
-    private function _execute(bool $resueConnection = false, bool $autoClose = true, mixed $outputHandle = null)
+    private function _execute(bool $resueConnection = true, mixed $outputHandle = null)
     {
         $this->createHandle($resueConnection);
 
@@ -691,7 +689,7 @@ final class Rpc
         $this->clearRequest();
 
         //Close Curl
-        if ($autoClose === true)
+        if ($resueConnection === false)
             $this->closeHandle();
 
     }
@@ -1020,7 +1018,7 @@ final class Rpc
                                        array             $cookies = []): bool
     {
         if (file_exists($saveFileName))
-            @unlink($saveFileName);
+            unlink($saveFileName);
         $fp = fopen($saveFileName, 'w');
         $this->setUrl($url);
         $this->setMethod($method);
