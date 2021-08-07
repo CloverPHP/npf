@@ -17,12 +17,6 @@ final class Rpc
      * @var string Url
      */
     private string $url = '';
-
-    /**
-     * @var string CURL Verbose Debug Log
-     */
-    private string $verboseDebugLog = '';
-
     /**
      * @var int Request Timeout
      */
@@ -64,11 +58,6 @@ final class Rpc
     private array $bindingParams = [];
 
     /**
-     * @var array Cookie
-     */
-    private array $cookie = [];
-
-    /**
      * @var string Body Content
      */
     private string $content = '';
@@ -97,11 +86,6 @@ final class Rpc
      * @var ?array Request Proxy
      */
     private ?array $proxy = null;
-
-    /**
-     * @var string Internal Cookie Handle
-     */
-    private string $internalCookie = '';
 
     /**
      * @var bool Flag is have file upload
@@ -141,6 +125,12 @@ final class Rpc
         'handle' => null,
         'tmpfile' => '',
         'log' => '',
+    ];
+
+    private array $cookie = [
+        'request' => [],
+        'tmpfile' => '',
+        'internal' => '',
     ];
 
     /**
@@ -347,7 +337,7 @@ final class Rpc
     final public function addCookie(string $name, string $content): self
     {
         if (!empty($name) && !empty($content))
-            $this->cookie[$name] = $content;
+            $this->cookie['request'][$name] = $content;
         return $this;
     }
 
@@ -359,7 +349,7 @@ final class Rpc
     final public function addCookies(array $cookies): self
     {
         if (!empty($cookies))
-            $this->cookie = array_merge($this->cookie, $cookies);
+            $this->cookie['request'] = array_merge($this->cookie['request'], $cookies);
         return $this;
     }
 
@@ -546,7 +536,7 @@ final class Rpc
      */
     final public function importCookieData(string $cookieData)
     {
-        $this->internalCookie = $cookieData;
+        $this->cookie['internal'] = $cookieData;
     }
 
     /**
@@ -555,7 +545,7 @@ final class Rpc
      */
     final public function exportCookieData(): string
     {
-        return $this->internalCookie;
+        return $this->cookie['internal'];
     }
 
     /**
@@ -597,9 +587,11 @@ final class Rpc
         $this->processRequestContent();
 
         //Prepare Cookie Data
-        $tmpCookie = tempnam(sys_get_temp_dir(), 'npf.rpc.cookie');
-        if (!empty($this->internalCookie))
-            file_put_contents($tmpCookie, $this->internalCookie);
+        if (empty($this->cookie['tmpfile'])) {
+            $this->cookie['tmpfile'] = tempnam(sys_get_temp_dir(), 'npf.rpc.cookie');
+            if (!empty($this->cookie['internal']))
+                file_put_contents($this->cookie['tmpfile'], $this->cookie['internal']);
+        }
 
         //Prepare CURL
         $this->curlOpt = [
@@ -620,8 +612,8 @@ final class Rpc
                 CURLOPT_HEADERFUNCTION => [$this, 'processResponseHeader'],
                 CURLOPT_HTTPHEADER => $this->processRequestHeader(),
                 CURLOPT_COOKIESESSION => FALSE,
-                CURLOPT_COOKIEJAR => $tmpCookie,
-                CURLOPT_COOKIEFILE => $tmpCookie,
+                CURLOPT_COOKIEJAR => $this->cookie['tmpfile'],
+                CURLOPT_COOKIEFILE => $this->cookie['tmpfile'],
                 CURLOPT_VERBOSE => $this->verbose['enable'],
             ] + $this->curlOpt;
         if (($this->timeout * 1000) + $this->timeoutMS < 1000)
@@ -722,8 +714,13 @@ final class Rpc
         }
 
         #Export/Unlink Cookie
-        $this->internalCookie = file_get_contents($this->curlOpt[CURLOPT_COOKIEJAR]);
-        unlink($this->curlOpt[CURLOPT_COOKIEJAR]);
+        if (!empty($this->cookie['tmpfile'])) {
+            if (file_exists($this->cookie['tmpfile'])) {
+                $this->cookie['internal'] = file_get_contents($this->cookie['tmpfile']);
+                unlink($this->cookie['tmpfile']);
+            }
+            $this->cookie['tmpfile'] = '';
+        }
     }
 
     /**
@@ -837,14 +834,14 @@ final class Rpc
     private function processRequestCookie(CurlHandle $cHandle)
     {
         $result = [];
-        if (is_array($this->cookie) && !empty($this->cookie)) {
-            foreach ($this->cookie as $key => $value)
+        if (is_array($this->cookie['request']) && !empty($this->cookie['request'])) {
+            foreach ($this->cookie['request'] as $key => $value)
                 $result [] = "{$key}={$value}";
         }
 
-        if (is_array($this->cookie) && !empty($this->cookie))
+        if (is_array($this->cookie['request']) && !empty($this->cookie['request']))
             curl_setopt($cHandle, CURLOPT_COOKIE, implode(";", $result));
-        $this->cookie = [];
+        $this->cookie['request'] = [];
     }
 
     /**
@@ -856,7 +853,7 @@ final class Rpc
         $this->CACert = '';
         $this->curlOpt = [];
         $this->params = [];
-        $this->cookie = [];
+        $this->cookie['request'] = [];
         $this->content = '';
         $this->headers = ['Expect' => ''];
         $this->fileUpload = false;
