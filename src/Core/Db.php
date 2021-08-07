@@ -49,9 +49,7 @@ namespace Npf\Core {
             $hosts = $this->config->get('hosts');
             shuffle($hosts);
             foreach ($hosts as $host) {
-                $this->app->profiler->timerStart("db");
                 $this->driver->connect($host);
-                $this->app->profiler->saveQuery("connect mysql://{$host}", "db");
                 if ($this->driver->connectErrorNo())
                     $this->connectError($this->driver->connectError());
                 elseif ($this->driver->connected === true) {

@@ -136,7 +136,6 @@ namespace Npf\Core\Redis {
         private string $mode = '';
         private int $rwTimeout = 3;
         private string $lastError = '';
-        private int $retry = 1;
         private bool $trans = false;
         private bool $transError = false;
         private int $bufferSize = 10240;
@@ -160,7 +159,6 @@ namespace Npf\Core\Redis {
          * @param int $db
          * @param int $timeout
          * @param int $rwTimeout
-         * @param bool $allowReconnect
          * @param bool $persistent
          */
         final public function __construct(private App    $app,
@@ -169,7 +167,6 @@ namespace Npf\Core\Redis {
                                           private int    $db,
                                           private int    $timeout = 10,
                                           int            $rwTimeout = 0,
-                                          private bool   $allowReconnect = true,
                                           private bool   $persistent = false)
         {
             if ($rwTimeout != 0)
@@ -178,20 +175,23 @@ namespace Npf\Core\Redis {
 
         final public function __destruct()
         {
-            $this->close();
+            $this->disconnect();
         }
 
         /**
-         * @param bool $full
+         * Disconnect from redis
          */
-        private function close(bool $full = false): void
+        private function disconnect(): void
         {
-            $isResource = is_resource($this->socket);
-            if (($this->persistent && $full && $isResource) || (!$this->persistent && $isResource))
+            if (is_resource($this->socket) && !empty($this->currentHost)) {
+                $this->app->profiler->timerStart("redis");
                 @fclose($this->socket);
+                $this->app->profiler->saveQuery("disconnected {$this->currentHost}", "redis");
+            }
             $this->socket = null;
             $this->connected = false;
             $this->currentHost = '';
+            $this->mode = '';
             $this->errorSocket = ['no' => 0, 'msg' => ''];
         }
 
@@ -205,31 +205,26 @@ namespace Npf\Core\Redis {
         }
 
         /**
-         * @return mixed
+         * @return string|array|bool|int|null
          * @throws InternalError
          */
-        private function __execmd(): mixed
+        private function __execmd(): string|array|bool|int|null
         {
             $args = func_get_args();
             $masterOnly = !in_array(strtoupper($args[0]), $this->readFnc, true);
             try {
                 $this->lastError = '';
+                if (!$this->connected || $masterOnly && $this->mode !== 'master')
+                    $this->connect($masterOnly);
                 if (!$this->connected)
                     throw new InternalError("not yet connected to redis");
-                elseif ($masterOnly && $this->mode !== 'master')
-                    throw new InternalError("need connect to master for write permission");
                 $args[0] = strtoupper($args[0]);
-                if ($this->__write($args)) {
-                    return $this->__read();
-                } else
+                if (!$this->__write($args))
                     $this->__errorHandle('Unable write to redis');
+                return $this->__read();
             } catch (InternalError) {
                 if ($this->lastError !== '')
                     $this->__errorHandle($this->lastError);
-                else {
-                    return $this->reconnect($masterOnly) === false ? false : call_user_func_array(
-                        [$this, '__execmd'], $args);
-                }
             }
             return false;
         }
@@ -304,7 +299,7 @@ namespace Npf\Core\Redis {
          */
         private function __errorHandle(string $desc)
         {
-            $this->close(TRUE);
+            $this->disconnect();
             throw new InternalError(trim($desc), "REDIS_ERROR");
         }
 
@@ -389,45 +384,23 @@ namespace Npf\Core\Redis {
         }
 
         /**
-         * Reconnect to redis if issue
-         * @param bool $masterOnly
-         * @return bool
-         * @throws InternalError
-         */
-        private function reconnect(bool $masterOnly = false): bool
-        {
-            try {
-                if ($this->allowReconnect || ($this->mode !== 'master' && $masterOnly)) {
-                    for ($times = 0; $times <= $this->retry; $times++)
-                        if ($this->connect($masterOnly) === true)
-                            return true;
-                    return false;
-                } elseif (!$this->connected)
-                    return $this->connect($masterOnly);
-            } catch (InternalError $e) {
-                $this->__errorHandle($e->getMessage());
-            }
-            return false;
-        }
-
-        /**
          * Connect to Redis
          * @param bool $masterOnly
-         * @return bool
+         * @return void
          * @throws InternalError
          */
-        private function connect(bool $masterOnly = false): bool
+        private function connect(bool $masterOnly = false): void
         {
-            $this->__connect($masterOnly);
+            $success = $this->__connect($masterOnly);
             if ($this->connected) {
                 if (!empty($this->authPass))
                     if (!$this->auth($this->authPass))
-                        return false;
+                        $success = false;
                 if (!$this->select($this->db))
-                    return false;
-            } else
+                    $success = false;
+            }
+            if ($success === false)
                 $this->__errorHandle("Connect {$this->currentHost} Failed, {$this->errorSocket['msg']}");
-            return $this->connected;
         }
 
         /**
@@ -439,40 +412,34 @@ namespace Npf\Core\Redis {
          */
         public function __connect(bool $masterOnly = false, int $retry = 1): bool
         {
-            if (is_array($this->hosts) && !empty($this->hosts)) {
+            if (!empty($this->hosts)) {
                 $hosts = $this->hosts;
                 shuffle($hosts);
-                foreach ($hosts as $config) {
-
-                    if (is_array($config) && count($config) === 2 && isset($config[0]) && isset($config[1]) &&
-                        (int)$config[1] !== 0
-                    ) {
-                        if ($this->__openSocket($config[0], $config[1], $this->timeout, $this->
-                        rwTimeout)
-                        ) {
-                            $role = $this->role();
-                            $this->mode = $role[0];
-                            if ($this->mode === 'master')
-                                return true;
-                            elseif ($masterOnly) {
-                                for ($i = 0; $i < 10; $i++) {
-                                    if ($role[3] === 'connected') {
-                                        $this->close();
+                foreach ($hosts as $config)
+                    if (is_array($config) && count($config) === 2 && isset($config[0]) && isset($config[1]) && (int)$config[1] !== 0 &&
+                        $this->__openSocket($config[0], $config[1], $this->timeout, $this->rwTimeout)) {
+                        $role = $this->role();
+                        $this->mode = $role[0];
+                        if ($this->mode === 'master')
+                            return true;
+                        elseif ($masterOnly)
+                            for ($i = 0; $i < 10; $i++)
+                                if ($role[3] === 'connected') {
+                                    if ($this->__openSocket($role[1], (int)$role[2], $this->timeout, $this->
+                                    rwTimeout)) {
                                         $this->mode = 'master';
-                                        return $this->__openSocket($role[1], (int)$role[2], $this->timeout, $this->
-                                        rwTimeout);
-                                    } else {
-                                        usleep(500000);
-                                        $role = $this->role();
-                                    }
+                                        return true;
+                                    } else
+                                        return false;
+                                } else {
+                                    usleep(300000);
+                                    $role = $this->role();
                                 }
-                            } else
-                                return true;
-                        }
+                        else
+                            return true;
                     }
-                }
                 if ($retry > 0) {
-                    usleep(100000);
+                    usleep(500000);
                     return $this->__connect($masterOnly, $retry - 1);
                 } else
                     return false;
@@ -490,25 +457,28 @@ namespace Npf\Core\Redis {
         private function __openSocket(string $host, int $port, int $timeout, int $rwTimeout): bool
         {
             try {
-                $this->close();
+                $this->disconnect();
                 $this->currentHost = "tcp://{$host}";
                 $this->app->profiler->timerStart("redis");
                 $this->socket = $this->persistent ? @pfsockopen($this->currentHost, $port, $this->errorSocket['no'], $this->errorSocket['msg'],
                     $timeout) : @fsockopen($this->currentHost, $port, $this->errorSocket['no'], $this->errorSocket['msg'], $timeout);
-                $this->app->profiler->saveQuery("connect {$this->currentHost}", "redis");
                 if (!$this->socket || !is_resource($this->socket)) {
+                    $this->app->profiler->saveQuery("failed connect {$this->currentHost}", "redis");
                     $this->socket = null;
                     return false;
                 }
                 if (!stream_set_timeout($this->socket, $rwTimeout, 0)) {
-                    $this->close(TRUE);
+                    $this->app->profiler->saveQuery("failed connect {$this->currentHost}", "redis");
+                    $this->disconnect();
                     return false;
                 } else {
+                    $this->app->profiler->saveQuery("connected {$this->currentHost}", "redis");
                     $this->connected = true;
                     return true;
                 }
             } catch (Exception) {
-                $this->close();
+                $this->app->profiler->saveQuery("failed connect {$this->currentHost}", "redis");
+                $this->disconnect();
                 return false;
             }
         }
@@ -567,10 +537,10 @@ namespace Npf\Core\Redis {
 
         /**
          * Start Redis Transaction
-         * @return mixed
+         * @return string|array|bool|int|null
          * @throws InternalError
          */
-        public function multi(): mixed
+        public function multi(): string|array|bool|int|null
         {
             if (!$this->trans) {
                 $this->trans = $this->__execmd('multi');
@@ -645,10 +615,10 @@ namespace Npf\Core\Redis {
 
         /**
          * @param string $name
-         * @return mixed
+         * @return string|int|bool|array|null
          * @throws InternalError
          */
-        public function get(string $name): mixed
+        public function get(string $name): string|int|bool|array|null
         {
             return $this->__execmd('get', $name);
         }

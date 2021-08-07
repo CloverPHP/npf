@@ -18,6 +18,7 @@ namespace Npf\Core\Db {
     {
         public bool $connected;
         private string $queryMode;
+        private string $connectionString;
         private bool|mysqli $mysqli;
         private bool|mysqli_result $resResult;
         private bool $tranEnable;
@@ -30,6 +31,7 @@ namespace Npf\Core\Db {
         {
             $this->connected = false;
             $this->queryMode = 'store';
+            $this->connectionString = '';
             $this->mysqli = false;
             $this->resResult = false;
             $this->tranEnable = false;
@@ -80,7 +82,7 @@ namespace Npf\Core\Db {
                     $this->mysqli->kill($this->mysqli->thread_id);
                 $this->mysqli->close();
                 $this->initialize();
-                $this->app->profiler->saveQuery("close", "db");
+                $this->app->profiler->saveQuery("disconnected {$this->connectionString}", "db");
                 return true;
             }
             return false;
@@ -119,7 +121,9 @@ namespace Npf\Core\Db {
             $user = $this->config->get('user', 'root');
             $name = $this->config->get('name', '');
             $compress = (bool)$this->config->get('compress', false);
-            if (!@$this->mysqli->real_connect(
+            $this->app->profiler->timerStart("db");
+            $this->connectionString = "mysql://{$user}@{$host}:{$port}/{$name}";
+            if (!$this->mysqli->real_connect(
                 hostname: $this->persistent ? "p:{$host}" : $host,
                 username: $user,
                 password: $this->config->get('pass', ''),
@@ -129,9 +133,11 @@ namespace Npf\Core\Db {
             )
             ) {
                 $this->initialize();
-                throw new DBQueryError("DB Connect Failed : mysql://{$user}@{$host}:{$port}/{$name} " . $this->connectError());
-            } else
+                throw new DBQueryError("DB Connect Failed : {$this->connectionString} " . $this->connectError());
+            } else {
+                $this->app->profiler->saveQuery("connected {$this->connectionString}", "db");
                 $this->connected = true;
+            }
             return $this->mysqli;
         }
 
@@ -210,7 +216,11 @@ namespace Npf\Core\Db {
         {
             if ($this->mysqli === false)
                 return false;
-            return $this->mysqli->select_db($this->escapeStr($name));
+
+            $this->app->profiler->timerStart("db");
+            $result = $this->mysqli->select_db($this->escapeStr($name));
+            $this->app->profiler->saveQuery("select db $name", "db");
+            return $result;
         }
 
         /**
@@ -295,7 +305,10 @@ namespace Npf\Core\Db {
                                 0, 3)) !== 'SET' && strtoupper(substr($query, 0, 5)) !== 'FLUSH') || strtoupper
                         (substr($query, -10)) === 'FOR UPDATE'
                     ) {
-                        $this->tranStarted = (bool)$this->realQuery("begin");
+                        $this->app->profiler->timerStart("db");
+                        if(!$this->tranStarted = $this->mysqli->begin_transaction())
+                            throw new DBQueryError("Unable begin mysql transaction");
+                        $this->app->profiler->saveQuery("begin transaction", "db");
                         return $this->tranStarted;
                     }
                 return true;
@@ -336,7 +349,7 @@ namespace Npf\Core\Db {
 
             if ($this->mysqli->errno !== 0) {
                 $queryStr = "Query error: {$this->mysqli->error} - {$queryStr}";
-                $this->app->profiler->saveQuery("*error {$queryStr}", "db");
+                $this->app->profiler->saveQuery($queryStr, "db");
                 throw new DBQueryError($queryStr, (string)$this->mysqli->errno);
             } else
                 $this->app->profiler->saveQuery($queryStr, "db");
@@ -559,20 +572,21 @@ namespace Npf\Core\Db {
         /**
          * Db Rollback
          * @return bool
-         * @throws DBQueryError
          */
         final public function rollback(): bool
         {
             if ($this->mysqli === false)
                 return false;
             $this->tranStarted = false;
-            return $this->realQuery("rollback");
+            $this->app->profiler->timerStart("db");
+            $result = $this->mysqli->rollback();
+            $this->app->profiler->saveQuery("commit", "db");
+            return $result;
         }
 
         /**
          * Db Commit & will return true if no start.
          * @return bool
-         * @throws DBQueryError
          */
         final public function commit(): bool
         {
@@ -580,7 +594,10 @@ namespace Npf\Core\Db {
                 return false;
             if ($this->tranStarted) {
                 $this->tranStarted = false;
-                return $this->realQuery("commit");
+                $this->app->profiler->timerStart("db");
+                $result = $this->mysqli->commit();
+                $this->app->profiler->saveQuery("commit", "db");
+                return $result;
             } else
                 return true;
         }

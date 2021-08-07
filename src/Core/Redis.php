@@ -149,7 +149,6 @@ namespace Npf\Core {
         private int $timeout = 0;
         private int $rwTimeout = 0;
         private string $authPass = '';
-        private bool $allowReconnect = true;
         private bool $persistent = false;
         private string $postHash = '';
         private string $tempHash = '';
@@ -180,7 +179,6 @@ namespace Npf\Core {
             ) {
                 $size = count($config->instance);
                 $range = range(0, $size - 1);
-                $this->allowReconnect = (bool)$config->get('allowReconnect');
                 if (array_keys($config->instance) === $range) {
                     $this->persistent = isset($config->persistent) && $config->persistent;
                     $this->instance = $config->instance;
@@ -336,7 +334,7 @@ namespace Npf\Core {
             if (!isset($this->redis[$index])) {
                 if (isset($this->instance[$index]))
                     $this->redis[$index] = new RedisBase($this->app, $this->instance[$index], $this->authPass, $this->
-                    db, $this->timeout, $this->rwTimeout, $this->allowReconnect, $this->persistent);
+                    db, $this->timeout, $this->rwTimeout, $this->persistent);
                 else
                     return false;
             }
