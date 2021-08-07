@@ -437,6 +437,15 @@ final class Rpc
 
     /**
      * Get Response Header
+     * @return array
+     */
+    final public function getResponse(): array
+    {
+        return $this->response;
+    }
+
+    /**
+     * Get Response Header
      * @param string $name
      * @return bool|int|float|string|array|null
      */
@@ -450,15 +459,6 @@ final class Rpc
 
     /**
      * Get Response Header
-     * @return array
-     */
-    final public function getResponse(): array
-    {
-        return $this->response;
-    }
-
-    /**
-     * Get Response Header
      * @param string $name
      * @return bool|int|float|string|array|null
      */
@@ -467,7 +467,7 @@ final class Rpc
         if (empty($name) || $name === '*')
             return $this->response['header'];
         else
-            return $this->response['cookie'][$name] ?? null;
+            return $this->response['header'][$name] ?? null;
     }
 
     /**
