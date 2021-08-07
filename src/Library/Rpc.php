@@ -592,9 +592,6 @@ final class Rpc
      */
     final public function createHandle(bool $reuseConnection = false): CurlHandle|bool
     {
-        if (isset($this->handle) && $this->handle instanceof CurlHandle)
-            return $this->handle;
-
         //Prepare Data
         $this->clearResponse();
         $this->processRequestContent();
@@ -658,13 +655,15 @@ final class Rpc
         }
 
         //Setup Curl
-        $this->handle = curl_init($this->url);
+        if (isset($this->handle) && $this->handle instanceof CurlHandle)
+            curl_reset($this->handle);
+        else
+            $this->handle = curl_init($this->url);
         curl_setopt_array($this->handle, $this->curlOpt);
 
         $this->processRequestProxy($this->handle);
         $this->processRequestBasicAuth($this->handle);
         $this->processRequestCookie($this->handle);
-
 
         return $this->handle;
     }
