@@ -706,7 +706,7 @@ final class Rpc
     /**
      * Clear Response
      */
-    private function closeHandle()
+    final public function closeHandle()
     {
         if (!empty($this->handle) && is_resource($this->handle))
             curl_close($this->handle);
