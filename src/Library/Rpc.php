@@ -447,40 +447,47 @@ final class Rpc
     /**
      * Get Response Header
      * @param string $name
-     * @return ?string
+     * @return bool|int|float|string|array|null
      */
-    final public function getResponseHeader(string $name): ?string
+    final public function getResponseTime(string $name): null|bool|int|float|string|array
     {
-        if (!empty($name)) {
-            if ($name === '*')
-                return $this->response['header'];
-            else
-                return $this->response['header'][$name] ?? null;
-        } else
-            return null;
+        if (empty($name) || $name === '*')
+            return $this->response['time'];
+        else
+            return $this->response['time'][$name] ?? null;
+    }
+
+    /**
+     * Get Response Header
+     * @param string $name
+     * @return bool|int|float|string|array|null
+     */
+    final public function getResponseHeader(string $name = '*'): null|bool|int|float|string|array
+    {
+        if (empty($name) || $name === '*')
+            return $this->response['header'];
+        else
+            return $this->response['cookie'][$name] ?? null;
     }
 
     /**
      * Get Response Cookie
      * @param string $name
-     * @return ?string
+     * @return bool|int|float|string|array|null
      */
-    final public function getResponseCookie(string $name): ?string
+    final public function getResponseCookie(string $name = '*'): null|bool|int|float|string|array
     {
-        if (!empty($name)) {
-            if ($name === '*')
-                return $this->response['cookie'];
-            else
-                return $this->response['cookie'][$name] ?? null;
-        } else
-            return null;
+        if (empty($name) || $name === '*')
+            return $this->response['cookie'];
+        else
+            return $this->response['cookie'][$name] ?? null;
     }
 
     /**
      * Get Response Body Content
-     * @return string
+     * @return bool|int|float|string|array|null
      */
-    final public function getResponseContent(): string
+    final public function getResponseContent(): null|bool|int|float|string|array
     {
         return $this->response['body'];
     }
@@ -665,9 +672,13 @@ final class Rpc
         }
         //Statistics Request Time
         $this->response['time'] = [
-            'total' => (curl_getinfo($this->handle, CURLINFO_TOTAL_TIME) * 1000) . " ms",
-            'connect' => (curl_getinfo($this->handle, CURLINFO_CONNECT_TIME) * 1000) . " ms",
             'nslookup' => (curl_getinfo($this->handle, CURLINFO_NAMELOOKUP_TIME) * 1000) . " ms",
+            'connect' => (curl_getinfo($this->handle, CURLINFO_CONNECT_TIME) * 1000) . " ms",
+            'ssl/ssh' => (curl_getinfo($this->handle, CURLINFO_APPCONNECT_TIME) * 1000) . " ms",
+            'pretransfer' => (curl_getinfo($this->handle, CURLINFO_PRETRANSFER_TIME) * 1000) . " ms",
+            'redirect' => (curl_getinfo($this->handle, CURLINFO_REDIRECT_TIME) * 1000) . " ms",
+            'starttransfer' => (curl_getinfo($this->handle, CURLINFO_STARTTRANSFER_TIME) * 1000) . " ms",
+            'total' => (curl_getinfo($this->handle, CURLINFO_TOTAL_TIME) * 1000) . " ms",
         ];
 
         //Close Curl
