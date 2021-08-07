@@ -154,12 +154,11 @@ namespace Npf\Core {
          */
         #[NoReturn] final public function end(): void
         {
-            $profiler = $this->profiler->fetch();
-            $this->response->add('profiler', $profiler);
-            $this->emit('appEnd', [&$this, $profiler]);
+            $this->emit('appEnd', [&$this]);
             $this->commit();
-            $this->emit('appBeforeClean', [&$this, $profiler]);
+            $this->emit('appBeforeClean', [&$this]);
             $this->clean();
+            $this->response->add('profiler', $this->profiler->fetch());
             $this->view->render();
             exit($this->getRoles() === 'daemon' ? 1 : 0);
         }

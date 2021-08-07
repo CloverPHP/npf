@@ -580,7 +580,7 @@ namespace Npf\Core\Db {
             $this->tranStarted = false;
             $this->app->profiler->timerStart("db");
             $result = $this->mysqli->rollback();
-            $this->app->profiler->saveQuery("commit", "db");
+            $this->app->profiler->saveQuery("rollback", "db");
             return $result;
         }
 
