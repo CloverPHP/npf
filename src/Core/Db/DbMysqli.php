@@ -81,8 +81,8 @@ namespace Npf\Core\Db {
                 if (!$this->persistent)
                     $this->mysqli->kill($this->mysqli->thread_id);
                 $this->mysqli->close();
-                $this->initialize();
                 $this->app->profiler->saveQuery("disconnected {$this->connectionString}", "db");
+                $this->initialize();
                 return true;
             }
             return false;
