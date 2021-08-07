@@ -118,9 +118,15 @@ namespace Npf\Core\Db {
             $this->persistent = (boolean)$this->config->get('persistent', false);
             $user = $this->config->get('user', 'root');
             $name = $this->config->get('name', '');
-            if (!@$this->mysqli->real_connect($this->escapeStr($this->persistent ? "p:{$host}" :
-                $host), $this->escapeStr($user), $this->escapeStr($this->config->get('pass', '')), $this->escapeStr($name),
-                $port)
+            $compress = (bool)$this->config->get('compress', false);
+            if (!@$this->mysqli->real_connect(
+                hostname: $this->persistent ? "p:{$host}" : $host,
+                username: $user,
+                password: $this->config->get('pass', ''),
+                database: $name,
+                port: $port,
+                flags: ($compress === true ? MYSQLI_CLIENT_COMPRESS : 0)
+            )
             ) {
                 $this->initialize();
                 throw new DBQueryError("DB Connect Failed : mysql://{$user}@{$host}:{$port}/{$name} " . $this->connectError());
@@ -189,7 +195,7 @@ namespace Npf\Core\Db {
         {
             if ($this->mysqli === false)
                 return false;
-            return mysqli_ping($this->mysqli);
+            return $this->mysqli->ping();
         }
         #----------------------------------------------------------------------#
         #Session of Query Handle
@@ -463,7 +469,7 @@ namespace Npf\Core\Db {
             $resResult = $this->getResResult($resResult);
             if ($this->isResResult($resResult)) {
                 $resResult->field_seek($column);
-                return$resResult->fetch_field();
+                return $resResult->fetch_field();
             } else
                 return false;
         }
