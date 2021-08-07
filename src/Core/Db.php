@@ -35,17 +35,17 @@ namespace Npf\Core {
             parent::__construct($app, $this->config);
 
             $this->connect();
-
-            if ($this->config->get('tran'))
-                $this->tranStart();
         }
 
         /**
          * Connect DB
          * @throws DBQueryError
          */
-        private function connect(): void
+        public function connect(): void
         {
+            if($this->isConnected())
+                return;
+
             $hosts = $this->config->get('hosts');
             shuffle($hosts);
             foreach ($hosts as $host) {
@@ -61,6 +61,9 @@ namespace Npf\Core {
 
             if ($this->driver->connected !== true)
                 throw new DBQueryError("No mysql server available, system exit");
+
+            if ($this->config->get('tran'))
+                $this->tranStart();
         }
 
         /**
