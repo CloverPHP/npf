@@ -51,7 +51,7 @@ namespace Npf\Core {
         /**
          * @var array
          */
-        private array $components;
+        private array $components = [];
 
         /**
          * @var string Config Path
