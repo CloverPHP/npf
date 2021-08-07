@@ -380,12 +380,12 @@ namespace Npf\Core\Redis {
 
         /**
          * @param int $len
-         * @return string
+         * @return bool|int|float|string|array
          */
-        private function __receive(int $len = 4096): string
+        private function __receive(int $len = 4096): bool|int|float|string|array
         {
             $response = @fgets($this->socket, $len);
-            return trim($response);
+            return is_string($response) ? trim($response) : $response;
         }
 
         /**
