@@ -19,11 +19,6 @@ final class Rpc
     private string $url = '';
 
     /**
-     * @var bool Enable Verbose Debug
-     */
-    private bool $verboseDebug = false;
-
-    /**
      * @var string CURL Verbose Debug Log
      */
     private string $verboseDebugLog = '';
@@ -137,6 +132,16 @@ final class Rpc
      * @var array
      */
     private array $rpcThread = [];
+
+    /**
+     * @var array $verbose
+     */
+    private array $verbose = [
+        'enable' => false,
+        'handle' => null,
+        'tmpfile' => '',
+        'log' => '',
+    ];
 
     /**
      * Rpc constructor.
@@ -555,19 +560,41 @@ final class Rpc
 
     /**
      * For public to execute
+     * @param bool $reuseConnection
      * @return string
      */
-    final public function execute(): string
+    final public function execute(bool $reuseConnection = false): string
     {
-        return $this->_execute();
+        $this->_execute($reuseConnection);
+        return $this->response['body'];
     }
 
     /**
-     * @param bool $fresh
+     * @return CurlHandle
+     */
+    final public function getHandle(): CurlHandle
+    {
+        return $this->handle;
+    }
+
+    /**
+     * @param CurlHandle $handle
+     * @return CurlHandle
+     */
+    final public function setHandle(CurlHandle $handle): CurlHandle
+    {
+        return $this->handle = $handle;
+    }
+
+    /**
+     * @param bool $reuseConnection
      * @return false|resource
      */
-    final public function createHandle(bool $fresh = false): CurlHandle|bool
+    final public function createHandle(bool $reuseConnection = false): CurlHandle|bool
     {
+        if ($this->handle instanceof CurlHandle)
+            return $this->handle;
+
         //Prepare Data
         $this->clearResponse();
         $this->processRequestContent();
@@ -598,11 +625,11 @@ final class Rpc
                 CURLOPT_COOKIESESSION => FALSE,
                 CURLOPT_COOKIEJAR => $tmpCookie,
                 CURLOPT_COOKIEFILE => $tmpCookie,
-                CURLOPT_VERBOSE => $this->verboseDebug,
+                CURLOPT_VERBOSE => $this->verbose['enable'],
             ] + $this->curlOpt;
         if (($this->timeout * 1000) + $this->timeoutMS < 1000)
             $this->curlOpt[CURLOPT_NOSIGNAL] = TRUE;
-        if ($fresh) {
+        if ($reuseConnection === false) {
             $this->curlOpt += [
                 CURLOPT_FORBID_REUSE => TRUE,
                 CURLOPT_FRESH_CONNECT => TRUE,
@@ -619,6 +646,17 @@ final class Rpc
                 CURLOPT_POSTFIELDS => $this->content,
             ];
 
+        //Record Verbose Log
+        if ($this->verbose['enable']) {
+            if ($this->verbose['handle'] === null) {
+                $this->verbose['tmpfile'] = tempnam(sys_get_temp_dir(), 'npf.rpc.verbose');
+                $this->verbose['handle'] = fopen($this->verbose['tmpfile'], 'wb+');
+            } else
+                fwrite($this->verbose['handle'], "\n-------------------------\n");
+            if (is_resource($this->verbose['handle']))
+                $this->curlOpt[CURLOPT_STDERR] = $this->verbose['handle'];
+        }
+
         //Setup Curl
         $this->handle = curl_init($this->url);
         curl_setopt_array($this->handle, $this->curlOpt);
@@ -626,41 +664,25 @@ final class Rpc
         $this->processRequestProxy($this->handle);
         $this->processRequestBasicAuth($this->handle);
         $this->processRequestCookie($this->handle);
-        return $this->handle;
-    }
 
-    /**
-     * @return CurlHandle
-     */
-    final public function getHandle(): CurlHandle
-    {
+
         return $this->handle;
     }
 
     /**
      * Execute a request, & process response
+     * @param bool $resueConnection
      * @param mixed $outputHandle
-     * @return mixed
      */
-    private function _execute(mixed $outputHandle = null): mixed
+    private function _execute(bool $resueConnection = false, mixed $outputHandle = null)
     {
-        $this->createHandle();
+        $this->createHandle($resueConnection);
 
         //Execute CURL Request & Getting Returning Response
         $outputReturn = true;
         if (is_resource($outputHandle) && get_resource_type($outputHandle) === 'stream') {
             curl_setopt($this->handle, CURLOPT_FILE, $outputHandle);
             $outputReturn = false;
-        }
-
-        //Record Verbose Log
-        $verbose = null;
-        $tmpVerbose = '';
-        if ($this->verboseDebug) {
-            $tmpVerbose = tempnam(sys_get_temp_dir(), 'npf.rpc.verbose');
-            $verbose = fopen($tmpVerbose, 'wb+');
-            curl_setopt($this->handle, CURLOPT_STDERR, $verbose);
-            $this->verboseDebugLog = '';
         }
 
         $this->response['body'] = curl_exec($this->handle);
@@ -673,22 +695,12 @@ final class Rpc
         //Statistics Request Time
         $this->response['info'] = curl_getinfo($this->handle);
 
-        //Close Curl
-        $this->closeHandle();
-
-        //Retrieve Verbose Log
-        if ($this->verboseDebug) {
-            rewind($verbose);
-            $this->verboseDebugLog = stream_get_contents($verbose);
-            unlink($tmpVerbose);
-        }
-
-        #Export/Unlink Cookie
-        $this->internalCookie = file_get_contents($this->curlOpt[CURLOPT_COOKIEJAR]);
-        unlink($this->curlOpt[CURLOPT_COOKIEJAR]);
-
         $this->clearRequest();
-        return $this->response['body'];
+
+        //Close Curl
+        if ($resueConnection === false)
+            $this->closeHandle();
+
     }
 
     /**
@@ -699,6 +711,20 @@ final class Rpc
         if (!empty($this->handle) && is_resource($this->handle))
             curl_close($this->handle);
         unset($this->handle);
+
+        //Retrieve Verbose Log
+        if (is_resource($this->verbose['handle'])) {
+            rewind($this->verbose['handle']);
+            $this->verbose['log'] = (string)stream_get_contents($this->verbose['handle']);
+            fclose($this->verbose['handle']);
+            $this->verbose['handle'] = null;
+            if (is_string($this->verbose['tmpfile']) && file_exists($this->verbose['tmpfile']))
+                unlink($this->verbose['tmpfile']);
+        }
+
+        #Export/Unlink Cookie
+        $this->internalCookie = file_get_contents($this->curlOpt[CURLOPT_COOKIEJAR]);
+        unlink($this->curlOpt[CURLOPT_COOKIEJAR]);
     }
 
     /**
@@ -944,7 +970,9 @@ final class Rpc
             $this->setContent($content);
         $this->addHeaders($headers);
         $this->addCookies($cookies);
-        return $this->_execute();
+        $this->_execute();
+
+        return $this->response['body'];
     }
 
     /**
@@ -1004,9 +1032,9 @@ final class Rpc
             $this->setContent($content);
         $this->addHeaders($headers);
         $this->addCookies($cookies);
-        $result = $this->_execute($fp);
+        $this->_execute(outputHandle: $fp);
         fclose($fp);
-        return (bool)$result;
+        return (int)$this->response['status'] === 200;
     }
 
     /**
@@ -1015,7 +1043,7 @@ final class Rpc
      */
     final public function verboseDebug(bool $enable = true): self
     {
-        $this->verboseDebug = $enable;
+        $this->verbose['enable'] = $enable;
         return $this;
     }
 
@@ -1025,7 +1053,14 @@ final class Rpc
      */
     final public function verboseLog(): string
     {
-        return $this->verboseDebugLog;
+        if (is_resource($this->verbose['handle'])) {
+            $content = '';
+            while (!feof($this->verbose['handle']))
+                $content .= fread($this->verbose['handle'], 8192);
+            ftruncate($this->verbose['handle'], 0);
+            return $content;
+        } else
+            return $this->verbose['log'];
     }
 
     /**
@@ -1033,7 +1068,7 @@ final class Rpc
      */
     final public function printVerboseLog(): void
     {
-        echo "<pre>" . $this->verboseDebugLog . "</pre>";
+        echo "<pre>" . $this->verboseLog() . "</pre>";
     }
 
     /**
