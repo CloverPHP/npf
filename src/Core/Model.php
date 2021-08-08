@@ -76,7 +76,7 @@ namespace Npf\Core {
         /**
          * @return bool|int|string
          */
-        protected function getLastInsertId(): bool|int|string
+        #[Pure] protected function getLastInsertId(): bool|int|string
         {
             return $this->db->getInsertId();
         }

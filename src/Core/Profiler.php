@@ -143,11 +143,7 @@ namespace Npf\Core {
          */
         #[Pure] public function elapsed(bool $milliSec = true): float
         {
-            if ($milliSec) {
-                return round((hrtime(true) - INIT_HRTIME) / 1e+6, 2);
-            } else {
-                return round((hrtime(true) - INIT_HRTIME) / 1e+9, 2);
-            }
+            return $this->app->elapsed($milliSec);
         }
 
         /**

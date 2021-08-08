@@ -154,9 +154,10 @@ namespace Npf\Core {
          */
         #[NoReturn] final public function end(): void
         {
-            $this->emit('appEnd', [&$this]);
+            $profiler = $this->profiler->fetch();
+            $this->emit('appEnd', [&$this, $profiler]);
             $this->commit();
-            $this->emit('appBeforeClean', [&$this]);
+            $this->emit('appBeforeClean', [&$this, $profiler]);
             $this->clean();
             $this->response->add('profiler', $this->profiler->fetch());
             $this->view->render();
@@ -519,7 +520,6 @@ namespace Npf\Core {
         /**
          * App Rollback
          * @return self
-         * @throws DBQueryError
          */
         final public function rollback(): self
         {
@@ -540,7 +540,7 @@ namespace Npf\Core {
 
         /**
          * DB Rollback
-         * @throws DBQueryError
+         * @return bool
          */
         final public function dbRollback(): bool
         {

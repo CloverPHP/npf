@@ -91,7 +91,6 @@ namespace Npf\Core {
         /**
          * SQL Rollback
          * @return bool
-         * @throws DBQueryError
          */
         final public function rollback(): bool
         {

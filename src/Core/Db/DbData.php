@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Npf\Core\Db {
 
+    use JetBrains\PhpStorm\Pure;
     use mysqli_result;
     use Npf\Core\App;
     use Npf\Core\Container;
@@ -211,7 +212,7 @@ namespace Npf\Core\Db {
         /**
          * Get the sql insert id
          */
-        final public function getInsertId(): bool|int|string
+        #[Pure] final public function getInsertId(): bool|int|string
         {
             return $this->driver->insertId();
         }
@@ -1244,7 +1245,7 @@ namespace Npf\Core\Db {
          * SQL Affected Row
          * @return int
          */
-        final public function affectedRow(): int
+        #[Pure] final public function affectedRow(): int
         {
             return $this->driver->affectedRow();
         }
@@ -1253,7 +1254,7 @@ namespace Npf\Core\Db {
          * Get Query Error Message
          * @return bool|string
          */
-        final public function error(): bool|string
+        #[Pure] final public function error(): bool|string
         {
             return $this->driver->error();
         }
@@ -1262,7 +1263,7 @@ namespace Npf\Core\Db {
          * Get Query Error MNumber
          * @return bool|int
          */
-        final public function errno(): bool|int
+        #[Pure] final public function errno(): bool|int
         {
             return $this->driver->errorNo();
         }

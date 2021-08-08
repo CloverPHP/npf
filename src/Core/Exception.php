@@ -33,7 +33,7 @@ namespace Npf\Core {
         /**
          * ExceptionNormal constructor.
          * @param null|string $desc
-         * @param string $code
+         * @param int|float|string $code
          * @param string $status
          * @param array $extra
          * @internal param string $error

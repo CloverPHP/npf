@@ -278,12 +278,16 @@ namespace Npf\Core {
         /**
          * get elapsed milli seconds
          * @param bool $milliSecond
-         * @param bool $current Start Current or initial time
          * @return float
          */
-        #[Pure] final public function elapsed(bool $milliSecond = false, bool $current = false): float
+        #[Pure]
+        final public function elapsed(bool $milliSecond = false): float
         {
-            return (true === $milliSecond) ? floor((hrtime(true) - INIT_HRTIME) / 1e+6) : floor((hrtime(true) - INIT_HRTIME) / 1e+9);
+            if ($milliSecond === true) {
+                return round((hrtime(true) - INIT_HRTIME) / 1e+6, 2);
+            } else {
+                return round((hrtime(true) - INIT_HRTIME) / 1e+9, 2);
+            }
         }
 
         /**
