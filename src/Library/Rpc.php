@@ -551,9 +551,9 @@ final class Rpc
     /**
      * For public to execute
      * @param bool $reuseConnection
-     * @return string
+     * @return string|bool
      */
-    final public function execute(bool $reuseConnection = false): string
+    final public function execute(bool $reuseConnection = false): string|bool
     {
         $this->_execute($reuseConnection);
         return $this->response['body'];
@@ -933,13 +933,13 @@ final class Rpc
      * @param string|array|null $content
      * @param array $headers
      * @param array $cookies
-     * @return mixed
+     * @return string|bool
      */
     final public function __invoke(string            $url,
                                    string            $method = "GET",
                                    string|array|null $content = null,
                                    array             $headers = [],
-                                   array             $cookies = []): mixed
+                                   array             $cookies = []): string|bool
     {
         return $this->run($url, $method, $content, $headers, $cookies);
     }
@@ -950,13 +950,13 @@ final class Rpc
      * @param string|array|null $content
      * @param array $headers
      * @param array $cookies
-     * @return mixed
+     * @return string|bool
      */
     final public function run(string            $url,
                               string            $method = "GET",
                               string|array|null $content = null,
                               array             $headers = [],
-                              array             $cookies = []): mixed
+                              array             $cookies = []): string|bool
     {
         $this->setUrl($url);
         $this->setMethod($method);
