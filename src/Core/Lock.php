@@ -34,7 +34,7 @@ namespace Npf\Core {
         }
 
         /**
-         * 释放锁
+         * Lock Type, allow same instance or not.
          * @param bool $allow
          * @return void
          */
@@ -47,22 +47,18 @@ namespace Npf\Core {
         }
 
         /**
-         * 释放锁
+         * Release Lock
          * @param $name
-         * @param bool $immediately
-         * @return int|bool
+         * @param int $delay
+         * @return bool
          */
-        final public function release($name, bool $immediately = false): bool|int
+        final public function release($name, int $delay = 0): bool
         {
             $name = "{$this->prefix}{$name}";
             $redis = $this->app->redis;
             if (!$redis->exists($name))
                 return true;
-            if ($immediately === true)
-                $ret = $redis->del($name);
-            else
-                $ret = $redis->expire($name, 1);
-            return $ret;
+            return ($delay <= 0) ? (bool)$redis->del($name) : (bool)$redis->expire($name, $delay);
         }
 
         /**
@@ -86,7 +82,7 @@ namespace Npf\Core {
         }
 
         /**
-         * Wait Acquire Done
+         * Acquire and wait it done
          * @param string $name
          * @param int $ttl
          * @param int $maxWait
@@ -104,7 +100,7 @@ namespace Npf\Core {
         }
 
         /**
-         * Acquire Look
+         * Acquire Lock
          * @param string $name
          * @param int $ttl
          * @return bool|int
@@ -121,7 +117,7 @@ namespace Npf\Core {
         }
 
         /**
-         * Acquire Look
+         * Acquire Lock set expire time
          * @param string $name
          * @param int|null $ttl
          * @return bool|int
@@ -138,7 +134,7 @@ namespace Npf\Core {
         }
 
         /**
-         * Acquire Look
+         * Extend Lock Ttl
          * @param string $name
          * @param int $ttl
          * @return bool|int
