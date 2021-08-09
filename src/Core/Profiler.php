@@ -28,12 +28,6 @@ namespace Npf\Core {
         private array $timer = [];
 
         /**
-         *
-         * @var array
-         */
-        private array $query = [];
-
-        /**
          * @var array
          */
         private array $debug = [];
@@ -44,9 +38,14 @@ namespace Npf\Core {
         private Container $config;
 
         /**
-         * @var int
+         *
+         * @var array
          */
-        private int $maxLog = 100;
+        private array $query = [
+            'enable' => true,
+            'max' => 100,
+            'log' => [],
+        ];
 
         /**
          * Profiler constructor.
@@ -59,7 +58,7 @@ namespace Npf\Core {
             } catch (Throwable) {
                 $this->config = new Container();
             }
-            $this->maxLog = $this->config->get('maxLog', 100);
+            $this->query['max'] = $this->config->get('maxLog', 100);
             if (in_array($app->getRoles(), ['daemon', 'cronjob'], true)) {
                 $opts = getopt('p', ['profiler']);
                 if (is_array($opts) && !empty($opts))
@@ -111,7 +110,7 @@ namespace Npf\Core {
                 'params' => $this->app->request->get("*"),
                 'headers' => $this->app->request->header("*"),
                 'debug' => $this->debug,
-                'query' => $this->query,
+                'query' => $this->query['log'],
             ];
             foreach ($this->timeUsage as $key => $time)
                 $profiler['timeusage'][$key] = "{$time}ms";
@@ -236,6 +235,17 @@ namespace Npf\Core {
         }
 
         /**
+         * @param bool|null $enable
+         * @return bool
+         */
+        public function enableQuery(?bool $enable = null): bool
+        {
+            if (is_bool($enable))
+                $this->query['enable'] = $enable;
+            return $this->enable;
+        }
+
+        /**
          * @param string $queryStr
          * @param string $category
          * @return Profiler
@@ -243,7 +253,7 @@ namespace Npf\Core {
         public function saveQuery(string $queryStr, string $category): self
         {
             try {
-                if (!$this->enable || !$this->app->config('Profiler')->get("queryLog" . ucfirst($category), true))
+                if (!$this->enable || !$this->query['enable'] || !$this->app->config('Profiler')->get("queryLog" . ucfirst($category), true))
                     return $this;
 
                 $now = $this->elapsed();
@@ -252,16 +262,15 @@ namespace Npf\Core {
                 if (!isset($this->timeUsage[$category]))
                     $this->timeUsage[$category] = 0;
                 $this->timeUsage[$category] += $elapsed;
-                $this->query[] = str_pad("({$elapsed}ms On {$start}-{$now}ms)", 30, " ", STR_PAD_RIGHT) . str_pad($category,
+                $this->query['log'][] = str_pad("({$elapsed}ms On {$start}-{$now}ms)", 30, " ", STR_PAD_RIGHT) . str_pad($category,
                         5, " ", STR_PAD_LEFT) . ": $queryStr";
-                if ($this->maxLog > 0 && count($this->query) > $this->maxLog)
-                    $this->query = array_slice($this->query, -1 * $this->maxLog);
+                if ($this->query['max'] > 0 && count($this->query['log']) > $this->query['max'])
+                    $this->query['log'] = array_slice($this->query['log'], -1 * $this->query['max']);
                 return $this;
             } catch (Exception) {
                 return $this;
             }
         }
-
 
         /**
          * @param int $reserve

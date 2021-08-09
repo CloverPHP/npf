@@ -73,11 +73,16 @@ namespace Npf\Core {
         final public function waitAcquireDone(string $name, int $ttl = 60, int $maxWait = 120): bool
         {
             $start = hrtime(true);
+            $success = true;
+            $this->app->profiler->enableQuery(false);
             while (!$this->acquire($name, $ttl)) {
                 usleep(Common::randomInt(100000, 300000));
-                if (floor((hrtime(true) - $start) / 1e+9) > $maxWait)
-                    return false;
+                if (floor((hrtime(true) - $start) / 1e+9) > $maxWait) {
+                    $success = false;
+                    break;
+                }
             }
+            $this->app->profiler->enableQuery(true);
             return true;
         }
 
@@ -89,11 +94,10 @@ namespace Npf\Core {
          */
         final public function release($name, int $delay = 0): bool
         {
-            $name = "{$this->prefix}{$name}";
             $redis = $this->app->redis;
-            if (!$redis->exists($name))
+            if (!$redis->exists("{$this->prefix}{$name}"))
                 return true;
-            return empty($delay) ? (bool)$redis->del($name) : (bool)$this->ttl($name, $delay);
+            return empty($delay) ? (bool)$redis->del("{$this->prefix}{$name}") : (bool)$this->ttl($name, $delay);
         }
 
         /**
@@ -136,8 +140,7 @@ namespace Npf\Core {
         final public function extend(string $name, int $ttl): bool|int
         {
             $redis = $this->app->redis;
-            $name = "{$this->prefix}{$name}";
-            return $redis->expire($name, (int)$redis->ttl($name) + $ttl);
+            return (int)$this->ttl($name, (int)$redis->ttl("{$this->prefix}{$name}") + $ttl);
         }
     }
 }
