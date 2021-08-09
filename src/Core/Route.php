@@ -273,7 +273,7 @@ namespace Npf\Core {
                 return;
             if ($cronLock)
                 $this->app->on('appBeforeClean', function (App $app) use ($lockName) {
-                    $app->lock->release($lockName, true);
+                    $app->lock->release($lockName);
                 });
             try {
                 $actionObj = $refClass->newInstanceArgs($parameters);
@@ -304,10 +304,10 @@ namespace Npf\Core {
             if ($daemonLock && !$this->app->lock->waitAcquireDone($lockName, 60, $this->generalConfig->get('daemonMaxWait', 60)))
                 return;
             $this->app->on('appBeforeClean', function (App $app) use ($lockName) {
-                $app->lock->release($lockName, true);
+                $app->lock->release($lockName);
             });
             $this->app->onTermSignal(function (App $app) use ($lockName) {
-                $app->lock->release($lockName, true);
+                $app->lock->release($lockName);
             });
 
             try {

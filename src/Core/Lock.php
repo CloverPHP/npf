@@ -47,6 +47,41 @@ namespace Npf\Core {
         }
 
         /**
+         * Acquire Lock
+         * @param string $name
+         * @param int $ttl
+         * @return bool|int
+         */
+        final public function acquire(string $name, int $ttl = 60): bool|int
+        {
+            $redis = $this->app->redis;
+            $name = "{$this->prefix}{$name}";
+            if ($redis->get($name) === $this->uniqueValue)
+                $ret = (boolean)$redis->expire($name, $ttl);
+            else
+                $ret = (boolean)$redis->setnx($name, $this->uniqueValue, $ttl);
+            return $ret;
+        }
+
+        /**
+         * Acquire and wait it done
+         * @param string $name
+         * @param int $ttl
+         * @param int $maxWait
+         * @return boolean
+         */
+        final public function waitAcquireDone(string $name, int $ttl = 60, int $maxWait = 120): bool
+        {
+            $start = hrtime(true);
+            while (!$this->acquire($name, $ttl)) {
+                usleep(Common::randomInt(100000, 300000));
+                if (floor((hrtime(true) - $start) / 1e+9) > $maxWait)
+                    return false;
+            }
+            return true;
+        }
+
+        /**
          * Release Lock
          * @param $name
          * @param int $delay
@@ -58,7 +93,7 @@ namespace Npf\Core {
             $redis = $this->app->redis;
             if (!$redis->exists($name))
                 return true;
-            return ($delay <= 0) ? (bool)$redis->del($name) : (bool)$redis->expire($name, $delay);
+            return empty($delay) ? (bool)$redis->del($name) : (bool)$this->ttl($name, $delay);
         }
 
         /**
@@ -82,41 +117,6 @@ namespace Npf\Core {
         }
 
         /**
-         * Acquire and wait it done
-         * @param string $name
-         * @param int $ttl
-         * @param int $maxWait
-         * @return boolean
-         */
-        final public function waitAcquireDone(string $name, int $ttl = 60, int $maxWait = 120): bool
-        {
-            $start = hrtime(true);
-            while (!$this->acquire($name, $ttl)) {
-                usleep(Common::randomInt(100000, 300000));
-                if (floor((hrtime(true) - $start) / 1e+9) > $maxWait)
-                    return false;
-            }
-            return true;
-        }
-
-        /**
-         * Acquire Lock
-         * @param string $name
-         * @param int $ttl
-         * @return bool|int
-         */
-        final public function acquire(string $name, int $ttl = 60): bool|int
-        {
-            $redis = $this->app->redis;
-            $name = "{$this->prefix}{$name}";
-            if ($redis->get($name) === $this->uniqueValue)
-                $ret = (boolean)$redis->expire($name, $ttl);
-            else
-                $ret = (boolean)$redis->setnx($name, $this->uniqueValue, $ttl);
-            return $ret;
-        }
-
-        /**
          * Acquire Lock set expire time
          * @param string $name
          * @param int|null $ttl
@@ -124,13 +124,7 @@ namespace Npf\Core {
          */
         final public function expire(string $name, ?int $ttl = null): bool|int
         {
-            $redis = $this->app->redis;
-            $name = "{$this->prefix}{$name}";
-            $ttl = (int)$ttl;
-            if (empty($ttl))
-                return (int)$redis->ttl($name);
-            else
-                return $redis->expire($name, $ttl);
+            return (int)$this->ttl($name, (int)$ttl);
         }
 
         /**

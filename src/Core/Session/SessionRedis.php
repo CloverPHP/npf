@@ -119,7 +119,7 @@ namespace Npf\Core\Session {
          */
         public function close(): bool
         {
-            return $this->app->lock->release("{$this->prefix}:{$this->sessionId}:lock", true);
+            return $this->app->lock->release("{$this->prefix}:{$this->sessionId}:lock");
         }
 
         /**
