@@ -93,7 +93,6 @@ namespace Npf\Core\Session {
          */
         public function write($id, $data): bool
         {
-            // Was the ID regenerated?
             if ($id !== $this->sessionId) {
                 if (!$this->app->lock->release("{$this->prefix}:{$this->sessionId}:lock") || !$this->app->lock->waitAcquireDone("{$this->prefix}:{$id}:lock", $this->lockTtl, $this->maxWait))
                     return false;
@@ -108,8 +107,9 @@ namespace Npf\Core\Session {
                     return true;
                 }
                 return false;
-            }
-            return (bool)$this->app->redis->expire("{$this->prefix}:{$id}", $this->sessionTtl);
+            }else
+                $this->app->redis->expire("{$this->prefix}:{$id}", $this->sessionTtl)
+            return true;
         }
 
         /**
