@@ -108,7 +108,7 @@ namespace Npf\Core\Session {
                 }
                 return false;
             }else
-                $this->app->redis->expire("{$this->prefix}:{$id}", $this->sessionTtl)
+                $this->app->redis->expire("{$this->prefix}:{$id}", $this->sessionTtl);
             return true;
         }
 
