@@ -480,7 +480,7 @@ namespace Npf\Core {
                 $this->view->error();
                 $this->response->add('profiler', $this->profiler->fetch());
                 $profiler = $this->response->get('profiler');
-                if ($exception->sysLog() || $exception instanceof \ErrorException) {
+                if ($exception->sysLog() || $exception instanceof GeneralException) {
                     $desc = is_string($profiler['desc']) ? $profiler['desc'] : json_encode($profiler['desc'], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
                     $this->profiler->logError($this->response->get('error', ''), "{$desc}\nTrace:\n" . implode(",", $profiler['trace']));
                     if ($event)

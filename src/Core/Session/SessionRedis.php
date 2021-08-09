@@ -61,7 +61,6 @@ namespace Npf\Core\Session {
          */
         public function open($path, $name): bool
         {
-            $this->app->lock->allowSameInstance(false);
             return true;
         }
 
@@ -74,6 +73,7 @@ namespace Npf\Core\Session {
          */
         public function read($id): string
         {
+            $this->app->lock->password($id);
             if ($this->app->lock->waitAcquireDone("{$this->prefix}:{$id}:lock", $this->lockTtl, $this->maxWait)) {
                 $this->sessionId = $id;
                 $data = (string)$this->app->redis->get("{$this->prefix}:{$id}");

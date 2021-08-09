@@ -14,7 +14,7 @@ namespace Npf\Core {
         /**
          * @var string
          */
-        private string $uniqueValue;
+        private string $password;
         /**
          * @var string
          */
@@ -41,9 +41,20 @@ namespace Npf\Core {
         final public function allowSameInstance(bool $allow = true): void
         {
             if ($allow)
-                $this->uniqueValue = Common::getServerIp();
+                $this->password = Common::getServerIp();
             else
-                $this->uniqueValue = Common::getServerIp() . ":" . getmypid();
+                $this->password = Common::getServerIp() . ":" . hrtime(true);
+        }
+
+        /**
+         * Setup Lock value, this will block those unknown value ppl
+         * @param string $password
+         * @return void
+         */
+        final public function password(string $password = ''): void
+        {
+            if (!empty($password))
+                $this->password = Common::getServerIp() . ":{$password}";
         }
 
         /**
@@ -56,10 +67,10 @@ namespace Npf\Core {
         {
             $redis = $this->app->redis;
             $name = "{$this->prefix}{$name}";
-            if ($redis->get($name) === $this->uniqueValue)
+            if ($redis->get($name) === $this->password)
                 $ret = (boolean)$redis->expire($name, $ttl);
             else
-                $ret = (boolean)$redis->setnx($name, $this->uniqueValue, $ttl);
+                $ret = (boolean)$redis->setnx($name, $this->password, $ttl);
             return $ret;
         }
 
@@ -83,7 +94,7 @@ namespace Npf\Core {
                 }
             }
             $this->app->profiler->enableQuery(true);
-            return true;
+            return $success;
         }
 
         /**
@@ -110,7 +121,7 @@ namespace Npf\Core {
             $name = "{$this->prefix}{$name}";
             $redis = $this->app->redis;
             $value = (string)$redis->get($name);
-            if ($value === $this->uniqueValue) {
+            if ($value === $this->password) {
                 if (!empty($ttl) && $redis->expire($name, $ttl))
                     return $ttl;
                 else
