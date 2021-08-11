@@ -248,33 +248,22 @@ namespace Npf\Core\Db {
         }
 
         /**
-         * @param string $mode
+         * @param string|null $mode
+         * @return string
          */
-        final public function queryMode(string $mode = 'store'): void
+        final public function queryMode(?string $mode): string
         {
-            $mode = strtolower($mode);
+            $original = $this->queryMode;
+            $mode = strtolower((string)$mode);
             if (in_array($mode, ['store', 'use'], true))
                 $this->queryMode = $mode;
-        }
-
-        /**
-         * Multiple Query, comma to split out.
-         * @param array $queryStr
-         * @return array
-         * @throws DBQueryError
-         */
-        final public function multiQuery(array $queryStr): array
-        {
-            $result = [];
-            foreach ($queryStr as $k => $sql)
-                $result[$k] = $this->query($sql);
-            return $result;
+            return $original;
         }
 
         /**
          * Db Query
          * @param string $queryStr
-         * @return mysqli_result|bool
+         * @return bool|mysqli_result
          * @throws DBQueryError
          */
         final public function query(string $queryStr): mysqli_result|bool
@@ -306,7 +295,7 @@ namespace Npf\Core\Db {
                         (substr($query, -10)) === 'FOR UPDATE'
                     ) {
                         $this->app->profiler->timerStart("db");
-                        if(!$this->tranStarted = $this->mysqli->begin_transaction())
+                        if (!$this->tranStarted = $this->mysqli->begin_transaction())
                             throw new DBQueryError("Unable begin mysql transaction");
                         $this->app->profiler->saveQuery("begin transaction", "db");
                         return $this->tranStarted;
@@ -338,14 +327,12 @@ namespace Npf\Core\Db {
          * @return bool|mysqli_result
          * @throws DBQueryError
          */
-        final public function realQuery(string $queryStr): bool|mysqli_result
+        final public function realQuery(string $queryStr): mysqli_result|bool
         {
             if ($this->mysqli === false)
                 return false;
             $this->app->profiler->timerStart("db");
-            $result = $this->mysqli->real_query($queryStr);
-            $this->resResult = $this->queryMode === 'use' ? $this->mysqli->use_result() : $this->mysqli->store_result();
-            $this->resResult = $this->mysqli->field_count ? $this->resResult : $result;
+            $this->resResult = $this->mysqli->query($queryStr, $this->queryMode === 'use' ? MYSQLI_USE_RESULT : MYSQLI_STORE_RESULT);
 
             if ($this->mysqli->errno !== 0) {
                 $queryStr = "Query error: {$this->mysqli->error} - {$queryStr}";
@@ -412,9 +399,9 @@ namespace Npf\Core\Db {
 
         /**
          * Once query, store the current result set from db.
-         * @return mysqli_result|bool|null
+         * @return mysqli_result|bool
          */
-        final public function resultSetStore(): mysqli_result|bool|null
+        final public function resultSetStore(): mysqli_result|bool
         {
             if ($this->mysqli === false)
                 return false;
@@ -487,14 +474,14 @@ namespace Npf\Core\Db {
                 return false;
         }
 
-        /**
+        /**         *
          * Fetch one of cell from the current result set, default is first row, first field.
          * @param int $column
          * @param int $row
          * @param mysqli_result|bool|null $resResult
-         * @return mixed
+         * @return bool|int|float|string|array|null
          */
-        final public function fetchCell(int $column = 0, int $row = 0, mysqli_result|bool|null $resResult = null): mixed
+        final public function fetchCell(int $column = 0, int $row = 0, mysqli_result|bool|null $resResult = null): float|array|bool|int|string|null
         {
             $resResult = $this->getResResult($resResult);
             if ($this->isResResult($resResult)) {

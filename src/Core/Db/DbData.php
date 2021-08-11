@@ -90,11 +90,12 @@ namespace Npf\Core\Db {
 
         /**
          * Query Lock for a once query call, default lock is 'FOR UPDATE'
-         * @param string $mode
+         * @param string|null $mode
+         * @return string
          */
-        final public function queryMode(string $mode = 'store'): void
+        final public function queryMode(?string $mode): string
         {
-            $this->driver->queryMode($mode);
+            return $this->driver->queryMode($mode);
         }
 
         /**
@@ -120,7 +121,7 @@ namespace Npf\Core\Db {
          * Unlock all the locked sql table on this session
          * @throws DBQueryError
          */
-        public function unlockTable(): void
+        final public function unlockTable(): void
         {
             $this->driver->query("UNLOCK TABLES");
         }
@@ -129,10 +130,10 @@ namespace Npf\Core\Db {
          * Alias with Query
          * @param string $queryStr
          * @param int $resultMode
-         * @return mixed
+         * @return string|int|bool|array|float|null
          * @throws DBQueryError
          */
-        public function special(string $queryStr, int $resultMode = 0): mixed
+        final public function special(string $queryStr, int $resultMode = 0): string|int|bool|array|null|float
         {
             return $this->query($queryStr, $resultMode);
         }
@@ -141,72 +142,32 @@ namespace Npf\Core\Db {
          * Query DB and return the result instant
          * @param string $queryStr
          * @param int $resultMode
-         * @return mixed
+         * @return string|array|bool|int|float|null
          * @throws DBQueryError
          */
-        final public function query(string $queryStr, int $resultMode = 0): mixed
+        final public function query(string $queryStr, int $resultMode = 0): string|array|bool|int|null|float
         {
-            $results = null;
             if (!empty($queryStr)) {
                 $resResult = $this->driver->query($queryStr);
-                if (NULL === $resResult || is_bool($resResult))
-                    $results = $resResult;
-                else {
-                    switch ($this->driver->numRows($resResult)) {
-                        case 0:
-                            $results = null;
-                            break;
-
-                        case 1:
-                            switch ($resultMode) {
-
-                                case 2:
-                                    $results[] = $this->driver->fetchRow($resResult);
-                                    break;
-
-                                case 1:
-                                    $results[] = $this->driver->fetchAssoc($resResult);
-                                    break;
-
-                                default:
-                                    if ($this->driver->numFields($resResult) === 0)
-                                        $results = $this->driver->fetchCell(0, 0, $resResult);
-                                    else
-                                        $results = $this->driver->fetchAssoc($resResult);
-                                    break;
-                            }
-                            break;
-
-                        default:
-                            switch ($resultMode) {
-
-                                case 2:
-                                    while ($row = $this->driver->fetchRow($resResult))
-                                        $results[] = $row;
-                                    break;
-
-                                default:
-                                    while ($row = $this->driver->fetchAssoc($resResult))
-                                        $results[] = $row;
-                                    break;
-                            }
-                    }
-                    $this->driver->free($resResult);
-                }
-            }
-            return $results;
+                return $this->getResult($resResult, $resultMode);
+            } else
+                return null;
         }
 
         /**
-         * @param string|array $queryStr
+         * @param string|array $queryStrs
+         * @param int $resultMode
          * @return array
          * @throws DBQueryError
          */
-        final public function multiQuery(string|array $queryStr): array
+        final public function multiQuery(string|array $queryStrs, int $resultMode = 0): array
         {
-            if (is_string($queryStr))
-                $queryStr = explode(";", $queryStr);
-            return $this->driver->multiQuery($queryStr);
+            if (is_string($queryStrs))
+                $queryStrs = explode(";", $queryStrs);
+            $results = [];
+            foreach ($queryStrs as $queryStr)
+                $results[] = $this->query($queryStr, $resultMode);
+            return $results;
         }
 
         /**
@@ -219,10 +180,10 @@ namespace Npf\Core\Db {
 
         /**
          * Query Select get result set.
-         * @param mysqli_result $resultSet
+         * @param mysqli_result|null $resultSet
          * @return array|null
          */
-        final public function fetchRow(mysqli_result $resultSet): ?array
+        final public function fetchRow(?mysqli_result $resultSet): ?array
         {
             return $this->driver->fetchAssoc($resultSet);
         }
@@ -272,7 +233,7 @@ namespace Npf\Core\Db {
          * @param string|int|float|array|null $limit
          * @param string|int|float|array|null $group
          * @param string|int|float|array|null $having
-         * @return bool|mysqli_result|null
+         * @return bool|mysqli_result
          * @throws DBQueryError
          */
         final public function select(string                      $table,
@@ -281,7 +242,7 @@ namespace Npf\Core\Db {
                                      string|int|float|array|null $order = null,
                                      string|int|float|array|null $limit = null,
                                      string|int|float|array|null $group = null,
-                                     string|int|float|array|null $having = null): mysqli_result|bool|null
+                                     string|int|float|array|null $having = null): mysqli_result|bool
         {
             $resultSet = $this->driver->query($this->getSelectSQL($table, $column, $cond, $order, $limit, $group, $having));
             $this->queryLock = '';
@@ -475,7 +436,7 @@ namespace Npf\Core\Db {
                     $colName = $this->convertSplit($colName);
                     $result = $this->colLiteral . $this->driver->escapeStr($colName) . $this->
                         colLiteral;
-                } elseif($functionality === false)
+                } elseif ($functionality === false)
                     $result = $this->driver->escapeStr($colName);
                 else
                     $result = $colName;
@@ -922,13 +883,13 @@ namespace Npf\Core\Db {
          * @param array $fields
          * @param array $values
          * @param bool $ignore
-         * @return bool|mysqli_result
+         * @return bool
          * @throws DBQueryError
          */
         final public function inserts(string $table,
                                       array  $fields,
                                       array  $values,
-                                      bool   $ignore = false): bool|mysqli_result
+                                      bool   $ignore = false): bool
         {
             if (!is_array($fields) || !is_array($values) || empty($fields) || empty($values) || empty($table))
                 return false;
@@ -988,12 +949,12 @@ namespace Npf\Core\Db {
          * @param string $table
          * @param array $colDatas
          * @param bool $ignore
-         * @return int|bool
+         * @return bool|int|string
          * @throws DBQueryError
          */
         final public function insert(string $table,
                                      array  $colDatas,
-                                     bool   $ignore = false): int|bool
+                                     bool   $ignore = false): bool|int|string
         {
             if (!empty($table) && !empty($colDatas)) {
                 $this->queryLock = '';
@@ -1115,14 +1076,14 @@ namespace Npf\Core\Db {
          * @param array|null $cond
          * @param bool $check
          * @param bool $ignore
-         * @return bool|int
+         * @return bool|int|string
          * @throws DBQueryError
          */
         final public function action(string     $table,
                                      array      $colData,
                                      array|null $cond = null,
                                      bool       $check = false,
-                                     bool       $ignore = false): bool|int
+                                     bool       $ignore = false): bool|int|string
         {
             if (!empty($cond) && $check === true)
                 if ($this->count($table, $cond) === 0)
@@ -1170,30 +1131,23 @@ namespace Npf\Core\Db {
         {
             if (!empty($name)) {
                 $this->queryLock = '';
-                $result = null;
                 $name = $this->driver->escapeStr($name);
+                $original = $this->driver->queryMode('use');
                 if (!empty($param)) {
                     foreach ($param as $key => $PValue)
                         $param[$key] = $this->getColVal($PValue, $key);
                     $this->driver->query("CALL {$name}(" . implode("','", $param) . ");");
                 } else
                     $this->driver->query("CALL {$name}();");
+                $this->driver->queryMode($original);
                 $data = [];
                 if ($fetchAll) {
-                    do {
-                        if ($result = $this->driver->resultSetStore()) {
-                            $dataNow = [];
-                            while ($row = $this->driver->fetchAssoc($result))
-                                $dataNow[] = $row;
-                            $data[] = $dataNow;
-                            $this->driver->free($result);
-                        }
-                    } while ($this->driver->resultSetNext());
-                } else {
-                    while ($row = $this->driver->fetchAssoc($result))
-                        $data[] = $row;
-                    $this->driver->resultSetClear();
-                }
+                    do
+                        $data[] = $this->getResult($this->driver->resultSetStore());
+                    while ($this->driver->resultSetNext());
+                } else
+                    $data = $this->getResult($this->driver->resultSetStore());
+                $this->driver->resultSetClear();
                 return $data;
             } else
                 return false;
@@ -1266,6 +1220,62 @@ namespace Npf\Core\Db {
         #[Pure] final public function errno(): bool|int
         {
             return $this->driver->errorNo();
+        }
+
+        /**
+         * @param mysqli_result|bool $resResult
+         * @param int $resultMode
+         * @return bool|int|float|string|array|null
+         */
+        private function getResult(mysqli_result|bool $resResult, int $resultMode = 0): bool|int|float|string|array|null
+        {
+            if (is_bool($resResult))
+                $results = $resResult;
+            else {
+                switch ($this->driver->numRows($resResult)) {
+
+                    case 0:
+                        $results = null;
+                        break;
+
+                    case 1:
+                        switch ($resultMode) {
+
+                            case 2:
+                                $results[] = $this->driver->fetchRow($resResult);
+                                break;
+
+                            case 1:
+                                $results[] = $this->driver->fetchAssoc($resResult);
+                                break;
+
+                            default:
+                                if ($this->driver->numFields($resResult) === 0)
+                                    $results = $this->driver->fetchCell(0, 0, $resResult);
+                                else
+                                    $results = $this->driver->fetchAssoc($resResult);
+                                break;
+                        }
+                        break;
+
+                    default:
+                        $results = [];
+                        switch ($resultMode) {
+
+                            case 2:
+                                while ($row = $this->driver->fetchRow($resResult))
+                                    $results[] = $row;
+                                break;
+
+                            default:
+                                while ($row = $this->driver->fetchAssoc($resResult))
+                                    $results[] = $row;
+                                break;
+                        }
+                }
+                $this->driver->free($resResult);
+            }
+            return $results;
         }
     }
 }
