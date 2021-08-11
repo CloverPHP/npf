@@ -155,6 +155,21 @@ namespace Npf\Core\Db {
         }
 
         /**
+         * Return the Split MultiQuery SQL to []
+         * @param string $queryStr
+         * @return array|string
+         */
+        private function querySplit(string $queryStr): array|string
+        {
+            $pattern = '%\s*((?:\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*\'|"[^"\\\\]*(?:\\\\.[^"\\\\]*)*"|/*[^*]*\*+([^*/][^*]*\*+)*/|\#.*|--.*|[^"\';#])+(?:;|$))%x';
+            $matches = [];
+            if (preg_match_all($pattern, $queryStr, $matches))
+                return $matches[1];
+            return [];
+        }
+
+
+        /**
          * @param string|array $queryStrs
          * @param int $resultMode
          * @return array
@@ -163,7 +178,7 @@ namespace Npf\Core\Db {
         final public function multiQuery(string|array $queryStrs, int $resultMode = 0): array
         {
             if (is_string($queryStrs))
-                $queryStrs = explode(";", $queryStrs);
+                $queryStrs = $this->querySplit($queryStrs);
             $results = [];
             foreach ($queryStrs as $queryStr)
                 $results[] = $this->query($queryStr, $resultMode);

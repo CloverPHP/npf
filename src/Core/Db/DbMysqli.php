@@ -262,15 +262,15 @@ namespace Npf\Core\Db {
 
         /**
          * Db Query
-         * @param string $queryStr
+         * @param string $queryString
          * @return bool|mysqli_result
          * @throws DBQueryError
          */
-        final public function query(string $queryStr): mysqli_result|bool
+        final public function query(string $queryString): mysqli_result|bool
         {
             $this->resResult = false;
-            if ($this->tranQuery($queryStr))
-                return $this->realQuery($queryStr);
+            if ($this->tranQuery($queryString))
+                return $this->realQuery($queryString);
             else {
                 $this->resResult = false;
                 return false;
@@ -280,47 +280,29 @@ namespace Npf\Core\Db {
 
         /**
          * Start Transaction if tranStarted = true and have DML Query
-         * @param string $queryStr
-         * @param bool $multi
-         * @return mysqli_result|bool|null
+         * @param string $query
+         * @return bool
          * @throws DBQueryError
          */
-        final public function tranQuery(string $queryStr, bool $multi = false): mysqli_result|bool|null
+        private function tranQuery(string $query): bool
         {
-            if (!empty($queryStr) && $this->tranEnable === true && $this->tranStarted === false) {
-                $queries = ($multi === true) ? $this->querySplit($queryStr) : [$queryStr];
-                foreach ($queries as $query)
-                    if ((strtoupper(substr($query, 0, 6)) !== 'SELECT' && strtoupper(substr($query,
-                                0, 3)) !== 'SET' && strtoupper(substr($query, 0, 5)) !== 'FLUSH') || strtoupper
-                        (substr($query, -10)) === 'FOR UPDATE'
-                    ) {
-                        $this->app->profiler->timerStart("db");
-                        if (!$this->tranStarted = $this->mysqli->begin_transaction())
-                            throw new DBQueryError("Unable begin mysql transaction");
-                        $this->app->profiler->saveQuery("begin transaction", "db");
-                        return $this->tranStarted;
-                    }
-                return true;
+            if (!empty($query) && $this->tranEnable === true && $this->tranStarted === false) {
+                $checkStr = explode(" ", strtoupper(substr($query, 0, 10)), 2)[0];
+                if (empty($checkStr) || !in_array($checkStr, ['SELECT', 'SET', 'FLUSH', 'DESCRIBE', 'SHOW', ''], true) || strtoupper(substr($query, -10)) === 'FOR UPDATE') {
+                    $this->app->profiler->timerStart("db");
+                    if (!$this->tranStarted = $this->mysqli->begin_transaction())
+                        throw new DBQueryError("Unable begin mysql transaction");
+                    $this->app->profiler->saveQuery("begin transaction", "db");
+                    return $this->tranStarted;
+                } else
+                    return true;
             } else
                 return true;
         }
+
         #----------------------------------------------------------------------#
         #Session of ResultSet Handle.
         #----------------------------------------------------------------------#
-
-        /**
-         * Return the Split MultiQuery SQL to []
-         * @param string $queryStr
-         * @return array|string
-         */
-        private function querySplit(string $queryStr): array|string
-        {
-            $pattern = '%\s*((?:\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*\'|"[^"\\\\]*(?:\\\\.[^"\\\\]*)*"|/*[^*]*\*+([^*/][^*]*\*+)*/|\#.*|--.*|[^"\';#])+(?:;|$))%x';
-            $matches = [];
-            if (preg_match_all($pattern, $queryStr, $matches))
-                return $matches[1];
-            return [];
-        }
 
         /**
          * @param string $queryStr

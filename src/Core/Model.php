@@ -484,8 +484,7 @@ namespace Npf\Core {
         protected function addOne(array $params, bool $ignore = false): bool|int|string
         {
             $data = $this->buildOne($params);
-            $ret = $this->db->insert($this->getTableName(), $data, $ignore);
-            return (false === $ret) ? false : $this->db->getInsertId();
+            return $this->db->insert($this->getTableName(), $data, $ignore);
         }
 
         /**
