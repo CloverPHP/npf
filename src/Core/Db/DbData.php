@@ -1232,6 +1232,7 @@ namespace Npf\Core\Db {
             if (is_bool($resResult))
                 $results = $resResult;
             else {
+                $results = [];
                 switch ($this->driver->numRows($resResult)) {
 
                     case 0:
@@ -1259,7 +1260,6 @@ namespace Npf\Core\Db {
                         break;
 
                     default:
-                        $results = [];
                         switch ($resultMode) {
 
                             case 2:
