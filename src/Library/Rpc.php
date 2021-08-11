@@ -1073,9 +1073,13 @@ final class Rpc
     /**
      * @param self $rpcThread
      * @param string $name
+     * @return false|void
      */
     final public function addNewThread(self $rpcThread, string $name = '')
     {
+        $handle = $rpcThread->createHandle(true);
+        if ($handle === false)
+            return false;
         if (!empty($name))
             $this->rpcThread[$name] = $rpcThread;
         else
