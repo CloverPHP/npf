@@ -609,8 +609,7 @@ namespace Npf\Core\Redis {
         private function varUnserialise(?string $json): mixed
         {
             $json = (string)$json;
-            $data = json_decode($json, true);
-            return json_last_error() !== 0 ? $json : $data;
+            return @unserialize($json, ['allowed_classes' => true]);
         }
 
         /**
@@ -654,7 +653,7 @@ namespace Npf\Core\Redis {
          */
         private function varSerialise(mixed $data): string
         {
-            return json_encode($data);
+            return serialize($data);
         }
 
         /**
