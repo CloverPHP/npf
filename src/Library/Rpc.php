@@ -159,14 +159,17 @@ final class Rpc
      * Rpc constructor.
      * @param int $timeout
      * @param int $timeoutMS
+     * @param int|null $connectionTimeout
      * @return self
      */
-    final public function setTimeout(int $timeout = 30, int $timeoutMS = 0): self
+    final public function setTimeout(int $timeout = 30, int $timeoutMS = 0, ?int $connectionTimeout = null): self
     {
         if ($timeout > 0)
             $this->timeout = $timeout;
         if ($timeoutMS > 0)
             $this->timeoutMS = $timeoutMS;
+        if (is_int($connectionTimeout) && $connectionTimeout > 0)
+            $this->connectTimeout = $connectionTimeout;
         return $this;
     }
 
@@ -1070,24 +1073,20 @@ final class Rpc
     /**
      * @param self $rpcThread
      * @param string $name
-     * @return bool|resource
      */
-    final public function addNewThread(self $rpcThread, string $name = ''): CurlHandle|bool
+    final public function addNewThread(self $rpcThread, string $name = '')
     {
-        $handle = $rpcThread->createHandle(true);
-        if ($handle === false)
-            return false;
         if (!empty($name))
             $this->rpcThread[$name] = $rpcThread;
         else
             $this->rpcThread[] = $rpcThread;
-        return $handle;
     }
 
     /**
+     * @param bool $autoClose
      * @return array
      */
-    final public function multiThread(): array
+    final public function multiThread(bool $autoClose = true): array
     {
         $mh = curl_multi_init();
         foreach ($this->rpcThread as $rpc)
@@ -1106,11 +1105,11 @@ final class Rpc
             if ($rpc instanceof Rpc) {
                 $handle = $rpc->getHandle();
                 $error = curl_error($handle);
-                if (empty($error)) {
+                if (empty($error))
                     $result[$key] = curl_multi_getcontent($handle);
-                }
                 curl_multi_remove_handle($mh, $handle);
-                $rpc->closeHandle();
+                if ($autoClose)
+                    $rpc->closeHandle();
             }
         }
         $this->rpcThread = [];
