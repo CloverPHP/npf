@@ -114,7 +114,7 @@ namespace Npf\Core {
         final public static function trace($ex = null): array
         {
             $result = [];
-            if (!$ex instanceof \ErrorException && !$ex instanceof GeneralException) {
+            if (!$ex instanceof GeneralException) {
                 $trace = explode("\n", $ex->getTraceAsString());
                 array_pop($trace);
                 $length = count($trace);
