@@ -40,7 +40,7 @@ namespace Npf\Core\Session {
             $this->config = &$config;
             $this->prefix = $config->get('prefix', 'sess');
             $this->maxWait = $config->get('maxWait', 30);
-            $this->lockTtl = $config->get('lockTtl', 600);
+            $this->lockTtl = $config->get('lockTtl', (int)ini_get("max_execution_time"));
             $this->sessionTtl = $config->get('sessionTtl', 10800);
         }
 

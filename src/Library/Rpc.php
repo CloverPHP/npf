@@ -133,6 +133,8 @@ final class Rpc
         'internal' => '',
     ];
 
+    private array $oldFile = [];
+
     /**
      * Rpc constructor.
      * @throws InternalError
@@ -668,7 +670,7 @@ final class Rpc
      * @param bool $resueConnection
      * @param mixed $outputHandle
      */
-    private function _execute(bool $resueConnection = true, mixed $outputHandle = null)
+    private function _execute(bool $resueConnection = false, mixed $outputHandle = null)
     {
         $this->createHandle($resueConnection);
 
@@ -694,7 +696,6 @@ final class Rpc
         //Close Curl
         if ($resueConnection === false)
             $this->closeHandle();
-
     }
 
     /**

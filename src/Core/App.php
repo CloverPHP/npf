@@ -158,7 +158,7 @@ namespace Npf\Core {
             $this->emit('appEnd', [&$this, $profiler]);
             $this->commit();
             $this->emit('appBeforeClean', [&$this, $profiler]);
-            $this->clean();
+            $this->clean(true, $profiler);
             $this->response->add('profiler', $this->profiler->fetch());
             $this->view->render();
             exit($this->getRoles() === 'daemon' ? 1 : 0);
@@ -257,8 +257,10 @@ namespace Npf\Core {
         /**
          * App Components Clean Up
          */
-        final public function clean(): self
+        private function clean(bool $event = true, ?array $profiler = [])
         {
+            if ($event)
+                $this->emit('appBeforeClean', [&$this, $profiler]);
             foreach ($this->components as $name => $component) {
                 if (!in_array($name, ['request', 'response', 'profiler', 'view'], true)) {
                     if (method_exists($component, '__destruct'))
@@ -269,7 +271,8 @@ namespace Npf\Core {
             $this->config = [];
             $this->models = [];
             $this->modules = [];
-            return $this;
+            if ($event)
+                $this->emit('appAfterClean', [&$this, $profiler]);
         }
 
         /**
@@ -490,9 +493,7 @@ namespace Npf\Core {
                     $this->emit('appException', [&$this, $profiler]);
                     $this->emit('exception', [&$this, $profiler]);
                 }
-                if ($event)
-                    $this->emit('appBeforeClean', [&$this, $profiler]);
-                $this->clean();
+                $this->clean($event, $profiler);
                 $this->view->render();
                 exit($exitCode);
             } catch (\Exception $ex) {
@@ -600,8 +601,7 @@ namespace Npf\Core {
                 $this->emit('sysReport', [&$this, $profiler]);
                 $this->emit('criticalError', [&$this, $profiler]);
                 $this->emit('critical', [&$this, $profiler]);
-                $this->emit('appBeforeClean', [&$this, $profiler]);
-                $this->clean();
+                $this->clean(true, $profiler);
                 $this->view->render();
             } catch (Throwable) {
                 exit(6);
