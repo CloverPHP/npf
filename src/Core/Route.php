@@ -229,6 +229,7 @@ namespace Npf\Core {
                     str_replace("\\", "/", "{$this->rootDirectory}\\{$this->appFile}");
                 $this->app->view->setView('static', $staticFile);
                 $this->app->view->lock();
+                $this->app->emit('appLaunch', [$this->app, $this->appFile]);
             } else
                 throw new UnknownClass("URI static file not found: {$this->appFile}");
         }
@@ -284,6 +285,7 @@ namespace Npf\Core {
             if ($cronLock && !empty($cronjobTtl))
                 $this->app->lock->expire($lockName, $cronjobTtl);
             if (method_exists($actionObj, '__invoke')) {
+                $this->app->emit('appLaunch', [$this->app, $refClass->name]);
                 $actionObj->__invoke(...$parameters);
                 unset($actionObj);
             } else
@@ -318,6 +320,7 @@ namespace Npf\Core {
             $daemonTtl = property_exists($actionObj, 'daemonTtl') ? (int)$actionObj->daemonTtl : (int)$this->generalConfig->get('daemonTtl', 300);
             $daemonInterval = property_exists($actionObj, 'daemonInterval') ? (int)$actionObj->daemonInterval : (int)$this->generalConfig->get('daemonInterval', 1000);
             if (method_exists($actionObj, '__invoke')) {
+                $this->app->emit('appLaunch', [$this->app, $refClass->name]);
                 $this->app->onTick(function () use ($daemonLock, $lockName, $daemonTtl, $actionObj, $parameters) {
                     try {
                         if ($daemonLock)
@@ -354,6 +357,7 @@ namespace Npf\Core {
                 throw new UnknownClass($ex->getMessage());
             }
             if (method_exists($actionObj, '__invoke')) {
+                $this->app->emit('appLaunch', [$this->app, $refClass->name]);
                 call_user_func_array([$actionObj, '__invoke'], $parameters);
                 unset($actionObj);
             } else
