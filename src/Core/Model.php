@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Npf\Core {
 
     use JetBrains\PhpStorm\Pure;
-    use mysqli_result;
     use Npf\Exception\DBQueryError;
 
     /**
@@ -258,11 +257,11 @@ namespace Npf\Core {
         /**
          * @param string $queryStr
          * @param int $resultMode
-         * @return bool|int|array|mysqli_result
+         * @return float|int|bool|array|string|null
          * @throws DBQueryError
          */
         protected function query(string $queryStr,
-                                 int $resultMode = 0): bool|int|array|mysqli_result
+                                 int $resultMode = 0): float|int|bool|array|string|null
         {
             return $this->db->query($queryStr, $resultMode);
         }
@@ -362,7 +361,7 @@ namespace Npf\Core {
          * @param int|array|null $limit
          * @param string|array|null $groupBy
          * @param string|array|null $having
-         * @return bool|array
+         * @return array|null
          * @throws DBQueryError
          */
         protected function getColumnByCond(array|string $field = '*',
@@ -370,7 +369,7 @@ namespace Npf\Core {
                                            string|array|null $orderBy = null,
                                            null|int|array $limit = 0,
                                            string|array|null $groupBy = null,
-                                           string|array|null $having = null): bool|array
+                                           string|array|null $having = null): ?array
         {
             return $this->db->column(
                 $this->getTableName(),
@@ -450,7 +449,7 @@ namespace Npf\Core {
          * @param int|float|string|array|null $limit
          * @param string|array|null $groupBy
          * @param string|array|null $having
-         * @return bool|array
+         * @return array
          * @throws DBQueryError
          */
         protected function getAllByCond(string|array $field = '*',
@@ -459,7 +458,7 @@ namespace Npf\Core {
                                         string|array|null $orderBy = null,
                                         int|float|string|array|null $limit = null,
                                         string|array|null $groupBy = null,
-                                        string|array|null $having = null): bool|array
+                                        string|array|null $having = null): array
         {
             $key = is_null($key) ? $key : ($field === '*' ? $this->prefix . $key : $key);
             $data = $this->db->all(
