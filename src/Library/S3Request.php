@@ -168,7 +168,7 @@ final class S3Request
     public function getResponse(): object|bool
     {
         if (sizeof($this->parameters) > 0) {
-            $query = substr($this->uri, -1) !== '?' ? '?' : '&';
+            $query = !str_ends_with($this->uri, '?') ? '?' : '&';
             foreach ($this->parameters as $var => $value)
                 if ($value == null || $value == '') $query .= $var . '&';
                 else $query .= $var . '=' . rawurlencode($value) . '&';
@@ -341,7 +341,7 @@ final class S3Request
     private function __responseHeaderCallback($curl, string $data): int
     {
         if (($strlen = strlen($data)) <= 2) return $strlen;
-        if (substr($data, 0, 4) == 'HTTP')
+        if (str_starts_with($data, 'HTTP'))
             $this->response->code = (int)substr($data, 9, 3);
         else {
             $data = trim($data);

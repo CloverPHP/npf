@@ -14,7 +14,7 @@ namespace Npf\Core {
         /**
          * @var string
          */
-        private string $uniqueValue;
+        private string $password;
         /**
          * @var string
          */
@@ -29,40 +29,86 @@ namespace Npf\Core {
         {
             $config = $app->config('General');
             $prefix = $config->get('lockPrefix', 'lock');
-            $this->uniqueValue = Common::getServerIp() . ":" . getmypid();
+            $this->allowSameInstance();
             $this->prefix = !empty($prefix) ? "{$prefix}:" : '';
         }
 
         /**
-         * 释放锁
+         * Lock Type, allow same instance or not.
          * @param bool $allow
          * @return void
          */
         final public function allowSameInstance(bool $allow = true): void
         {
             if ($allow)
-                $this->uniqueValue = Common::getServerIp() . ":" . getmypid();
+                $this->password = Common::getServerIp();
             else
-                $this->uniqueValue = Common::getServerIp() . ":" . getmypid() . ":" . floor(Common::timestamp() * 1000000);
+                $this->password = Common::getServerIp() . ":" . hrtime(true);
         }
 
         /**
-         * 释放锁
-         * @param $name
-         * @param bool $immediately
-         * @return int|bool
+         * Setup Lock value, this will block those unknown value ppl
+         * @param string $password
+         * @return void
          */
-        final public function release($name, bool $immediately = false): bool|int
+        final public function password(string $password = ''): void
         {
-            $name = "{$this->prefix}{$name}";
+            if (!empty($password))
+                $this->password = Common::getServerIp() . ":{$password}";
+        }
+
+        /**
+         * Acquire Lock
+         * @param string $name
+         * @param int $ttl
+         * @return bool|int
+         */
+        final public function acquire(string $name, int $ttl = 60): bool|int
+        {
             $redis = $this->app->redis;
-            if (!$redis->exists($name))
-                return true;
-            if ($immediately === true)
-                $ret = $redis->del($name);
+            $name = "{$this->prefix}{$name}";
+            if ($redis->get($name) === $this->password)
+                $ret = (boolean)$redis->expire($name, $ttl);
             else
-                $ret = $redis->expire($name, 1);
+                $ret = (boolean)$redis->setnx($name, $this->password, $ttl);
             return $ret;
+        }
+
+        /**
+         * Acquire and wait it done
+         * @param string $name
+         * @param int $ttl
+         * @param int $maxWait
+         * @return boolean
+         */
+        final public function waitAcquireDone(string $name, int $ttl = 60, int $maxWait = 120): bool
+        {
+            $start = hrtime(true);
+            $success = true;
+            $this->app->profiler->enableQuery(false);
+            while (!$this->acquire($name, $ttl)) {
+                usleep(Common::randomInt(100000, 300000));
+                if (floor((hrtime(true) - $start) / 1e+9) > $maxWait) {
+                    $success = false;
+                    break;
+                }
+            }
+            $this->app->profiler->enableQuery(true);
+            return $success;
+        }
+
+        /**
+         * Release Lock
+         * @param $name
+         * @param int $delay
+         * @return bool
+         */
+        final public function release($name, int $delay = 0): bool
+        {
+            $redis = $this->app->redis;
+            if (!$redis->exists("{$this->prefix}{$name}"))
+                return true;
+            return empty($delay) ? (bool)$redis->del("{$this->prefix}{$name}") : (bool)$this->ttl($name, $delay);
         }
 
         /**
@@ -75,7 +121,7 @@ namespace Npf\Core {
             $name = "{$this->prefix}{$name}";
             $redis = $this->app->redis;
             $value = (string)$redis->get($name);
-            if ($value === $this->uniqueValue) {
+            if ($value === $this->password) {
                 if (!empty($ttl) && $redis->expire($name, $ttl))
                     return $ttl;
                 else
@@ -86,60 +132,18 @@ namespace Npf\Core {
         }
 
         /**
-         * Wait Acquire Done
-         * @param string $name
-         * @param int $ttl
-         * @param int $maxWait
-         * @return boolean
-         */
-        final public function waitAcquireDone(string $name, int $ttl = 60, int $maxWait = 120): bool
-        {
-            $start = -1 * (int)microtime(true);
-            while (!$this->acquire($name, $ttl)) {
-                usleep(Common::randomInt(300000, 1000000));
-                if ((int)microtime(true) + $start > $maxWait)
-                    return false;
-            }
-            return true;
-        }
-
-        /**
-         * Acquire Look
-         * @param string $name
-         * @param int $ttl
-         * @return bool|int
-         */
-        final public function acquire(string $name, int $ttl = 60): bool|int
-        {
-            usleep(Common::randomInt(10000, 300000));
-            $redis = $this->app->redis;
-            $name = "{$this->prefix}{$name}";
-            if ($redis->get($name) === $this->uniqueValue)
-                $ret = (boolean)$redis->expire($name, $ttl);
-            else
-                $ret = (boolean)$redis->setnx($name, $this->uniqueValue, $ttl);
-            return $ret;
-        }
-
-        /**
-         * Acquire Look
+         * Acquire Lock set expire time
          * @param string $name
          * @param int|null $ttl
          * @return bool|int
          */
         final public function expire(string $name, ?int $ttl = null): bool|int
         {
-            $redis = $this->app->redis;
-            $name = "{$this->prefix}{$name}";
-            $ttl = (int)$ttl;
-            if (empty($ttl))
-                return (int)$redis->ttl($name);
-            else
-                return $redis->expire($name, $ttl);
+            return (int)$this->ttl($name, (int)$ttl);
         }
 
         /**
-         * Acquire Look
+         * Extend Lock Ttl
          * @param string $name
          * @param int $ttl
          * @return bool|int
@@ -147,8 +151,7 @@ namespace Npf\Core {
         final public function extend(string $name, int $ttl): bool|int
         {
             $redis = $this->app->redis;
-            $name = "{$this->prefix}{$name}";
-            return $redis->expire($name, (int)$redis->ttl($name) + $ttl);
+            return (int)$this->ttl($name, (int)$redis->ttl("{$this->prefix}{$name}") + $ttl);
         }
     }
 }

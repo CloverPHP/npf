@@ -1305,7 +1305,7 @@ class S3
             $bucket . '.s3.amazonaws.com',
             $enabled,
             (string)$comment,
-            (string)microtime(true),
+            (string)hrtime(true),
             $cnames,
             $defaultRootObject,
             $originAccessIdentity,
@@ -1385,7 +1385,7 @@ class S3
     {
         $rest->getResponse();
         if ($rest->response->error === false && isset($rest->response->body) &&
-            is_string($rest->response->body) && substr($rest->response->body, 0, 5) == '<?xml') {
+            is_string($rest->response->body) && str_starts_with($rest->response->body, '<?xml')) {
             $rest->response->body = simplexml_load_string($rest->response->body);
             // Grab CloudFront errors
             if (isset($rest->response->body->Error, $rest->response->body->Error->Code,
@@ -1643,7 +1643,7 @@ class S3
         $useSSL = self::$useSSL;
         self::$useSSL = true; // CloudFront requires SSL
         $rest = new S3Request('POST', '', '2010-08-01/distribution/' . $distributionId . '/invalidation', 'cloudfront.amazonaws.com');
-        $rest->data = self::__getCloudFrontInvalidationBatchXML($paths, (string)microtime(true));
+        $rest->data = self::__getCloudFrontInvalidationBatchXML($paths, (string)hrtime(true));
         $rest->size = strlen($rest->data);
         $rest = self::__getCloudFrontResponse($rest);
         self::$useSSL = $useSSL;

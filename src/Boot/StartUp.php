@@ -5,7 +5,6 @@ namespace Npf\Boot;
 use Exception;
 use Npf\Core\App;
 use Npf\Core\Kernel;
-use Npf\Core\Polyfill;
 use Throwable;
 
 /**
@@ -40,16 +39,16 @@ final class StartUp
                                       string $name = 'default'
     )
     {
-        new Polyfill();
         define('INIT_MEMORY', memory_get_usage());
-        define('INIT_TIMESTAMP', microtime(true));
+        define('INIT_TIMESTAMP', microtime());
+        define('INIT_HRTIME', hrtime(true));
         $this->appInfo = [
             'role' => $role,
             'env' => $env,
             'name' => $name,
         ];
         $this->instance = new Kernel();
-        $this->app = $this->instance->createApp($this->appInfo);
+        $this->app = $this->instance->buildApp($this->appInfo);
     }
 
     /**

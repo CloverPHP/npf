@@ -76,7 +76,7 @@ class Smtp
     {
         if (empty($host) || !is_string($host) || strlen($host) > 256 || !preg_match('/^([a-zA-Z\d.-]*|\[[a-fA-F\d:]+])$/', $host))
             return false;
-        if (strlen($host) > 2 && substr($host, 0, 1) === '[' && substr($host, -1, 1) === ']')
+        if (strlen($host) > 2 && str_starts_with($host, '[') && substr($host, -1, 1) === ']')
             return filter_var(substr($host, 1, -1), FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false;
         if (is_numeric(str_replace('.', '', $host)))
             return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;
@@ -120,7 +120,7 @@ class Smtp
      */
     #[Pure] public function isEmail(string $email): bool
     {
-        return is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL);
+        return filter_var($email, FILTER_VALIDATE_EMAIL);
     }
 
     /**
@@ -527,9 +527,9 @@ class Smtp
     private function prepareMail()
     {
         //Setup Mail Boundary
-        $mixBoundary = @sha1(md5($this->mail['subject'] . "-MIXED-" . microtime(true)));
-        $relatedBoundary = @sha1(md5($this->mail['subject'] . "-RELATED-" . microtime(true)));
-        $alternativeBoundary = @sha1(md5($this->mail['subject'] . "-ALTERNATIVE-" . microtime(true)));
+        $mixBoundary = @sha1(md5($this->mail['subject'] . "-MIXED-" . hrtime(true)));
+        $relatedBoundary = @sha1(md5($this->mail['subject'] . "-RELATED-" . hrtime(true)));
+        $alternativeBoundary = @sha1(md5($this->mail['subject'] . "-ALTERNATIVE-" . hrtime(true)));
 
         //Add necessary email header
         $this->addHeader("Date", gmdate("r"));
@@ -551,7 +551,7 @@ class Smtp
 
         //Add Email Subject & Message ID
         $this->addHeader("Subject", "=?UTF-8?B?" . base64_encode($this->mail['subject']) . "?=");
-        $this->addHeader("Message-ID", '<' . sha1($this->mail['content']['text'] . $this->mail['content']['html'] . microtime(true)) . '.' . microtime(true) . '@' . explode('@', $this->mail['contact']['from']['email'], 2)[1] . '>');
+        $this->addHeader("Message-ID", '<' . sha1($this->mail['content']['text'] . $this->mail['content']['html'] . hrtime(true)) . '.' . hrtime(true) . '@' . explode('@', $this->mail['contact']['from']['email'], 2)[1] . '>');
         $this->addHeader("MIME-Version", "1.0");
         $this->mail['content']['body'] .=
 

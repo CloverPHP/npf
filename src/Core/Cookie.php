@@ -24,46 +24,65 @@ namespace Npf\Core {
          * Session Set Data
          * @param string $name
          * @param mixed $value
-         * @param string|int $expired
+         * @param string|int $expire
          * @param string $path
          * @param string $domain
          * @param bool $secure
          * @param bool $httpOnly
+         * @param string $samesite
          * @return void
          */
         public function set(
             string $name,
             mixed $value,
-            string|int $expired,
+            string|int $expire,
             string $path = '',
             string $domain = '',
             bool $secure = false,
-            bool $httpOnly = false)
+            bool $httpOnly = false,
+            string $samesite = 'None'
+        )
         {
-            setcookie($name, $value, $expired, $path, $domain, $secure, $httpOnly);
+            setcookie($name, $value, [
+                'expires' => $expire,
+                'path' => $path,
+                'domain' => $domain,
+                'samesite' => $samesite,
+                'secure' => $secure,
+                'httponly' => $httpOnly,
+            ]);
         }
 
         /**
          * Session Set Data
          * @param string $name
          * @param mixed $value
-         * @param string|int $expired
+         * @param string|int $expire
          * @param string $path
          * @param string $domain
          * @param bool $secure
          * @param bool $httpOnly
+         * @param string $samesite
          * @return void
          */
         public function setRaw(
             string $name,
             mixed $value,
-            string|int $expired,
+            string|int $expire,
             string $path = '',
             string $domain = '',
             bool $secure = false,
-            bool $httpOnly = false)
+            bool $httpOnly = false,
+            string $samesite = 'None')
         {
-            setrawcookie($name, $value, $expired, $path, $domain, $secure, $httpOnly);
+            setrawcookie($name, $value, [
+                'expires' => $expire,
+                'path' => $path,
+                'domain' => $domain,
+                'samesite' => $samesite,
+                'secure' => $secure,
+                'httponly' => $httpOnly,
+            ]);
         }
 
         /**

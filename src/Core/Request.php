@@ -69,7 +69,7 @@ namespace Npf\Core {
         {
             $this->headers = [];
             foreach ($_SERVER as $name => $value)
-                if (substr($name, 0, 5) === 'HTTP_')
+                if (str_starts_with($name, 'HTTP_'))
                     $this->headers[strtolower(str_replace("HTTP_", "", $name))] = $value;
         }
 

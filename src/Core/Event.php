@@ -86,41 +86,41 @@ namespace Npf\Core {
         }
 
         /**
-         * @param string $event Event Name to register
+         * @param string $eventName Event Name to register
          * @param callable $listener Event Listener to register
          * @param int|string $times Event available fire times, 0 = not limit.
          * @param int $priority Event Priority
          * @return Event
          */
-        final public function on(string $event,
-                                 callable $listener,
+        final public function on(string     $eventName,
+                                 callable   $listener,
                                  int|string $times = 0,
-                                 int $priority = 0): self
+                                 int        $priority = 0): self
         {
-            if (!empty($event)) {
-                if (!isset($this->listeners[$event]))
-                    $this->listeners[$event] = [];
-                $this->listeners[$event][] = ["listener" => $listener, "times" => $times, "priority" => $priority];
-                Common::multiArraySort($this->listeners[$event], ["priority" => [SORT_DESC, SORT_NATURAL]]);
+            if (!empty($eventName)) {
+                if (!isset($this->listeners[$eventName]))
+                    $this->listeners[$eventName] = [];
+                $this->listeners[$eventName][] = ["listener" => $listener, "times" => $times, "priority" => $priority];
+                Common::multiArraySort($this->listeners[$eventName], ["priority" => [SORT_DESC, SORT_NATURAL]]);
             }
             return $this;
         }
 
         /**
          * Turn off one off event listener if listener is same.
-         * @param string $event Event Name to turn off
+         * @param string $eventName Event Name to turn off
          * @param callable $listener Event Listener to turn off
          * @param bool $all Remove only match or all match event listener
          * @return Event
          */
-        final public function off(string $event,
+        final public function off(string   $eventName,
                                   callable $listener,
-                                  bool $all = true): self
+                                  bool     $all = true): self
         {
-            if (!empty($event) && isset($this->listeners[$event])) {
-                foreach ($this->listeners[$event] as $key => $event)
-                    if ($event['listener'] === $listener) {
-                        unset($this->listeners[$event][$key]);
+            if (!empty($eventName) && isset($this->listeners[$eventName])) {
+                foreach ($this->listeners[$eventName] as $key => $eventName)
+                    if ($eventName['listener'] === $listener) {
+                        unset($this->listeners[$eventName][$key]);
                         if (!$all)
                             break;
                     }
@@ -130,13 +130,13 @@ namespace Npf\Core {
 
         /**
          * Remove Event
-         * @param string $event Event Name to remove
+         * @param string $eventName Event Name to remove
          * @return Event
          */
-        final public function removeEvent(string $event): self
+        final public function removeEvent(string $eventName): self
         {
-            if (!empty($event) && isset($this->listeners[$event]))
-                unset($this->listeners[$event]);
+            if (!empty($eventName) && isset($this->listeners[$eventName]))
+                unset($this->listeners[$eventName]);
             return $this;
         }
 
@@ -148,10 +148,10 @@ namespace Npf\Core {
          * @param int $priority
          * @return self
          */
-        final public function onTick(callable $listener,
-                                     int $tick = 1,
+        final public function onTick(callable   $listener,
+                                     int        $tick = 1,
                                      int|string $times = 0,
-                                     int $priority = 0): self
+                                     int        $priority = 0): self
         {
             $event = 'timerTick';
             if (!isset($this->timerListener[$event]) && !empty($interval))
@@ -171,10 +171,10 @@ namespace Npf\Core {
          * @param int $priority
          * @return self
          */
-        final public function onSchedule(string $schedule,
-                                         callable $listener,
+        final public function onSchedule(string     $schedule,
+                                         callable   $listener,
                                          int|string $times = 0,
-                                         int $priority = 0): self
+                                         int        $priority = 0): self
         {
             if (self::scheduleValidate($schedule)) {
                 if (!isset($this->scheduleListener[$schedule]))
@@ -235,7 +235,7 @@ namespace Npf\Core {
                         $result = $this->eventFire($event['listener'], $args);
                         $event['times']--;
                         if ($event['times'] === 0)
-                            unset($this->listeners[$event][$key]);
+                            unset($this->listeners[$eventName][$key]);
                         if ($result === false)
                             break;
                     }
@@ -266,7 +266,7 @@ namespace Npf\Core {
                 $now = ceil(Common::timestamp(true));
                 $this->emitSchedule();
                 $offset = $now - $this->timerLastTimestamp - 1;
-                $this->timerEmit($now, $offset);
+                $this->timerEmit($now, (int)$offset);
                 $this->timerLastTimestamp = $now;
                 $this->tick++;
                 return true;
@@ -278,13 +278,16 @@ namespace Npf\Core {
         /**
          * get elapsed milli seconds
          * @param bool $milliSecond
-         * @param bool $current Start Current or initial time
          * @return float
          */
-        #[Pure] final public function elapsed(bool $milliSecond = false, bool $current = false): float
+        #[Pure]
+        final public function elapsed(bool $milliSecond = false): float
         {
-            $now = Common::timestamp($current);
-            return (true === $milliSecond) ? floor((microtime(true) - $now) * 1000) : floor(microtime(true) - $now);
+            if ($milliSecond === true) {
+                return round((hrtime(true) - INIT_HRTIME) / 1e+6, 2);
+            } else {
+                return round((hrtime(true) - INIT_HRTIME) / 1e+9, 2);
+            }
         }
 
         /**
@@ -345,8 +348,7 @@ namespace Npf\Core {
          */
         private function timerEmit(float $timestamp, int $offset): void
         {
-            $eventName = 'timerTick';
-            if (is_string('timerTick') && !empty($eventName) && isset($this->timerListener['timerTick'])) {
+            if (isset($this->timerListener['timerTick'])) {
                 foreach ($this->timerListener['timerTick'] as $key => $event)
                     if (isset($event['listener']) && is_callable($event['listener'])) {
                         if (!isset($event['tick']) || (int)$event['tick'] < 1)

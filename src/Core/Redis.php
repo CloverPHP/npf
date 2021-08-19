@@ -149,7 +149,6 @@ namespace Npf\Core {
         private int $timeout = 0;
         private int $rwTimeout = 0;
         private string $authPass = '';
-        private bool $allowReconnect = true;
         private bool $persistent = false;
         private string $postHash = '';
         private string $tempHash = '';
@@ -180,7 +179,6 @@ namespace Npf\Core {
             ) {
                 $size = count($config->instance);
                 $range = range(0, $size - 1);
-                $this->allowReconnect = (bool)$config->get('allowReconnect');
                 if (array_keys($config->instance) === $range) {
                     $this->persistent = isset($config->persistent) && $config->persistent;
                     $this->instance = $config->instance;
@@ -200,7 +198,7 @@ namespace Npf\Core {
         final public function setPostHash(string $postHash): self
         {
             if (!empty($postHash))
-                $this->postHash = substr($postHash, 0, 1) === "{" ? $postHash : "{{$postHash}}";
+                $this->postHash = str_starts_with($postHash, "{") ? $postHash : "{{$postHash}}";
             return $this;
         }
 
@@ -209,12 +207,10 @@ namespace Npf\Core {
         final public function __destruct()
         {
             if (!empty($this->redis)) {
-                $this->app->profiler->timerStart("redis");
                 foreach ($this->redis as $redis)
                     if (method_exists($redis, '__destruct'))
                         $redis->__destruct();
                 $this->redis = [];
-                $this->app->profiler->saveQuery("close", "redis");
             }
         }
 
@@ -226,7 +222,7 @@ namespace Npf\Core {
         {
             $tempHash = (string )$tempHash;
             if (!empty($tempHash))
-                $this->tempHash = substr($tempHash, 0, 1) === "{" ? $tempHash : "{{$tempHash}}";
+                $this->tempHash = str_starts_with($tempHash, "{") ? $tempHash : "{{$tempHash}}";
             return $this;
         }
 
@@ -336,7 +332,7 @@ namespace Npf\Core {
             if (!isset($this->redis[$index])) {
                 if (isset($this->instance[$index]))
                     $this->redis[$index] = new RedisBase($this->app, $this->instance[$index], $this->authPass, $this->
-                    db, $this->timeout, $this->rwTimeout, $this->allowReconnect, $this->persistent);
+                    db, $this->timeout, $this->rwTimeout, $this->persistent);
                 else
                     return false;
             }

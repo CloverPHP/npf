@@ -86,7 +86,7 @@ namespace Npf\Core {
             $this->app->request->setPathInfo($pathInfo);
             $pathInfo = preg_replace('#^/\w+\.php#', '', $pathInfo);
             $pathInfo = (!$pathInfo || $pathInfo === '/') ?
-                $this->indexFile : (substr($pathInfo, 0, 1) === '/' ? substr($pathInfo, 1) : $pathInfo);
+                $this->indexFile : (str_starts_with($pathInfo, '/') ? substr($pathInfo, 1) : $pathInfo);
             $this->proceedAppPath($pathInfo);
             clearstatcache();
         }
@@ -142,11 +142,11 @@ namespace Npf\Core {
                 if (is_file($routeTableFile) && ($routeTable = file($routeTableFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)))
                     $this->routeTable = array_combine(array_map('strtolower', $routeTable), $routeTable);
             }
-            $lowerCase = strtolower($this->appFile);
+            $lowerCase = strtolower("{$this->rootDirectory}\\{$this->appFile}");
             do {
                 if (!empty($this->routeTable[$lowerCase])) {
-                    $appFile = $this->routeTable[$lowerCase];
-                    if (substr($appFile, -1) === "\\")
+                    $appFile = str_replace("{$this->rootDirectory}\\", "", $this->routeTable[$lowerCase]);
+                    if (str_ends_with($appFile, "\\"))
                         $appFile .= $this->indexFile;
                     $this->appFile = $appFile;
                     $this->appPath = explode("\\", $appFile);
@@ -229,6 +229,7 @@ namespace Npf\Core {
                     str_replace("\\", "/", "{$this->rootDirectory}\\{$this->appFile}");
                 $this->app->view->setView('static', $staticFile);
                 $this->app->view->lock();
+                $this->app->emit('appLaunch', [$this->app, $this->appFile]);
             } else
                 throw new UnknownClass("URI static file not found: {$this->appFile}");
         }
@@ -267,13 +268,13 @@ namespace Npf\Core {
         private function launchCronjob(ReflectionClass $refClass, array $parameters = [])
         {
             $cronLock = $this->app->config('Redis')->get('enable', false) && $this->generalConfig->get('cronLock', false);
-            $cronBlock = sha1(Common::getServerIp());
-            $lockName = "cronjob:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$this->rootDirectory}\\{$this->appFile}:{$cronBlock}";
+            $cronBlock = sha1($refClass->getFileName() . $this->app->request);
+            $lockName = "cronjob:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$cronBlock}";
             if ($cronLock && !$this->app->lock->waitAcquireDone($lockName, 60, $this->generalConfig->get('cronMaxWait', 60)))
                 return;
             if ($cronLock)
                 $this->app->on('appBeforeClean', function (App $app) use ($lockName) {
-                    $app->lock->release($lockName, true);
+                    $app->lock->release($lockName);
                 });
             try {
                 $actionObj = $refClass->newInstanceArgs($parameters);
@@ -284,7 +285,8 @@ namespace Npf\Core {
             if ($cronLock && !empty($cronjobTtl))
                 $this->app->lock->expire($lockName, $cronjobTtl);
             if (method_exists($actionObj, '__invoke')) {
-                call_user_func_array([$actionObj, '__invoke'], $parameters);
+                $this->app->emit('appLaunch', [$this->app, $refClass->name]);
+                $actionObj->__invoke(...$parameters);
                 unset($actionObj);
             } else
                 throw new UnknownClass('Class(' . get_class($actionObj) . ') __invoke Not Found');
@@ -298,16 +300,16 @@ namespace Npf\Core {
         private function launchDaemon(ReflectionClass $refClass, array $parameters = [])
         {
             set_time_limit(0);
-            $daemonBlock = sha1(Common::getServerIp());
-            $lockName = "daemon:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$this->rootDirectory}\\{$this->appFile}:{$daemonBlock}";
+            $daemonBlock = sha1($refClass->getFileName() . $this->app->request);
+            $lockName = "daemon:{$this->app->getAppEnv()}:{$this->app->getAppName()}:{$daemonBlock}";
             $daemonLock = $this->app->config('Redis')->get('enable', false) && $this->generalConfig->get('daemonLock', false);
-            if ($daemonLock && !$this->app->lock->waitAcquireDone($lockName, 60, $this->generalConfig->get('daemonMaxWait', 180)))
+            if ($daemonLock && !$this->app->lock->waitAcquireDone($lockName, 60, $this->generalConfig->get('daemonMaxWait', 60)))
                 return;
             $this->app->on('appBeforeClean', function (App $app) use ($lockName) {
-                $app->lock->release($lockName, true);
+                $app->lock->release($lockName);
             });
             $this->app->onTermSignal(function (App $app) use ($lockName) {
-                $app->lock->release($lockName, true);
+                $app->lock->release($lockName);
             });
 
             try {
@@ -318,22 +320,21 @@ namespace Npf\Core {
             $daemonTtl = property_exists($actionObj, 'daemonTtl') ? (int)$actionObj->daemonTtl : (int)$this->generalConfig->get('daemonTtl', 300);
             $daemonInterval = property_exists($actionObj, 'daemonInterval') ? (int)$actionObj->daemonInterval : (int)$this->generalConfig->get('daemonInterval', 1000);
             if (method_exists($actionObj, '__invoke')) {
+                $this->app->emit('appLaunch', [$this->app, $refClass->name]);
                 $this->app->onTick(function () use ($daemonLock, $lockName, $daemonTtl, $actionObj, $parameters) {
                     try {
-                        call_user_func_array([$actionObj, '__invoke'], $parameters);
-                        $this->app->dbCommit();
                         if ($daemonLock)
-                            $this->app->lock->expire($lockName, $daemonTtl);
+                            $this->app->lock->extend($lockName, $daemonTtl);
+                        $actionObj->__invoke(...$parameters);
+                        $this->app->dbCommit();
                     } catch (NextTick) {
                         $this->app->dbRollback();
                     }
                 }, 1, 'loop');
-                if ($daemonLock)
-                    $this->app->lock->expire($lockName, $daemonTtl);
                 $this->app->launchTimer($daemonTtl, $daemonInterval);
                 unset($actionObj);
             } else
-                throw new UnknownClass('Class(' . get_class($actionObj) . ') __invoke Not Found');
+                throw new InternalError('Class(' . get_class($actionObj) . ') __invoke Not Found');
         }
 
         /**
@@ -356,6 +357,7 @@ namespace Npf\Core {
                 throw new UnknownClass($ex->getMessage());
             }
             if (method_exists($actionObj, '__invoke')) {
+                $this->app->emit('appLaunch', [$this->app, $refClass->name]);
                 call_user_func_array([$actionObj, '__invoke'], $parameters);
                 unset($actionObj);
             } else

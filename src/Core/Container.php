@@ -16,7 +16,7 @@ namespace Npf\Core {
          */
         private array $data = [];
 
-        private bool $lock = false;
+        private bool $lock;
 
         /**
          * Container constructor.
@@ -28,6 +28,7 @@ namespace Npf\Core {
                                     bool $lock = FALSE,
                                     private bool $__firstOnly = false)
         {
+            $this->lock = false;
             $this->import($data);
             $this->lock = $lock;
         }

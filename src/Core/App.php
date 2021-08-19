@@ -6,6 +6,7 @@ namespace Npf\Core {
     use Composer\Autoload\ClassLoader;
     use JetBrains\PhpStorm\NoReturn;
     use Npf\Exception\DBQueryError;
+    use Npf\Exception\GeneralException;
     use Npf\Exception\InternalError;
     use Npf\Exception\UnknownClass;
     use ReflectionClass;
@@ -50,7 +51,7 @@ namespace Npf\Core {
         /**
          * @var array
          */
-        private array $components;
+        private array $components = [];
 
         /**
          * @var string Config Path
@@ -68,9 +69,9 @@ namespace Npf\Core {
         private string $basePath;
 
         /**
-         * @var bool Ignore Error
+         * @var int Ignore Error
          */
-        private bool $ignoreException = false;
+        private int $exceptionRetry = 0;
 
         /**
          * App constructor.
@@ -88,6 +89,7 @@ namespace Npf\Core {
             $this->roles = !empty($roles) ? $roles : 'web';
             $this->basePath = getcwd();
             $this->configPath = sprintf("Config\\%s\\%s\\", ucfirst($this->appEnv), ucfirst($this->appName));
+            $this->request = new Request();
         }
 
         /**
@@ -127,7 +129,7 @@ namespace Npf\Core {
                     $this->view->lock();
                 }
             }
-            $this->finishingApp();
+            $this->end();
         }
 
         /**
@@ -140,7 +142,7 @@ namespace Npf\Core {
             $route = new Route($this);
             $this->corsSupport();
             $route();
-            $this->finishingApp();
+            $this->end();
         }
 
         /**
@@ -150,14 +152,14 @@ namespace Npf\Core {
          * @throws RuntimeError
          * @throws SyntaxError
          */
-        #[NoReturn] private function finishingApp(): void
+        #[NoReturn] final public function end(): void
         {
             $profiler = $this->profiler->fetch();
-            $this->response->add('profiler', $profiler);
             $this->emit('appEnd', [&$this, $profiler]);
             $this->commit();
             $this->emit('appBeforeClean', [&$this, $profiler]);
-            $this->clean();
+            $this->clean(true, $profiler);
+            $this->response->add('profiler', $this->profiler->fetch());
             $this->view->render();
             exit($this->getRoles() === 'daemon' ? 1 : 0);
         }
@@ -255,8 +257,10 @@ namespace Npf\Core {
         /**
          * App Components Clean Up
          */
-        final public function clean(): self
+        private function clean(bool $event = true, ?array $profiler = [])
         {
+            if ($event)
+                $this->emit('appBeforeClean', [&$this, $profiler]);
             foreach ($this->components as $name => $component) {
                 if (!in_array($name, ['request', 'response', 'profiler', 'view'], true)) {
                     if (method_exists($component, '__destruct'))
@@ -267,7 +271,8 @@ namespace Npf\Core {
             $this->config = [];
             $this->models = [];
             $this->modules = [];
-            return $this;
+            if ($event)
+                $this->emit('appAfterClean', [&$this, $profiler]);
         }
 
         /**
@@ -277,7 +282,7 @@ namespace Npf\Core {
         {
             if (empty($this->rootPath)) {
                 $reflection = new ReflectionClass(ClassLoader::class);
-                $rootPath = explode('/', str_replace('\\', '/', dirname(dirname($reflection->getFileName()))));
+                $rootPath = explode('/', str_replace('\\', '/', dirname($reflection->getFileName(), 2)));
                 array_pop($rootPath);
                 $this->rootPath = implode("/", $rootPath) . '/';
             }
@@ -301,18 +306,29 @@ namespace Npf\Core {
         }
 
         /**
+         * @param string|array $rootPaths
          * @return array
          */
-        public function genRouteTable(): array
+        public function genRouteTable(string|array $rootPaths = 'App'): array
         {
-            $appPath = $this->getRootPath() . "App/";
-            $this->searchFile($appPath, "*.php", $results, true);
-            foreach ($results as $key => &$result) {
-                if (str_ends_with($result, "Router.php"))
-                    unset($results[$key]);
-                $result = str_replace(["\\", $appPath, "/", ".php"], ["/", "", "\\", ""], $result);
+            $appPath = $this->getRootPath();
+            if (is_string($rootPaths))
+                $rootPaths = explode(",", $rootPaths);
+            $results = [];
+            foreach ($rootPaths as $rootPath) {
+                $rootPath = str_replace("\\", "/", $rootPath);
+                if (!str_ends_with($rootPath, "/"))
+                    $rootPath .= "/";
+                $searchs = [];
+                $this->searchFile($appPath . $rootPath, "*.php", $searchs, true);
+                foreach ($searchs as $key => &$search) {
+                    if (str_ends_with($search, "Router.php"))
+                        unset($searchs[$key]);
+                    $search = str_replace(['\\', $appPath, '/', '.php'], ['/', '', '\\', ''], $search);
+                }
+                $results = array_merge($results, $searchs);
             }
-            return array_values($results);
+            return array_values(array_unique($results));
         }
 
         /**
@@ -329,16 +345,17 @@ namespace Npf\Core {
                 $results = [];
             if (is_dir($path)) {
                 $files = scandir($path);
-                foreach ($files as $value) {
-                    $scanValue = realpath($path . DIRECTORY_SEPARATOR . $value);
-                    if (!is_dir($scanValue) && fnmatch($search, $scanValue, FNM_CASEFOLD))
-                        $results[] = $scanValue;
-                    else if ($value != "." && $value != "..") {
-                        if ($includePath)
-                            $results[] = "{$scanValue}/";
-                        $this->searchFile($scanValue, $search, $results, $includePath, true);
+                foreach ($files as $value)
+                    if ($value != "." && $value != "..") {
+                        $scanValue = realpath($path . DIRECTORY_SEPARATOR . $value);
+                        if (!is_dir($scanValue) && fnmatch($search, $scanValue, FNM_CASEFOLD))
+                            $results[] = $scanValue;
+                        else {
+                            if ($includePath)
+                                $results[] = "{$scanValue}/";
+                            $this->searchFile($scanValue, $search, $results, $includePath, true);
+                        }
                     }
-                }
             }
             if (!$statCache)
                 clearstatcache();
@@ -449,66 +466,40 @@ namespace Npf\Core {
         }
 
         /**
-         * @param array $trace
          * @param Throwable $exception
          * @param bool $event
          */
-        final public function handleException(array $trace, Throwable $exception, bool $event = false): void
+        final public function handleException(Throwable $exception, bool $event = false): void
         {
             try {
-                if ($exception instanceof Exception) {
-                    $this->response = $exception->response();
-                    $this->rollback();
-                    $this->view->error();
-                    $this->response->add('profiler', $this->profiler->fetch());
-                    $profiler = $this->response->get('profiler');
-                    if ($exception->sysLog()) {
-                        $desc = is_string($profiler['desc']) ? $profiler['desc'] : json_encode($profiler['desc'], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-                        $this->profiler->logError($this->response->get('error', ''), "{$desc}\nTrace:\n" . implode(",", $profiler['trace']));
-                        if ($event)
-                            $this->emit('sysReport', [&$this, $profiler]);
-                    }
-                    if ($event) {
-                        $this->emit('appException', [&$this, $profiler]);
-                        $this->emit('exception', [&$this, $profiler]);
-                    }
-                    $exitCode = 2;
-                } else {
-                    $message = '';
-                    if (method_exists($exception, 'getMessage'))
-                        $message = $exception->getMessage();
-                    $profiler = [
-                            'desc' => $message,
-                            'trace' => $trace,
-                            'params' => $this->request->get("*"),
-                            'headers' => $this->request->header("*"),
-                        ] + $this->profiler->fetch();
-                    $output = [
-                        'status' => 'error',
-                        'error' => 'unexpected_error',
-                        'code' => get_class($exception),
-                        'profiler' => $profiler,
-                    ];
-                    $this->response = new Response($output);
-                    $this->rollback();
-                    $this->view->error();
-                    $this->profiler->logError('PHP Exception', "Message: " . implode("\n", $trace));
-                    if ($event) {
-                        $this->emit('sysReport', [&$this, $profiler]);
-                        $this->emit('codeException', [&$this, $profiler]);
-                        $this->emit('exception', [&$this, $profiler]);
-                    }
+                $exitCode = 2;
+                if (!$exception instanceof Exception) {
                     $exitCode = 3;
+                    $exception = new GeneralException($exception);
                 }
-                if ($event)
-                    $this->emit('appBeforeClean', [&$this, $profiler]);
-                $this->clean();
+                $this->response = $exception->response();
+                $this->corsSupport();
+                $this->rollback();
+                $this->view->error();
+                $this->response->add('profiler', $this->profiler->fetch());
+                $profiler = $this->response->get('profiler');
+                if ($exception->sysLog() || $exception instanceof GeneralException) {
+                    $desc = is_string($profiler['desc']) ? $profiler['desc'] : json_encode($profiler['desc'], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                    $this->profiler->logError($this->response->get('error', ''), "{$desc}\nTrace:\n" . implode(",", $profiler['trace']));
+                    if ($event)
+                        $this->emit('sysReport', [&$this, $profiler]);
+                }
+                if ($event) {
+                    $this->emit('appException', [&$this, $profiler]);
+                    $this->emit('exception', [&$this, $profiler]);
+                }
+                $this->clean($event, $profiler);
                 $this->view->render();
                 exit($exitCode);
-            } catch (Throwable $ex) {
-                if (!$this->ignoreException) {
-                    $this->ignoreException = true;
-                    $this->handleException($this->trace($ex), $ex);
+            } catch (\Exception $ex) {
+                if ($this->exceptionRetry < 10) {
+                    $this->exceptionRetry++;
+                    $this->handleException($ex);
                 } else {
                     if ($ex instanceof Exception) {
                         $profiler = $this->response->get('profiler');
@@ -521,6 +512,7 @@ namespace Npf\Core {
                         $exitCode = 3;
                     }
                     echo($message);
+                    echo("stack trace:\n" . implode("\n", Exception::trace($ex)));
                     exit($exitCode);
                 }
             }
@@ -529,7 +521,6 @@ namespace Npf\Core {
         /**
          * App Rollback
          * @return self
-         * @throws DBQueryError
          */
         final public function rollback(): self
         {
@@ -550,7 +541,7 @@ namespace Npf\Core {
 
         /**
          * DB Rollback
-         * @throws DBQueryError
+         * @return bool
          */
         final public function dbRollback(): bool
         {
@@ -610,8 +601,7 @@ namespace Npf\Core {
                 $this->emit('sysReport', [&$this, $profiler]);
                 $this->emit('criticalError', [&$this, $profiler]);
                 $this->emit('critical', [&$this, $profiler]);
-                $this->emit('appBeforeClean', [&$this, $profiler]);
-                $this->clean();
+                $this->clean(true, $profiler);
                 $this->view->render();
             } catch (Throwable) {
                 exit(6);
@@ -637,10 +627,10 @@ namespace Npf\Core {
          * @throws UnknownClass
          */
         final public function createDb(string|Container $host = 'localhost',
-                                       int $port = 3306, string $user = 'root', string $pass = '',
-                                       string $name = '', bool $event = false,
-                                       int $timeOut = 10, string $characterSet = 'UTF8MB4',
-                                       string $collate = 'UTF8MB4_UNICODE_CI', bool $persistent = false): Db
+                                       int              $port = 3306, string $user = 'root', string $pass = '',
+                                       string           $name = '', bool $event = false,
+                                       int              $timeOut = 10, string $characterSet = 'UTF8MB4',
+                                       string           $collate = 'UTF8MB4_UNICODE_CI', bool $persistent = false): Db
         {
             if ($host instanceof Container)
                 $config = $host;
