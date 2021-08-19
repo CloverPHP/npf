@@ -129,7 +129,7 @@ namespace Npf\Core {
          */
         public static function weightRndArray(array $items,
                                               array $weightedArray = [],
-                                              bool $unique = true): array|bool
+                                              bool  $unique = true): array|bool
         {
             $rndAry = [];
             if ($unique === true) {
@@ -202,8 +202,8 @@ namespace Npf\Core {
          * @return boolean
          */
         public static function getOddWeight(int|float $odd,
-                                            float $commission = 0,
-                                            float $factor = 1): bool
+                                            float     $commission = 0,
+                                            float     $factor = 1): bool
         {
             $commission = !empty($commission) ? $commission / 100 : 0;
             $rate = empty($odd) ? 0 : round((1 / $odd) * (1 - $commission) * $factor, 7);
@@ -220,7 +220,7 @@ namespace Npf\Core {
         public static function getOddsWeightedKey(array $oddItems,
                                                   float $defaultCommission = 0,
                                                   float $defaultFactor = 1,
-                                                  bool $probabilityOnly = false): int|string|array
+                                                  bool  $probabilityOnly = false): int|string|array
         {
             $decimalLengths = [];
             $rates = [];
@@ -830,7 +830,7 @@ namespace Npf\Core {
          * @param int $picked
          * @return mixed
          */
-        public static function arrayRandomAssoc(array $array, int $picked = 1): mixed
+        public static function arrayRandomAssoc(array $array, int $picked = 1): array
         {
             $total = count($array);
             if ($picked > $total)
@@ -840,7 +840,7 @@ namespace Npf\Core {
             $result = [];
             for ($i = 0; $i < $picked; $i++)
                 $result[$keys[$i]] = $array[$keys[$i]];
-            return $picked === 1 ? reset($result) : $result;
+            return $result;
         }
 
         /**
@@ -911,7 +911,7 @@ namespace Npf\Core {
          */
         final static public function arrayNumAddUp(array|float $data,
                                                    array|float $append,
-                                                   array $expectedKey = []): array|float
+                                                   array       $expectedKey = []): array|float
         {
             if (!is_array($expectedKey))
                 $expectedKey = !empty($expectedKey) ? [$expectedKey] : [];
@@ -952,9 +952,9 @@ namespace Npf\Core {
          */
         final static public function arrayNumCutDown(array|float $data,
                                                      array|float $subtrahend,
-                                                     bool $negative = false,
-                                                     bool $removeEmpty = true,
-                                                     array $expectedKey = []): array|float
+                                                     bool        $negative = false,
+                                                     bool        $removeEmpty = true,
+                                                     array       $expectedKey = []): array|float
         {
             if (!is_array($expectedKey))
                 $expectedKey = !empty($expectedKey) ? [$expectedKey] : [];
@@ -1003,9 +1003,9 @@ namespace Npf\Core {
          * @return string
          */
         #[Pure] public static function strMosaic(string $content,
-                                                 int $start = 0,
-                                                 int $end = 6,
-                                                 int $length = 0,
+                                                 int    $start = 0,
+                                                 int    $end = 6,
+                                                 int    $length = 0,
                                                  string $toReplace = 'x'): string
         {
             $subLength = strlen(substr($content, $start, $end));
@@ -1054,8 +1054,8 @@ namespace Npf\Core {
          * @param string|int|float|null $time
          * @return string|bool
          */
-        public static function specifyTimeZone(string $timeZone,
-                                               string $format = 'Y-m-d H:i:s',
+        public static function specifyTimeZone(string                $timeZone,
+                                               string                $format = 'Y-m-d H:i:s',
                                                string|int|float|null $time = null): string|bool
         {
             try {
@@ -1076,9 +1076,9 @@ namespace Npf\Core {
          * @param string|int|float|null $time
          * @return string|bool
          */
-        public static function convertTimeZone(string $fromTimeZone,
-                                               string $targetTimeZone,
-                                               string $format = 'Y-m-d H:i:s',
+        public static function convertTimeZone(string                $fromTimeZone,
+                                               string                $targetTimeZone,
+                                               string                $format = 'Y-m-d H:i:s',
                                                string|int|float|null $time = null): bool|string
         {
             try {
@@ -1204,9 +1204,9 @@ namespace Npf\Core {
          * @param bool $maintainKey maintain index association
          * @param int|array $defaultSortFlag
          */
-        final static public function multiArraySort(array &$array,
-                                                    mixed $orderColumns,
-                                                    bool $maintainKey = false,
+        final static public function multiArraySort(array     &$array,
+                                                    mixed     $orderColumns,
+                                                    bool      $maintainKey = false,
                                                     int|array $defaultSortFlag = SORT_ASC): void
         {
             $args = [];
@@ -1283,7 +1283,7 @@ namespace Npf\Core {
          * @return void
          */
         public static function kSortRecursive(array &$array,
-                                              int $sort_flags = SORT_REGULAR): void
+                                              int   $sort_flags = SORT_REGULAR): void
         {
             ksort($array, $sort_flags);
             foreach ($array as &$item)
@@ -1309,10 +1309,10 @@ namespace Npf\Core {
              */
             $composer = function (array &$result,
                                   array &$composed,
-                                  int $start,
-                                  int $number,
+                                  int   $start,
+                                  int   $number,
                                   array $array,
-                                  int $size) use (&$composer) {
+                                  int   $size) use (&$composer) {
                 if ($number == 0)
                     array_push($result, $composed);
                 else
@@ -1432,8 +1432,8 @@ namespace Npf\Core {
          * @return string
          */
         final static public function convertUtfAngle(string $content,
-                                                     bool $toFullAngle = false,
-                                                     bool $includeSymbol = false): string
+                                                     bool   $toFullAngle = false,
+                                                     bool   $includeSymbol = false): string
         {
             $fullAngle = [
                 'alphanumeric' => [
